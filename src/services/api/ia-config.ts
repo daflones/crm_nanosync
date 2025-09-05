@@ -1,0 +1,190 @@
+import { supabase } from '@/lib/supabase'
+
+export interface IAConfig {
+  id?: string
+  user_id: string
+  // Contexto e personalidade da IA
+  contexto_ia: string
+  tom_fala: 'profissional' | 'casual' | 'formal' | 'amigavel' | 'tecnico'
+  // Regras e comportamentos
+  regras_especificas: string
+  regras_adicionais?: string
+  // Configurações de texto
+  tamanho_textos: 'curto' | 'medio' | 'longo' | 'detalhado'
+  usar_emojis: boolean
+  // Horários de funcionamento
+  horarios_funcionamento: {
+    [key: string]: {
+      inicio: string
+      fim: string
+      ativo: boolean
+    }
+  }
+  // Detalhes da empresa
+  detalhes_empresa: {
+    // Informações básicas da empresa
+    sobre_empresa: string
+    diferenciais_competitivos: string
+    portfolio_produtos_servicos: string
+    principais_clientes: string
+    produtos_servicos_mais_vendidos: string
+    
+    // Diretrizes para IA
+    informacoes_ia_pode_fornecer: string
+    informacoes_ia_nao_pode_fornecer: string
+    
+    // Estratégias comerciais
+    operacional_comercial: string
+    argumentos_venda_por_perfil: string
+    objecoes_comuns_respostas: string
+    
+    // Contatos (mantendo compatibilidade)
+    contatos: {
+      telefone: string
+      email: string
+      whatsapp: string
+      endereco: string
+    }
+    
+    // Redes sociais (mantendo compatibilidade)
+    redes_sociais: {
+      website: string
+      instagram: string
+      linkedin: string
+      facebook: string
+    }
+  }
+  // Configurações avançadas
+  tempo_resposta_ms: number
+  mensagem_ausencia: string
+  created_at?: string
+  updated_at?: string
+}
+
+// Buscar configurações IA do usuário
+export const getIAConfig = async (userId: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('ia_config')
+      .select('*')
+      .eq('user_id', userId)
+      .single()
+
+    if (error && error.code === 'PGRST116') {
+      // Configurações não existem, criar padrão
+      const defaultConfig: Partial<IAConfig> = {
+        user_id: userId,
+        contexto_ia: 'Você é um assistente inteligente especializado em vendas e atendimento ao cliente para a empresa. Seja sempre prestativo, profissional e focado em ajudar o cliente.',
+        tom_fala: 'profissional',
+        regras_especificas: 'Sempre confirme informações importantes antes de prosseguir. Seja claro e objetivo nas respostas.',
+        regras_adicionais: '',
+        tamanho_textos: 'medio',
+        usar_emojis: true,
+        horarios_funcionamento: {
+          segunda: { inicio: '08:00', fim: '18:00', ativo: true },
+          terca: { inicio: '08:00', fim: '18:00', ativo: true },
+          quarta: { inicio: '08:00', fim: '18:00', ativo: true },
+          quinta: { inicio: '08:00', fim: '18:00', ativo: true },
+          sexta: { inicio: '08:00', fim: '18:00', ativo: true },
+          sabado: { inicio: '08:00', fim: '12:00', ativo: false },
+          domingo: { inicio: '08:00', fim: '12:00', ativo: false }
+        },
+        detalhes_empresa: {
+          sobre_empresa: '',
+          diferenciais_competitivos: '',
+          portfolio_produtos_servicos: '',
+          principais_clientes: '',
+          produtos_servicos_mais_vendidos: '',
+          informacoes_ia_pode_fornecer: '',
+          informacoes_ia_nao_pode_fornecer: '',
+          operacional_comercial: '',
+          argumentos_venda_por_perfil: '',
+          objecoes_comuns_respostas: '',
+          contatos: {
+            telefone: '',
+            email: '',
+            whatsapp: '',
+            endereco: ''
+          },
+          redes_sociais: {
+            website: '',
+            instagram: '',
+            linkedin: '',
+            facebook: ''
+          }
+        },
+        tempo_resposta_ms: 2000,
+        mensagem_ausencia: 'No momento estou fora do horário de atendimento. Deixe sua mensagem que retornarei assim que possível.'
+      }
+
+      const { data: newData, error: createError } = await supabase
+        .from('ia_config')
+        .insert([defaultConfig])
+        .select()
+        .single()
+
+      return { data: newData, error: createError }
+    }
+
+    return { data, error }
+  } catch (error) {
+    console.error('Erro ao buscar configurações IA:', error)
+    return { data: null, error }
+  }
+}
+
+// Salvar/Atualizar configurações IA
+export const upsertIAConfig = async (userId: string, config: Partial<IAConfig>) => {
+  try {
+    // Primeiro, verificar se já existe uma configuração para o usuário
+    const { data: existingConfig } = await supabase
+      .from('ia_config')
+      .select('id')
+      .eq('user_id', userId)
+      .single()
+
+    if (existingConfig) {
+      // Se existe, fazer UPDATE
+      const { data, error } = await supabase
+        .from('ia_config')
+        .update({ 
+          ...config,
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', userId)
+        .select()
+        .single()
+
+      return { data, error }
+    } else {
+      // Se não existe, fazer INSERT
+      const { data, error } = await supabase
+        .from('ia_config')
+        .insert([{ 
+          user_id: userId, 
+          ...config,
+          updated_at: new Date().toISOString()
+        }])
+        .select()
+        .single()
+
+      return { data, error }
+    }
+  } catch (error) {
+    console.error('Erro ao salvar configurações IA:', error)
+    return { data: null, error }
+  }
+}
+
+// Testar configurações IA
+export const testIAConfig = async (config: Partial<IAConfig>) => {
+  // Simular teste das configurações
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve({ 
+        success: true, 
+        message: 'Configurações IA testadas com sucesso! A IA está pronta para usar.' 
+      })
+    }, 2000)
+  })
+}

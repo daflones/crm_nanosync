@@ -1,0 +1,13 @@
+{
+  "connections": [
+    {
+      "name": "Supabase InovaPet",
+      "host": "aws-1-sa-east-1.pooler.supabase.com",
+      "port": 5432,
+      "database": "postgres",
+      "username": "postgres.rpydvmgnquvmwnowcmpp",
+      "password": "22660202Ju$$$",
+      "ssl": true
+    }
+  ]
+}
