@@ -147,16 +147,6 @@ export function PropostasPage() {
   const propostasFinalizadas = propostas.filter(p => ['aprovada', 'rejeitada', 'vencida'].includes(p.status))
   const taxaConversao = propostasFinalizadas.length > 0 ? Math.round((propostasAprovadas.length / propostasFinalizadas.length) * 100) : 0
   
-  // Calcular tempo médio para aprovação (propostas aprovadas com data de criação e aprovação)
-  const propostasComTempo = propostas.filter(p => p.status === 'aprovada' && p.created_at && p.data_aprovacao_interna)
-  const tempoMedio = propostasComTempo.length > 0 
-    ? propostasComTempo.reduce((acc, p) => {
-        const inicio = new Date(p.created_at)
-        const fim = new Date(p.data_aprovacao_interna!)
-        const dias = Math.ceil((fim.getTime() - inicio.getTime()) / (1000 * 60 * 60 * 24))
-        return acc + dias
-      }, 0) / propostasComTempo.length
-    : 0
 
   const stats = [
     {
