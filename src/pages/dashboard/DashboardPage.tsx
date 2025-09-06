@@ -15,7 +15,7 @@ import { formatCurrency } from '@/utils/format'
 
 export function DashboardPage() {
   const { user } = useAuthStore()
-  const { stats, activities, proposals, conversion, pipeline, isLoading, isError, error } = useDashboardData()
+  const { stats, proposals, conversion, pipeline, isLoading, isError, error } = useDashboardData()
 
   if (isLoading) {
     return (
