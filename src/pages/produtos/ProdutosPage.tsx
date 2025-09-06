@@ -323,7 +323,7 @@ export function ProdutosPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Produtos</h1>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Produtos</h1>
         {isAdmin && (
           <Button onClick={() => setIsCreateModalOpen(true)}>
             <Plus className="w-4 h-4 mr-2" />
@@ -333,7 +333,7 @@ export function ProdutosPage() {
       </div>
 
       {/* Filters */}
-      <Card>
+      <Card className="dark:bg-gray-800">
         <CardContent className="p-4">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <Input
@@ -382,28 +382,28 @@ export function ProdutosPage() {
       {/* Stats Cards */}
       {stats && (
         <div className="w-full grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-          <Card>
+          <Card className="dark:bg-gray-800">
             <CardContent className="p-4">
               <div className="text-2xl font-bold">{stats.total}</div>
-              <div className="text-sm text-gray-500">Total de Produtos</div>
+              <div className="text-sm text-gray-500 dark:text-gray-400">Total de Produtos</div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="dark:bg-gray-800">
             <CardContent className="p-4">
               <div className="text-2xl font-bold">{stats.ativos}</div>
-              <div className="text-sm text-gray-500">Produtos Ativos</div>
+              <div className="text-sm text-gray-500 dark:text-gray-400">Produtos Ativos</div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="dark:bg-gray-800">
             <CardContent className="p-4">
               <div className="text-2xl font-bold">{stats.em_destaque}</div>
-              <div className="text-sm text-gray-500">Em Destaque</div>
+              <div className="text-sm text-gray-500 dark:text-gray-400">Em Destaque</div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="dark:bg-gray-800">
             <CardContent className="p-4">
               <div className="text-2xl font-bold">{stats.baixo_estoque}</div>
-              <div className="text-sm text-gray-500">Baixo Estoque</div>
+              <div className="text-sm text-gray-500 dark:text-gray-400">Baixo Estoque</div>
             </CardContent>
           </Card>
         </div>
@@ -412,7 +412,7 @@ export function ProdutosPage() {
       {/* Products Grid */}
       <div className="w-full grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6">
         {currentProducts.map((product) => (
-          <Card key={product.id} className="group hover:shadow-lg transition-shadow duration-200 flex flex-col">
+          <Card key={product.id} className="group hover:shadow-lg transition-shadow duration-200 flex flex-col dark:bg-gray-800">
             <CardContent className="p-0 flex flex-col flex-1">
               {/* Product Image */}
               <div className="relative aspect-[4/3] overflow-hidden rounded-t-lg">
@@ -423,8 +423,8 @@ export function ProdutosPage() {
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
                   />
                 ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-                    <Package className="w-16 h-16 text-gray-400" />
+                  <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-600 flex items-center justify-center">
+                    <Package className="w-16 h-16 text-gray-400 dark:text-gray-500" />
                   </div>
                 )}
                 
@@ -464,9 +464,9 @@ export function ProdutosPage() {
                 <div className="flex-1 space-y-2">
                   <div>
                     <h3 className="font-semibold text-base line-clamp-2 mb-1">{product.nome}</h3>
-                    <p className="text-xs text-gray-600 mb-1">Código: {product.codigo}</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Código: {product.codigo}</p>
                     {product.resumo && (
-                      <p className="text-xs text-gray-500 line-clamp-1">{product.resumo}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1">{product.resumo}</p>
                     )}
                   </div>
 
@@ -877,8 +877,8 @@ export function ProdutosPage() {
                       className="w-48 h-48 rounded object-cover"
                     />
                   ) : (
-                    <div className="w-48 h-48 bg-gray-200 rounded flex items-center justify-center">
-                      <Package className="w-24 h-24 text-gray-400" />
+                    <div className="w-48 h-48 bg-gray-200 dark:bg-gray-700 rounded flex items-center justify-center">
+                      <Package className="w-24 h-24 text-gray-400 dark:text-gray-500" />
                     </div>
                   )}
                 </div>

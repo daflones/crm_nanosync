@@ -246,7 +246,7 @@ export function PropostasPage() {
         {stats.map((stat) => {
           const Icon = stat.icon
           return (
-            <Card key={stat.title}>
+            <Card key={stat.title} className="dark:bg-gray-800">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
                   {stat.title}
@@ -283,7 +283,7 @@ export function PropostasPage() {
           >
             {option.label}
             {option.count > 0 && (
-              <span className="ml-2 px-2 py-0.5 bg-white/20 rounded-full text-xs">
+              <span className="ml-2 px-2 py-0.5 bg-white/20 dark:bg-gray-800/20 rounded-full text-xs">
                 {option.count}
               </span>
             )}

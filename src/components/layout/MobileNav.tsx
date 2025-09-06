@@ -94,15 +94,12 @@ export function MobileNav({ open, onClose }: MobileNavProps) {
               </Transition.Child>
 
               <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-white dark:bg-gray-800 px-6 pb-4">
-                <div className="flex h-16 shrink-0 items-center">
+                <div className="flex h-16 shrink-0 items-center justify-center bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg -mx-2">
                   <img 
-                    src="/Logo.ico" 
-                    alt="Logo" 
-                    className="h-10 w-10 object-contain"
+                    src="/LogoNanoSyncBranca.png" 
+                    alt="NanoSync CRM Logo" 
+                    className="h-[65%] w-auto object-contain"
                   />
-                  <span className="ml-2 text-xl font-bold text-gray-900 dark:text-white">
-                    CRM
-                  </span>
                 </div>
                 
                 <nav className="flex flex-1 flex-col">

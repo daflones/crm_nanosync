@@ -638,11 +638,11 @@ export function AgendamentosPage() {
           </div>
 
           {/* Calendar Grid */}
-          <div className="bg-white rounded-lg border">
+          <div className="bg-white dark:bg-gray-800 rounded-lg border dark:border-gray-700">
             {/* Days of week header */}
-            <div className="grid grid-cols-7 border-b">
+            <div className="grid grid-cols-7 border-b dark:border-gray-700">
               {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((day) => (
-                <div key={day} className="p-3 text-center font-medium text-muted-foreground border-r last:border-r-0">
+                <div key={day} className="p-3 text-center font-medium text-muted-foreground dark:text-gray-400 border-r dark:border-gray-700 last:border-r-0">
                   {day}
                 </div>
               ))}

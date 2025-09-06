@@ -352,14 +352,14 @@ export function ClientesPage() {
               placeholder="Buscar clientes..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
             />
           </div>
           
           {/* Desktop Controls */}
           <div className="hidden sm:flex items-center gap-3">
             {/* View Toggle */}
-            <div className="flex items-center border border-gray-300 rounded-md">
+            <div className="flex items-center border border-gray-300 dark:border-gray-600 rounded-md">
               <button
                 onClick={() => setViewMode('kanban')}
                 className={`px-3 py-2 text-sm font-medium flex items-center gap-2 ${
@@ -401,7 +401,7 @@ export function ClientesPage() {
           </div>
 
           {/* Mobile View Toggle */}
-          <div className="sm:hidden flex items-center border border-gray-300 rounded-md">
+          <div className="sm:hidden flex items-center border border-gray-300 dark:border-gray-600 rounded-md">
             <button
               onClick={() => setViewMode('kanban')}
               className={`flex-1 px-3 py-2 text-sm font-medium flex items-center justify-center gap-2 ${
@@ -431,16 +431,16 @@ export function ClientesPage() {
       <div className="w-full grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 2xl:grid-cols-8">
         <div 
           className={`p-4 rounded-lg border cursor-pointer transition-colors ${
-            selectedStage === 'todos' ? 'bg-primary-50 border-primary-200' : 'bg-white border-gray-200 hover:bg-gray-50'
+            selectedStage === 'todos' ? 'bg-primary-50 border-primary-200 dark:bg-primary-900/20 dark:border-primary-700' : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
           }`}
           onClick={() => setSelectedStage('todos')}
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Todos</p>
-              <p className="text-2xl font-bold text-gray-900">{clientes.length}</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Todos</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{clientes.length}</p>
             </div>
-            <Users className="h-8 w-8 text-gray-400" />
+            <Users className="h-8 w-8 text-gray-400 dark:text-gray-500" />
           </div>
         </div>
 
@@ -448,14 +448,14 @@ export function ClientesPage() {
           <div
             key={stage.id}
             className={`p-4 rounded-lg border cursor-pointer transition-colors ${
-              selectedStage === stage.id ? 'bg-primary-50 border-primary-200' : 'bg-white border-gray-200 hover:bg-gray-50'
+              selectedStage === stage.id ? 'bg-primary-50 border-primary-200 dark:bg-primary-900/20 dark:border-primary-700' : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
             }`}
             onClick={() => setSelectedStage(stage.id)}
           >
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">{stage.name}</p>
-                <p className="text-2xl font-bold text-gray-900">{getStageCount(stage.id)}</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-300">{stage.name}</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{getStageCount(stage.id)}</p>
               </div>
               <div className={`w-3 h-3 rounded-full ${stage.color}`} />
             </div>
@@ -465,10 +465,10 @@ export function ClientesPage() {
 
       {/* Conditional View Rendering */}
       {viewMode === 'kanban' ? (
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
           <div className="mb-6">
-            <h2 className="text-lg font-semibold text-gray-900">Pipeline de Vendas</h2>
-            <p className="text-sm text-gray-600">Gerencie seus leads através do funil de vendas</p>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Pipeline de Vendas</h2>
+            <p className="text-sm text-gray-600 dark:text-gray-400">Gerencie seus leads através do funil de vendas</p>
           </div>
           <KanbanBoard
             clientes={clientes}
@@ -479,8 +479,8 @@ export function ClientesPage() {
           />
         </div>
       ) : (
-        <div className="bg-white rounded-lg shadow">
-          <div className="px-6 py-4 border-b border-gray-200">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
+          <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
             <h2 className="text-lg font-semibold text-gray-900">
               {selectedStage === 'todos' ? 'Todos os Clientes' : 
                pipelineStages.find(s => s.id === selectedStage)?.name || 'Clientes'}
@@ -489,16 +489,16 @@ export function ClientesPage() {
 
           {filteredClientes.length === 0 ? (
             <div className="text-center py-12">
-              <User className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="mt-2 text-sm font-medium text-gray-900">Nenhum cliente encontrado</h3>
-              <p className="mt-1 text-sm text-gray-500">
+              <User className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" />
+              <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">Nenhum cliente encontrado</h3>
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                 Comece adicionando um novo cliente ao seu pipeline.
               </p>
             </div>
           ) : (
-            <div className="divide-y divide-gray-200">
+            <div className="divide-y divide-gray-200 dark:divide-gray-700">
               {filteredClientes.map((cliente: any) => (
-                <div key={cliente.id} className="p-6 hover:bg-gray-50">
+                <div key={cliente.id} className="p-6 hover:bg-gray-50 dark:hover:bg-gray-700">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-3">
@@ -506,23 +506,23 @@ export function ClientesPage() {
                           <User className="w-5 h-5 text-primary-600" />
                         </div>
                         <div>
-                          <h3 className="text-lg font-semibold text-gray-900">{cliente.nome_contato}</h3>
-                          <p className="text-sm text-gray-500">{cliente.nome_empresa}</p>
+                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{cliente.nome_contato}</h3>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">{cliente.nome_empresa}</p>
                         </div>
                       </div>
                       
                       <div className="mt-4 space-y-2 sm:space-y-0 sm:grid sm:grid-cols-1 lg:grid-cols-3 sm:gap-4">
                         <div className="flex items-center gap-2">
-                          <Mail className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                          <span className="text-sm text-gray-600 truncate">{cliente.email || 'N/A'}</span>
+                          <Mail className="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" />
+                          <span className="text-sm text-gray-600 dark:text-gray-300 truncate">{cliente.email || 'N/A'}</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Phone className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                          <span className="text-sm text-gray-600 truncate">{cliente.telefone || 'N/A'}</span>
+                          <Phone className="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" />
+                          <span className="text-sm text-gray-600 dark:text-gray-300 truncate">{cliente.telefone || 'N/A'}</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <MapPin className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                          <span className="text-sm text-gray-600 truncate">{cliente.cidade || 'N/A'}, {cliente.estado || 'N/A'}</span>
+                          <MapPin className="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" />
+                          <span className="text-sm text-gray-600 dark:text-gray-300 truncate">{cliente.cidade || 'N/A'}, {cliente.estado || 'N/A'}</span>
                         </div>
                       </div>
                       
@@ -549,13 +549,13 @@ export function ClientesPage() {
                         <div className="flex flex-wrap items-center gap-4">
                           <div className="flex items-center gap-1">
                             <DollarSign className="w-4 h-4 text-green-600" />
-                            <span className="text-sm font-medium text-gray-900">
+                            <span className="text-sm font-medium text-gray-900 dark:text-white">
                               R$ {(cliente.valor_estimado || 0).toLocaleString('pt-BR')}
                             </span>
                           </div>
                           <div className="flex items-center gap-1">
                             <TrendingUp className="w-4 h-4 text-blue-600" />
-                            <span className="text-sm text-gray-600">{cliente.probabilidade || 0}%</span>
+                            <span className="text-sm text-gray-600 dark:text-gray-300">{cliente.probabilidade || 0}%</span>
                           </div>
                         </div>
 
@@ -567,7 +567,7 @@ export function ClientesPage() {
                               <select
                                 value={cliente.etapa_pipeline}
                                 onChange={(e) => handleMovePipeline(cliente.id, e.target.value)}
-                                className="w-full sm:w-auto text-xs border border-gray-300 rounded px-2 py-1"
+                                className="w-full sm:w-auto text-xs border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                               >
                                 {pipelineStages.map((stage) => (
                                   <option key={stage.id} value={stage.id}>
@@ -582,19 +582,19 @@ export function ClientesPage() {
                           <div className="flex items-center gap-2 sm:order-1">
                             <button
                               onClick={() => handleViewCliente(cliente)}
-                              className="p-2 text-gray-600 hover:text-blue-600 hover:bg-gray-100 rounded"
+                              className="p-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-600 rounded"
                             >
                               <Eye className="h-4 w-4" />
                             </button>
                             <button
                               onClick={() => openEditModal(cliente)}
-                              className="p-2 text-gray-600 hover:text-primary-600 hover:bg-gray-100 rounded"
+                              className="p-2 text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-gray-100 dark:hover:bg-gray-600 rounded"
                             >
                               <Edit className="h-4 w-4" />
                             </button>
                             <button
                               onClick={() => openDeleteDialog(cliente)}
-                              className="p-2 text-gray-600 hover:text-red-600 hover:bg-gray-100 rounded"
+                              className="p-2 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-600 rounded"
                             >
                               <Trash2 className="h-4 w-4" />
                             </button>

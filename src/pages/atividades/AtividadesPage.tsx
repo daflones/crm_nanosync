@@ -472,7 +472,7 @@ export function AtividadesPage() {
                                 <div className="space-y-3">
                                   {changes.length > 0 ? (
                                     changes.map((change, index) => (
-                                      <div key={index} className="bg-white dark:bg-gray-900 p-3 rounded border">
+                                      <div key={index} className="bg-white dark:bg-gray-800 p-3 rounded border dark:border-gray-700">
                                         <div className="font-medium text-sm text-gray-900 dark:text-white mb-2">
                                           {formatFieldName(change.key)}
                                         </div>
@@ -544,7 +544,7 @@ export function AtividadesPage() {
                               <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">
                                 Metadados:
                               </h4>
-                              <pre className="text-xs bg-white dark:bg-gray-900 p-3 rounded border overflow-x-auto">
+                              <pre className="text-xs bg-white dark:bg-gray-800 p-3 rounded border dark:border-gray-700 overflow-x-auto">
                                 {formatJsonData(atividade.metadata)}
                               </pre>
                             </div>

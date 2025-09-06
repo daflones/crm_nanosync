@@ -120,16 +120,13 @@ export function Sidebar() {
   return (
     <div className="flex h-full w-64 flex-col bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 shadow-lg">
       {/* Logo */}
-      <div className="flex h-20 items-center justify-center border-b border-gray-200 dark:border-gray-700">
-        <Link to="/app/dashboard" className="flex flex-col items-center px-4">
+      <div className="flex h-20 items-center justify-center border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-indigo-600 to-purple-600">
+        <Link to="/app/dashboard" className="flex items-center justify-center px-4 w-full h-full">
           <img 
-            src="/Logo.ico" 
-            alt="Logo" 
-            className="h-12 w-12 object-contain"
+            src="/LogoNanoSyncBranca.png" 
+            alt="NanoSync CRM Logo" 
+            className="h-[65%] w-auto object-contain"
           />
-          <span className="text-xs font-medium text-gray-700 dark:text-gray-300 mt-1">
-            CRM
-          </span>
         </Link>
       </div>
 

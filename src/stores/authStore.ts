@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { supabase, type Profile } from '@/lib/supabase'
 import { AtividadeService } from '@/services/api/atividades'
+import { CacheManager } from '@/utils/cacheManager'
 
 interface AuthState {
   user: Profile | null
@@ -114,7 +115,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       
       const { error } = await supabase.auth.signOut()
       if (error) throw error
+      
+      // Clear all application state
       set({ user: null, loading: false, initialized: true })
+      
+      // Clear all cache and storage using CacheManager
+      await CacheManager.clearAllData()
+      
+      // Force complete page reload to ensure clean state
+      window.location.href = '/login'
+      
     } catch (error: any) {
       set({ error: error.message, loading: false })
       throw error

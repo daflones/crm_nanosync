@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { clientesService } from '@/services/api/clientes'
 import { useIsAdmin, useCurrentVendedorId } from '@/hooks/useAuth'
+import { useAutoRefresh } from '@/hooks/useAutoRefresh'
 import { toast } from 'sonner'
 import { useMemo } from 'react'
 
@@ -56,12 +57,12 @@ export function useCliente(id: string) {
 
 export function useCreateCliente() {
   const queryClient = useQueryClient()
+  const { refreshAfterMutation } = useAutoRefresh()
   
   return useMutation({
     mutationFn: clientesService.create,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['clientes'] })
-      queryClient.refetchQueries({ queryKey: ['clientes'] })
+    onSuccess: async () => {
+      await refreshAfterMutation('cliente', 'create')
       // Toast will be handled by the component
     },
     onError: (error: Error) => {
@@ -73,13 +74,13 @@ export function useCreateCliente() {
 
 export function useUpdateCliente() {
   const queryClient = useQueryClient()
+  const { refreshAfterMutation } = useAutoRefresh()
   
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: any }) =>
       clientesService.update(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['clientes'] })
-      queryClient.refetchQueries({ queryKey: ['clientes'] })
+    onSuccess: async () => {
+      await refreshAfterMutation('cliente', 'update')
       // Toast will be handled by the component
     },
     onError: (error: Error) => {
@@ -91,12 +92,12 @@ export function useUpdateCliente() {
 
 export function useDeleteCliente() {
   const queryClient = useQueryClient()
+  const { refreshAfterMutation } = useAutoRefresh()
   
   return useMutation({
     mutationFn: clientesService.delete,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['clientes'] })
-      queryClient.refetchQueries({ queryKey: ['clientes'] })
+    onSuccess: async () => {
+      await refreshAfterMutation('cliente', 'delete')
       // Toast will be handled by the component
     },
     onError: (error: Error) => {
@@ -108,13 +109,13 @@ export function useDeleteCliente() {
 
 export function useUpdatePipelineStage() {
   const queryClient = useQueryClient()
+  const { refreshAfterMutation } = useAutoRefresh()
   
   return useMutation({
     mutationFn: ({ id, etapa }: { id: string; etapa: string }) =>
       clientesService.updatePipelineStage(id, etapa),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['clientes'] })
-      queryClient.refetchQueries({ queryKey: ['clientes'] })
+    onSuccess: async () => {
+      await refreshAfterMutation('cliente', 'update')
       // Toast will be handled by the component
     },
     onError: (error: Error) => {

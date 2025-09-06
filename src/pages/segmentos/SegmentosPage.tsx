@@ -178,7 +178,7 @@ export function SegmentosPage() {
         {stats.map((stat) => {
           const Icon = stat.icon
           return (
-            <Card key={stat.title}>
+            <Card key={stat.title} className="dark:bg-gray-800">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
                   {stat.title}
@@ -228,7 +228,7 @@ export function SegmentosPage() {
               const categoryName = getCategoryName(segmento.categoria_id)
               
               return (
-                <Card key={segmento.id} className="group relative overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50 border-0 shadow-md">
+                <Card key={segmento.id} className="group relative overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-800 dark:to-gray-700/50 border-0 shadow-md dark:border-gray-700">
                   {/* Decorative gradient overlay */}
                   <div 
                     className="absolute inset-0 opacity-5 group-hover:opacity-10 transition-opacity duration-300"
@@ -255,7 +255,7 @@ export function SegmentosPage() {
                               className="absolute -top-1 -right-1 w-4 h-4 rounded-full shadow-sm"
                               style={{ backgroundColor: segmento.cor }}
                             >
-                              <div className="w-full h-full rounded-full bg-white/30 animate-pulse" />
+                              <div className="w-full h-full rounded-full bg-white/30 dark:bg-gray-800/30 animate-pulse" />
                             </div>
                           )}
                         </div>

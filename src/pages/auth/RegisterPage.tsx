@@ -63,8 +63,8 @@ export function RegisterPage() {
 
   return (
     <div className="min-h-screen w-full relative overflow-hidden">
-      {/* Animated Background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 w-full h-full">
+      {/* Animated Background - Using CRM gradient */}
+      <div className="absolute inset-0 bg-gradient-to-br from-indigo-600 to-purple-600 w-full h-full">
         <div className="absolute inset-0 opacity-20 w-full h-full" style={{
           backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239C92AC' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='4'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
         }}></div>
@@ -78,13 +78,20 @@ export function RegisterPage() {
           {/* Left side - Branding with depth */}
           <div className="hidden lg:flex relative p-8 lg:p-16 xl:p-20 2xl:p-24 w-full h-full items-center">
           <div className="relative bg-white/10 backdrop-blur-xl rounded-3xl p-12 xl:p-16 2xl:p-20 border border-white/20 shadow-2xl w-full max-w-none">
-            <div className="text-center space-y-8">
+            <div className="text-center space-y-2">
               <div>
-                <h1 className="text-6xl font-black bg-gradient-to-r from-white via-blue-100 to-purple-100 bg-clip-text text-transparent mb-6 leading-tight">
-                  Bem-vindo!
-                </h1>
-                <p className="text-xl text-white/90 mb-8 font-light">
-                  Crie sua conta e comece a gerenciar seus clientes de forma eficiente
+                <div className="flex flex-col items-center -mt-24">
+                  <img 
+                    src="/LogoNanoSyncBranca.png" 
+                    alt="Logo" 
+                    className="w-96 h-96 object-contain -mb-24"
+                  />
+                  <h1 className="text-5xl font-black bg-gradient-to-r from-white via-blue-100 to-purple-100 bg-clip-text text-transparent leading-tight mb-2">
+                    Bem-vindo ao NanoSync
+                  </h1>
+                </div>
+                <p className="text-lg text-white/90 mb-2 font-light leading-relaxed">
+                  O CRM inteligente que conecta leads, agenda e WhatsApp para automatizar todo o seu fluxo de vendas — da captura ao fechamento.
                 </p>
                 <div className="w-24 h-1 bg-gradient-to-r from-blue-400 to-purple-400 rounded-full mx-auto"></div>
               </div>
@@ -96,8 +103,8 @@ export function RegisterPage() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
                     </svg>
                   </div>
-                  <h3 className="font-bold text-white mb-2">Gestão de Clientes</h3>
-                  <p className="text-white/80 text-sm">Organize e acompanhe todos os seus clientes</p>
+                  <h3 className="font-bold text-white mb-2">Gestão Inteligente</h3>
+                  <p className="text-white/80 text-sm">Organize, acompanhe e qualifique seus leads com automação integrada ao WhatsApp e agendamentos automáticos.</p>
                 </div>
                 
                 <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10">
@@ -106,8 +113,8 @@ export function RegisterPage() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                     </svg>
                   </div>
-                  <h3 className="font-bold text-white mb-2">Relatórios</h3>
-                  <p className="text-white/80 text-sm">Análises detalhadas do seu negócio</p>
+                  <h3 className="font-bold text-white mb-2">Análises Avançadas</h3>
+                  <p className="text-white/80 text-sm">Acompanhe métricas, conversões e performance em tempo real com dashboards claros e relatórios inteligentes.</p>
                 </div>
               </div>
             </div>
@@ -118,17 +125,19 @@ export function RegisterPage() {
           <div className="flex justify-center items-center relative p-8 lg:p-16 xl:p-20 2xl:p-24 w-full h-full">
             <div className="relative w-full max-w-md xl:max-w-lg 2xl:max-w-xl">
             <div className="lg:hidden text-center mb-8">
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent mb-2">
-                NanoSync (CRM)
-              </h1>
+              <img 
+                src="/LogoNanoSyncBranca.png" 
+                alt="Logo" 
+                className="w-56 h-56 mx-auto -mb-16 object-contain"
+              />
               <p className="text-white/80">
-                Sistema de Gestão de Relacionamento
+                CRM Inteligente
               </p>
             </div>
 
               {/* Register form with enhanced depth */}
               <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500 rounded-3xl blur opacity-20"></div>
+                <div className="absolute inset-0 bg-gradient-to-r from-indigo-800 to-purple-700 rounded-3xl blur opacity-20"></div>
                 <Card className="relative bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-white/20 shadow-2xl rounded-3xl overflow-hidden w-full">
             <CardHeader>
               <div className="flex items-center gap-2 mb-2">
