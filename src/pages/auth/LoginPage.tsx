@@ -49,59 +49,66 @@ export function LoginPage() {
           {/* Left side - Branding with depth */}
           <div className="hidden lg:flex relative p-8 lg:p-16 xl:p-20 2xl:p-24 w-full h-full items-center">
             <div className="relative bg-white/20 backdrop-blur-xl rounded-3xl p-12 xl:p-16 2xl:p-20 border border-white/30 shadow-2xl w-full max-w-none">
-              <div className="text-center lg:text-left space-y-10">
+              <div className="text-center lg:text-left space-y-6">
                 <div>
-                  <h1 className="text-7xl font-black bg-gradient-to-r from-white via-blue-100 to-purple-100 bg-clip-text text-transparent mb-6 leading-tight">
-                    Nano Sync (CRM)
-                  </h1>
-                  <p className="text-2xl text-white/90 mb-8 font-light">
+                  <div className="flex flex-col items-center lg:items-start mb-4">
+                    <img 
+                      src="/Logo.png" 
+                      alt="Logo" 
+                      className="w-120 h-80 mb-1 object-contain"
+                    />
+                    <h1 className="text-6xl font-black bg-gradient-to-r from-white via-blue-100 to-purple-100 bg-clip-text text-transparent leading-tight">
+                      CRM
+                    </h1>
+                  </div>
+                  <p className="text-2xl text-white/90 mb-4 font-light">
                     Sistema de Gestão de Relacionamento com Clientes
                   </p>
                   <div className="w-24 h-1 bg-gradient-to-r from-blue-400 to-purple-400 rounded-full"></div>
                 </div>
                 
-                <div className="grid grid-cols-2 gap-6">
+                <div className="grid grid-cols-2 gap-4">
                   <div className="group relative">
-                    <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-2xl blur opacity-25 group-hover:opacity-40 transition-opacity"></div>
-                    <div className="relative bg-white/20 backdrop-blur-sm rounded-2xl p-6 border border-white/20 hover:border-white/40 transition-all duration-300 hover:transform hover:scale-105">
-                      <div className="w-14 h-14 bg-gradient-to-r from-blue-400 to-cyan-400 rounded-xl flex items-center justify-center mb-4 shadow-lg">
-                        <Users className="w-7 h-7 text-white" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-xl blur opacity-25 group-hover:opacity-40 transition-opacity"></div>
+                    <div className="relative bg-white/20 backdrop-blur-sm rounded-xl p-4 border border-white/20 hover:border-white/40 transition-all duration-300 hover:transform hover:scale-105">
+                      <div className="w-10 h-10 bg-gradient-to-r from-blue-400 to-cyan-400 rounded-lg flex items-center justify-center mb-3 shadow-lg">
+                        <Users className="w-5 h-5 text-white" />
                       </div>
-                      <h3 className="font-bold text-white mb-2 text-lg">Gestão de Clientes</h3>
-                      <p className="text-white/80 text-sm leading-relaxed">Controle completo da base de clientes</p>
+                      <h3 className="font-bold text-white mb-1 text-sm">Gestão de Clientes</h3>
+                      <p className="text-white/80 text-xs leading-relaxed">Controle completo da base de clientes</p>
                     </div>
                   </div>
                   
                   <div className="group relative">
-                    <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-500 rounded-2xl blur opacity-25 group-hover:opacity-40 transition-opacity"></div>
-                    <div className="relative bg-white/20 backdrop-blur-sm rounded-2xl p-6 border border-white/20 hover:border-white/40 transition-all duration-300 hover:transform hover:scale-105">
-                      <div className="w-14 h-14 bg-gradient-to-r from-green-400 to-emerald-400 rounded-xl flex items-center justify-center mb-4 shadow-lg">
-                        <FileText className="w-7 h-7 text-white" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl blur opacity-25 group-hover:opacity-40 transition-opacity"></div>
+                    <div className="relative bg-white/20 backdrop-blur-sm rounded-xl p-4 border border-white/20 hover:border-white/40 transition-all duration-300 hover:transform hover:scale-105">
+                      <div className="w-10 h-10 bg-gradient-to-r from-green-400 to-emerald-400 rounded-lg flex items-center justify-center mb-3 shadow-lg">
+                        <FileText className="w-5 h-5 text-white" />
                       </div>
-                      <h3 className="font-bold text-white mb-2 text-lg">Propostas</h3>
-                      <p className="text-white/80 text-sm leading-relaxed">Gerencie propostas e vendas</p>
+                      <h3 className="font-bold text-white mb-1 text-sm">Propostas</h3>
+                      <p className="text-white/80 text-xs leading-relaxed">Gerencie propostas e vendas</p>
                     </div>
                   </div>
                   
                   <div className="group relative">
-                    <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl blur opacity-25 group-hover:opacity-40 transition-opacity"></div>
-                    <div className="relative bg-white/20 backdrop-blur-sm rounded-2xl p-6 border border-white/20 hover:border-white/40 transition-all duration-300 hover:transform hover:scale-105">
-                      <div className="w-14 h-14 bg-gradient-to-r from-purple-400 to-pink-400 rounded-xl flex items-center justify-center mb-4 shadow-lg">
-                        <Calendar className="w-7 h-7 text-white" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl blur opacity-25 group-hover:opacity-40 transition-opacity"></div>
+                    <div className="relative bg-white/20 backdrop-blur-sm rounded-xl p-4 border border-white/20 hover:border-white/40 transition-all duration-300 hover:transform hover:scale-105">
+                      <div className="w-10 h-10 bg-gradient-to-r from-purple-400 to-pink-400 rounded-lg flex items-center justify-center mb-3 shadow-lg">
+                        <Calendar className="w-5 h-5 text-white" />
                       </div>
-                      <h3 className="font-bold text-white mb-2 text-lg">Agendamentos</h3>
-                      <p className="text-white/80 text-sm leading-relaxed">Organize sua agenda</p>
+                      <h3 className="font-bold text-white mb-1 text-sm">Agendamentos</h3>
+                      <p className="text-white/80 text-xs leading-relaxed">Organize sua agenda</p>
                     </div>
                   </div>
                   
                   <div className="group relative">
-                    <div className="absolute inset-0 bg-gradient-to-r from-orange-500 to-red-500 rounded-2xl blur opacity-25 group-hover:opacity-40 transition-opacity"></div>
-                    <div className="relative bg-white/20 backdrop-blur-sm rounded-2xl p-6 border border-white/20 hover:border-white/40 transition-all duration-300 hover:transform hover:scale-105">
-                      <div className="w-14 h-14 bg-gradient-to-r from-orange-400 to-red-400 rounded-xl flex items-center justify-center mb-4 shadow-lg">
-                        <Package className="w-7 h-7 text-white" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-orange-500 to-red-500 rounded-xl blur opacity-25 group-hover:opacity-40 transition-opacity"></div>
+                    <div className="relative bg-white/20 backdrop-blur-sm rounded-xl p-4 border border-white/20 hover:border-white/40 transition-all duration-300 hover:transform hover:scale-105">
+                      <div className="w-10 h-10 bg-gradient-to-r from-orange-400 to-red-400 rounded-lg flex items-center justify-center mb-3 shadow-lg">
+                        <Package className="w-5 h-5 text-white" />
                       </div>
-                      <h3 className="font-bold text-white mb-2 text-lg">Produtos</h3>
-                      <p className="text-white/80 text-sm leading-relaxed">Catálogo de produtos</p>
+                      <h3 className="font-bold text-white mb-1 text-sm">Produtos</h3>
+                      <p className="text-white/80 text-xs leading-relaxed">Catálogo de produtos</p>
                     </div>
                   </div>
                 </div>
@@ -113,9 +120,16 @@ export function LoginPage() {
           <div className="flex justify-center items-center relative p-8 lg:p-16 xl:p-20 2xl:p-24 w-full h-full">
             <div className="relative w-full max-w-md xl:max-w-lg 2xl:max-w-xl">
               <div className="lg:hidden text-center mb-8">
-                <h1 className="text-4xl font-bold bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent mb-2">
-                  Nano Sync (CRM)
-                </h1>
+                <div className="flex flex-col items-center mb-4">
+                  <img 
+                    src="/Logo.ico" 
+                    alt="Logo" 
+                    className="w-32 h-32 mb-2 object-contain"
+                  />
+                  <h1 className="text-4xl font-bold bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent">
+                    CRM
+                  </h1>
+                </div>
                 <p className="text-white/80">
                   Sistema de Gestão de Relacionamento
                 </p>
@@ -218,7 +232,7 @@ export function LoginPage() {
                 </Card>
 
                 <p className="text-center mt-6 text-sm text-white/60">
-                  © 2024 Nano Sync. Todos os direitos reservados.
+                  © 2024 NanoSync. Todos os direitos reservados.
                 </p>
               </div>
             </div>

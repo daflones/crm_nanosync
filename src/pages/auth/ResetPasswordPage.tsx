@@ -59,10 +59,12 @@ export function ResetPasswordPage() {
       <div className="min-h-screen bg-gradient-to-br from-purple-50 to-white flex items-center justify-center p-4">
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-purple-600 rounded-full mb-4">
-              <span className="text-2xl">🐾</span>
-            </div>
-            <h1 className="text-2xl font-bold text-gray-900">InovaPet CRM</h1>
+            <img 
+              src="/Logo.ico" 
+              alt="Logo" 
+              className="w-16 h-16 mx-auto mb-4 object-contain"
+            />
+            <h1 className="text-2xl font-bold text-gray-900">CRM</h1>
             <p className="text-gray-600">Sistema de Gestão Veterinária</p>
           </div>
 
@@ -95,11 +97,13 @@ export function ResetPasswordPage() {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-purple-600 rounded-full mb-4">
-            <span className="text-2xl">🐾</span>
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900">InovaPet CRM</h1>
-          <p className="text-gray-600">Sistema de Gestão Veterinária</p>
+          <img 
+            src="/Logo.ico" 
+            alt="Logo" 
+            className="w-16 h-16 mx-auto mb-4 object-contain"
+          />
+          <h1 className="text-2xl font-bold text-gray-900">CRM</h1>
+          <p className="text-gray-600">Sistema de Gestão de Relacionamento</p>
         </div>
 
         {/* Reset Password Form */}

@@ -108,12 +108,18 @@ export function ConfirmationPage() {
       case 'expired':
         return (
           <div className="text-center">
-            <XCircle className="w-16 h-16 text-amber-500 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
-              Link Expirado
-            </h2>
-            <p className="text-gray-600 mb-6">
-              {message}
+            <div className="flex flex-col items-center mb-4">
+              <img 
+                src="/Logo.ico" 
+                alt="Logo" 
+                className="w-20 h-20 mb-2 object-contain"
+              />
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent">
+                CRM
+              </h1>
+            </div>
+            <p className="text-white/80 mb-8">
+              Sistema de Gestão de Relacionamento
             </p>
             <div className="space-y-3">
               <Button 

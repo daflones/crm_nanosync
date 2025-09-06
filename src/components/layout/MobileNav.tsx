@@ -1,7 +1,7 @@
 import { Fragment } from 'react'
 import { Dialog, Transition } from '@headlessui/react'
 import { Link, useLocation } from 'react-router-dom'
-import { X, Building2 } from 'lucide-react'
+import { X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { useAuthStore } from '@/stores/authStore'
@@ -95,9 +95,13 @@ export function MobileNav({ open, onClose }: MobileNavProps) {
 
               <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-white dark:bg-gray-800 px-6 pb-4">
                 <div className="flex h-16 shrink-0 items-center">
-                  <Building2 className="h-8 w-8 text-primary-600" />
+                  <img 
+                    src="/Logo.ico" 
+                    alt="Logo" 
+                    className="h-8 w-8 object-contain"
+                  />
                   <span className="ml-2 text-xl font-bold text-gray-900 dark:text-white">
-                    Nano Sync (CRM)
+                    CRM
                   </span>
                 </div>
                 

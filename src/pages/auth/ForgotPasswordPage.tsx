@@ -71,7 +71,7 @@ export function ForgotPasswordPage() {
           <div className="w-full max-w-md xl:max-w-lg 2xl:max-w-xl">
             <div className="lg:hidden text-center mb-8">
               <h1 className="text-4xl font-bold bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent mb-2">
-                Nano Sync (CRM)
+                NanoSync (CRM)
               </h1>
               <p className="text-white/80">
                 Sistema de Gestão de Relacionamento
@@ -161,7 +161,7 @@ export function ForgotPasswordPage() {
         </Card>
 
             <p className="text-center mt-6 text-sm text-white/60">
-              © 2024 Nano Sync. Todos os direitos reservados.
+              © 2024 NanoSync. Todos os direitos reservados.
             </p>
           </div>
         </div>
