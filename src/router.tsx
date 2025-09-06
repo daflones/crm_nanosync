@@ -6,6 +6,8 @@ import { AppLayout } from './components/layout/AppLayout'
 const LoginPage = lazy(() => import('./pages/auth/LoginPage').then(m => ({ default: m.LoginPage })))
 const RegisterPage = lazy(() => import('./pages/auth/RegisterPage').then(m => ({ default: m.RegisterPage })))
 const ForgotPasswordPage = lazy(() => import('./pages/auth/ForgotPasswordPage').then(m => ({ default: m.ForgotPasswordPage })))
+const ConfirmationPage = lazy(() => import('./pages/auth/ConfirmationPage').then(m => ({ default: m.ConfirmationPage })))
+const ResetPasswordPage = lazy(() => import('./pages/auth/ResetPasswordPage').then(m => ({ default: m.ResetPasswordPage })))
 const DashboardPage = lazy(() => import('./pages/dashboard/DashboardPage').then(m => ({ default: m.DashboardPage })))
 const ClientesPage = lazy(() => import('./pages/clientes/ClientesPage').then(m => ({ default: m.ClientesPage })))
 const VendedoresPage = lazy(() => import('./pages/vendedores/VendedoresPage'))
@@ -50,6 +52,14 @@ export const router = createBrowserRouter([
   {
     path: '/forgot-password',
     element: withSuspense(ForgotPasswordPage),
+  },
+  {
+    path: '/confirm',
+    element: withSuspense(ConfirmationPage),
+  },
+  {
+    path: '/reset-password',
+    element: withSuspense(ResetPasswordPage),
   },
   {
     path: '/landing',

@@ -1,8 +1,6 @@
-import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { useAuthStore } from '@/stores/authStore'
-import { useCurrentUser, useIsAdmin, useCurrentVendedorId } from '@/hooks/useCurrentUser'
 import { 
   Users, 
   FileText, 
@@ -12,64 +10,29 @@ import {
   TrendingDown,
   Loader2
 } from 'lucide-react'
-import { 
-  getDashboardStats, 
-  getRecentProposals,
-  getSalesConversion,
-  getSalesPipeline,
-  type DashboardStats,
-  type RecentProposal,
-  type SalesConversion,
-  type PipelineStage
-} from '@/services/api/dashboard'
+import { useDashboardData } from '@/hooks/useDashboard'
 import { formatCurrency } from '@/utils/format'
 
 export function DashboardPage() {
   const { user } = useAuthStore()
-  const { data: currentUser } = useCurrentUser()
-  const isAdmin = useIsAdmin()
-  const currentVendedorId = useCurrentVendedorId()
-  
-  const [dashboardStats, setDashboardStats] = useState<DashboardStats | null>(null)
-  const [recentProposals, setRecentProposals] = useState<RecentProposal[]>([])
-  const [salesConversion, setSalesConversion] = useState<SalesConversion[]>([])
-  const [pipeline, setPipeline] = useState<PipelineStage[]>([])
-  const [loading, setLoading] = useState(true)
+  const { stats, activities, proposals, conversion, pipeline, isLoading, isError, error } = useDashboardData()
 
-  // Carregar dados do dashboard
-  useEffect(() => {
-    const loadDashboardData = async () => {
-      try {
-        setLoading(true)
-        const [statsData, proposalsData, conversionData, pipelineData] = await Promise.all([
-          getDashboardStats(currentVendedorId, isAdmin),
-          getRecentProposals(5, currentVendedorId, isAdmin),
-          getSalesConversion(currentVendedorId, isAdmin),
-          getSalesPipeline(currentVendedorId, isAdmin)
-        ])
-        
-        setDashboardStats(statsData)
-        setRecentProposals(proposalsData)
-        setSalesConversion(conversionData)
-        setPipeline(pipelineData)
-      } catch (error) {
-        console.error('Erro ao carregar dados do dashboard:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    if (currentUser) {
-      loadDashboardData()
-    }
-  }, [currentUser, currentVendedorId, isAdmin])
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="w-full h-full flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
           <p className="text-muted-foreground">Carregando dashboard...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (isError) {
+    return (
+      <div className="w-full h-full flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <p className="text-red-600">Erro ao carregar dashboard: {error?.message}</p>
         </div>
       </div>
     )
@@ -90,11 +53,11 @@ export function DashboardPage() {
 
       {/* Stats Grid */}
       <div className="w-full grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-        {dashboardStats && [
+        {stats.data && [
           {
             title: 'Total de Clientes',
-            value: dashboardStats.totalClientes.toString(),
-            description: `${dashboardStats.clientesNovos} novos este mês`,
+            value: stats.data.totalClientes.toString(),
+            description: `${stats.data.clientesNovos} novos este mês`,
             icon: Users,
             color: 'text-blue-600',
             bgColor: 'bg-blue-100 dark:bg-blue-900/20',
@@ -102,8 +65,8 @@ export function DashboardPage() {
           },
           {
             title: 'Propostas Ativas',
-            value: dashboardStats.propostasAbertas.toString(),
-            description: `${dashboardStats.propostasEnviadas} enviadas`,
+            value: stats.data.propostasAbertas.toString(),
+            description: `${stats.data.propostasEnviadas} enviadas`,
             icon: FileText,
             color: 'text-amber-600',
             bgColor: 'bg-amber-100 dark:bg-amber-900/20',
@@ -111,8 +74,8 @@ export function DashboardPage() {
           },
           {
             title: 'Agendamentos Hoje',
-            value: dashboardStats.agendamentosHoje.toString(),
-            description: `${dashboardStats.agendamentosConfirmados} confirmados`,
+            value: stats.data.agendamentosHoje.toString(),
+            description: `${stats.data.agendamentosConfirmados} confirmados`,
             icon: Calendar,
             color: 'text-cyan-600',
             bgColor: 'bg-cyan-100 dark:bg-cyan-900/20',
@@ -120,8 +83,8 @@ export function DashboardPage() {
           },
           {
             title: 'Faturamento Mensal',
-            value: formatCurrency(dashboardStats.faturamentoMensal),
-            description: `Ticket médio: ${formatCurrency(dashboardStats.ticketMedio)}`,
+            value: formatCurrency(stats.data.faturamentoMensal),
+            description: `Ticket médio: ${formatCurrency(stats.data.ticketMedio)}`,
             icon: DollarSign,
             color: 'text-green-600',
             bgColor: 'bg-green-100 dark:bg-green-900/20',
@@ -168,7 +131,7 @@ export function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {recentProposals.length > 0 ? recentProposals.map((proposta) => (
+              {proposals.data && proposals.data.length > 0 ? proposals.data.map((proposta) => (
                 <div key={proposta.id} className="flex items-start space-x-3 p-3 border rounded-lg">
                   <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/20 flex items-center justify-center flex-shrink-0">
                     <FileText className="h-4 w-4 text-blue-600" />
@@ -217,7 +180,7 @@ export function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {salesConversion.length > 0 ? salesConversion.map((vendedor) => (
+              {conversion.data && conversion.data.length > 0 ? conversion.data.map((vendedor) => (
                 <div key={vendedor.vendedor_id} className="flex items-center justify-between p-3 border rounded-lg">
                   <div className="flex items-center space-x-3">
                     <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/20 flex items-center justify-center">
@@ -263,7 +226,7 @@ export function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="w-full grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
-              {pipeline.length > 0 ? pipeline.map((item) => (
+              {pipeline.data && pipeline.data.length > 0 ? pipeline.data.map((item) => (
                 <div key={item.etapa} className="text-center">
                   <div className={`h-2 ${item.cor} rounded-full mb-2`} />
                   <p className="text-xs font-medium text-gray-900 dark:text-white">

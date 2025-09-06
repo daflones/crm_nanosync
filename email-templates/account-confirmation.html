@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirmação de Conta - InovaPet CRM</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #374151;
+            background-color: #f9fafb;
+        }
+        
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%);
+            padding: 40px 30px;
+            text-align: center;
+        }
+        
+        .logo {
+            color: #ffffff;
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        
+        .header-subtitle {
+            color: #e9d5ff;
+            font-size: 16px;
+        }
+        
+        .content {
+            padding: 40px 30px;
+        }
+        
+        .greeting {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 20px;
+        }
+        
+        .message {
+            font-size: 16px;
+            color: #4b5563;
+            margin-bottom: 30px;
+            line-height: 1.7;
+        }
+        
+        .welcome-box {
+            background: linear-gradient(135deg, #f3e8ff 0%, #faf5ff 100%);
+            border: 1px solid #e9d5ff;
+            border-radius: 8px;
+            padding: 24px;
+            margin: 30px 0;
+            text-align: center;
+        }
+        
+        .welcome-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+        
+        .welcome-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #7c3aed;
+            margin-bottom: 8px;
+        }
+        
+        .welcome-text {
+            color: #6b46c1;
+            font-size: 14px;
+        }
+        
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%);
+            color: #ffffff;
+            text-decoration: none;
+            padding: 16px 32px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 16px;
+            text-align: center;
+            margin: 20px 0;
+            transition: transform 0.2s ease;
+        }
+        
+        .cta-button:hover {
+            transform: translateY(-2px);
+        }
+        
+        .features-list {
+            background-color: #f9fafb;
+            border-radius: 8px;
+            padding: 24px;
+            margin: 30px 0;
+        }
+        
+        .features-title {
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+        
+        .feature-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+            font-size: 14px;
+            color: #4b5563;
+        }
+        
+        .feature-icon {
+            color: #8b5cf6;
+            margin-right: 12px;
+            font-weight: bold;
+        }
+        
+        .footer {
+            background-color: #f9fafb;
+            padding: 30px;
+            text-align: center;
+            border-top: 1px solid #e5e7eb;
+        }
+        
+        .footer-text {
+            font-size: 14px;
+            color: #6b7280;
+            margin-bottom: 10px;
+        }
+        
+        .footer-link {
+            color: #8b5cf6;
+            text-decoration: none;
+        }
+        
+        .footer-link:hover {
+            text-decoration: underline;
+        }
+        
+        @media (max-width: 600px) {
+            .email-container {
+                margin: 0;
+                border-radius: 0;
+            }
+            
+            .header, .content, .footer {
+                padding: 30px 20px;
+            }
+            
+            .logo {
+                font-size: 24px;
+            }
+            
+            .greeting {
+                font-size: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <div class="logo">🐾 InovaPet CRM</div>
+            <div class="header-subtitle">Sistema de Gestão Veterinária</div>
+        </div>
+        
+        <div class="content">
+            <div class="greeting">Bem-vindo ao InovaPet CRM!</div>
+            
+            <div class="welcome-box">
+                <div class="welcome-icon">🎉</div>
+                <div class="welcome-title">Conta Criada com Sucesso!</div>
+                <div class="welcome-text">
+                    Sua jornada na gestão veterinária moderna começa agora
+                </div>
+            </div>
+            
+            <div class="message">
+                Para começar a usar o InovaPet CRM e acessar todas as funcionalidades do sistema, 
+                você precisa confirmar seu endereço de email clicando no botão abaixo:
+            </div>
+            
+            <div style="text-align: center;">
+                <a href="{{ .ConfirmationURL }}" class="cta-button">
+                    Confirmar Minha Conta
+                </a>
+            </div>
+            
+            <div class="features-list">
+                <div class="features-title">O que você pode fazer no InovaPet CRM:</div>
+                <div class="feature-item">
+                    <span class="feature-icon">✓</span>
+                    Gerenciar clientes e histórico de atendimentos
+                </div>
+                <div class="feature-item">
+                    <span class="feature-icon">✓</span>
+                    Criar e acompanhar propostas comerciais
+                </div>
+                <div class="feature-item">
+                    <span class="feature-icon">✓</span>
+                    Organizar agendamentos e consultas
+                </div>
+                <div class="feature-item">
+                    <span class="feature-icon">✓</span>
+                    Controlar estoque de produtos e medicamentos
+                </div>
+                <div class="feature-item">
+                    <span class="feature-icon">✓</span>
+                    Acompanhar métricas e relatórios de desempenho
+                </div>
+            </div>
+            
+            <div class="message">
+                Se o botão não funcionar, copie e cole o link abaixo no seu navegador:<br>
+                <span style="word-break: break-all; color: #8b5cf6;">{{ .ConfirmationURL }}</span>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <div class="footer-text">
+                Este email foi enviado pelo InovaPet CRM<br>
+                Sistema de Gestão para Clínicas Veterinárias
+            </div>
+            <div class="footer-text">
+                Precisa de ajuda? Entre em contato: 
+                <a href="mailto:suporte@inovapet.com" class="footer-link">suporte@inovapet.com</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

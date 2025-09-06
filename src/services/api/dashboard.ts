@@ -75,6 +75,25 @@ export interface MonthlyRevenue {
 // Buscar estatísticas gerais do dashboard
 export const getDashboardStats = async (vendedorId?: string | null, isAdmin?: boolean): Promise<DashboardStats> => {
   try {
+    // Get current user's profile to filter by company
+    const { data: { user: currentUser } } = await supabase.auth.getUser()
+    if (!currentUser) {
+      throw new Error('Usuário não autenticado')
+    }
+
+    const { data: currentProfile } = await supabase
+      .from('profiles')
+      .select('id, role, admin_profile_id')
+      .eq('id', currentUser.id)
+      .single()
+
+    if (!currentProfile) {
+      throw new Error('Perfil do usuário não encontrado')
+    }
+
+    // Determine company profile ID for filtering
+    const adminId = currentProfile.admin_profile_id || currentProfile.id
+
     const now = new Date()
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
     const startOfYear = new Date(now.getFullYear(), 0, 1)
@@ -83,12 +102,12 @@ export const getDashboardStats = async (vendedorId?: string | null, isAdmin?: bo
     const tomorrow = new Date(today)
     tomorrow.setDate(tomorrow.getDate() + 1)
 
-    // Buscar dados das tabelas com filtros baseados no papel do usuário
-    let clientesQuery = supabase.from('clientes').select('*')
-    let propostasQuery = supabase.from('propostas').select('*')
-    let agendamentosQuery = supabase.from('agendamentos').select('*')
+    // Buscar dados das tabelas com filtros multi-tenant
+    let clientesQuery = supabase.from('clientes').select('*').eq('profile', adminId)
+    let propostasQuery = supabase.from('propostas').select('*').eq('profile', adminId)
+    let agendamentosQuery = supabase.from('agendamentos').select('*').eq('profile', adminId)
     
-    // Se não for admin, filtrar por vendedor
+    // Se não for admin, filtrar também por vendedor
     if (!isAdmin && vendedorId) {
       clientesQuery = clientesQuery.eq('vendedor_id', vendedorId)
       propostasQuery = propostasQuery.eq('vendedor_id', vendedorId)
@@ -102,10 +121,12 @@ export const getDashboardStats = async (vendedorId?: string | null, isAdmin?: bo
     const { data: produtosData } = await supabase
       .from('produtos')
       .select('*')
+      .eq('profile', adminId)
 
     const { data: vendedoresData } = await supabase
       .from('vendedores')
       .select('*')
+      .eq('profile', adminId)
 
     // Calcular estatísticas dos clientes (baseado na página de clientes)
     const totalClientes = clientesData?.length || 0
@@ -197,7 +218,26 @@ export const getDashboardStats = async (vendedorId?: string | null, isAdmin?: bo
 // Buscar atividades recentes
 export const getRecentActivities = async (limit: number = 10): Promise<RecentActivity[]> => {
   try {
-    // Buscar atividades da tabela atividades
+    // Get current user's profile to filter by company
+    const { data: { user: currentUser } } = await supabase.auth.getUser()
+    if (!currentUser) {
+      throw new Error('Usuário não autenticado')
+    }
+
+    const { data: currentProfile } = await supabase
+      .from('profiles')
+      .select('id, role, admin_profile_id')
+      .eq('id', currentUser.id)
+      .single()
+
+    if (!currentProfile) {
+      throw new Error('Perfil do usuário não encontrado')
+    }
+
+    // Determine company profile ID for filtering
+    const adminId = currentProfile.admin_profile_id || currentProfile.id
+
+    // Buscar atividades da tabela atividades com filtro multi-tenant
     const { data: atividadesData } = await supabase
       .from('atividades')
       .select(`
@@ -210,6 +250,7 @@ export const getRecentActivities = async (limit: number = 10): Promise<RecentAct
         usuario_id,
         profiles!atividades_usuario_id_fkey(nome, email)
       `)
+      .eq('profile', adminId)
       .order('created_at', { ascending: false })
       .limit(limit)
 
@@ -258,22 +299,38 @@ export const getRecentActivities = async (limit: number = 10): Promise<RecentAct
   } catch (error) {
     console.error('Erro ao buscar atividades recentes:', error)
     
+    // Get profile again for fallback
+    const { data: { user: currentUser } } = await supabase.auth.getUser()
+    if (!currentUser) return []
+
+    const { data: currentProfile } = await supabase
+      .from('profiles')
+      .select('id, role, admin_profile_id')
+      .eq('id', currentUser.id)
+      .single()
+
+    if (!currentProfile) return []
+    const adminId = currentProfile.admin_profile_id || currentProfile.id
+    
     // Fallback: buscar atividades recentes de diferentes entidades se a tabela atividades não funcionar
     const { data: clientesRecentes } = await supabase
       .from('clientes')
       .select('id, nome_contato, nome_empresa, created_at')
+      .eq('profile', adminId)
       .order('created_at', { ascending: false })
       .limit(3)
 
     const { data: propostasRecentes } = await supabase
       .from('propostas')
       .select('id, titulo, numero_proposta, created_at, status')
+      .eq('profile', adminId)
       .order('created_at', { ascending: false })
       .limit(3)
 
     const { data: agendamentosRecentes } = await supabase
       .from('agendamentos')
       .select('id, titulo, created_at, status')
+      .eq('profile', adminId)
       .order('created_at', { ascending: false })
       .limit(3)
 
@@ -328,20 +385,28 @@ export const getRecentActivities = async (limit: number = 10): Promise<RecentAct
 // Buscar propostas recentes
 export const getRecentProposals = async (limit: number = 5, vendedorId?: string | null, isAdmin?: boolean): Promise<RecentProposal[]> => {
   try {
-    console.log('=== BUSCANDO PROPOSTAS RECENTES ===')
-    
-    // Primeiro verificar se existem propostas
-    const { data: allPropostas } = await supabase
-      .from('propostas')
-      .select('id, numero_proposta, status, created_at')
-      .limit(10)
-
-    console.log('Total de propostas encontradas:', allPropostas?.length || 0)
-    if (allPropostas && allPropostas.length > 0) {
-      console.log('Exemplos de propostas:', allPropostas.slice(0, 3))
+    // Get current user's profile to filter by company
+    const { data: { user: currentUser } } = await supabase.auth.getUser()
+    if (!currentUser) {
+      throw new Error('Usuário não autenticado')
     }
 
-    // Buscar propostas com joins separados para evitar problemas
+    const { data: currentProfile } = await supabase
+      .from('profiles')
+      .select('id, role, admin_profile_id')
+      .eq('id', currentUser.id)
+      .single()
+
+    if (!currentProfile) {
+      throw new Error('Perfil do usuário não encontrado')
+    }
+
+    // Determine company profile ID for filtering
+    const adminId = currentProfile.admin_profile_id || currentProfile.id
+
+    console.log('=== BUSCANDO PROPOSTAS RECENTES ===')
+    
+    // Buscar propostas com filtro multi-tenant
     let propostasQuery = supabase
       .from('propostas')
       .select(`
@@ -354,10 +419,11 @@ export const getRecentProposals = async (limit: number = 5, vendedorId?: string 
         cliente_id,
         vendedor_id
       `)
+      .eq('profile', adminId)
       .order('created_at', { ascending: false })
       .limit(limit)
     
-    // Se não for admin, filtrar por vendedor
+    // Se não for admin, filtrar também por vendedor
     if (!isAdmin && vendedorId) {
       propostasQuery = propostasQuery.eq('vendedor_id', vendedorId)
     }
@@ -376,25 +442,27 @@ export const getRecentProposals = async (limit: number = 5, vendedorId?: string 
       return []
     }
 
-    // Buscar clientes separadamente
+    // Buscar clientes separadamente com filtro multi-tenant
     const clienteIds = [...new Set(propostas.map(p => p.cliente_id).filter(Boolean))]
     console.log('IDs de clientes para buscar:', clienteIds)
     
     const { data: clientes } = await supabase
       .from('clientes')
       .select('id, nome_contato, nome_empresa')
+      .eq('profile', adminId)
       .in('id', clienteIds)
 
     console.log('Clientes encontrados:', clientes?.length || 0)
     console.log('Dados dos clientes:', clientes)
 
-    // Buscar vendedores separadamente  
+    // Buscar vendedores separadamente com filtro multi-tenant
     const vendedorIds = [...new Set(propostas.map(p => p.vendedor_id).filter(Boolean))]
     console.log('IDs de vendedores para buscar:', vendedorIds)
     
     const { data: vendedores } = await supabase
       .from('vendedores')
       .select('id, nome')
+      .eq('profile', adminId)
       .in('id', vendedorIds)
 
     console.log('Vendedores encontrados:', vendedores?.length || 0)
@@ -458,6 +526,25 @@ export const getRecentProposals = async (limit: number = 5, vendedorId?: string 
 // Buscar conversão por vendedor
 export const getSalesConversion = async (vendedorId?: string | null, isAdmin?: boolean): Promise<SalesConversion[]> => {
   try {
+    // Get current user's profile to filter by company
+    const { data: { user: currentUser } } = await supabase.auth.getUser()
+    if (!currentUser) {
+      throw new Error('Usuário não autenticado')
+    }
+
+    const { data: currentProfile } = await supabase
+      .from('profiles')
+      .select('id, role, admin_profile_id')
+      .eq('id', currentUser.id)
+      .single()
+
+    if (!currentProfile) {
+      throw new Error('Perfil do usuário não encontrado')
+    }
+
+    // Determine company profile ID for filtering
+    const adminId = currentProfile.admin_profile_id || currentProfile.id
+
     let vendedoresQuery = supabase
       .from('vendedores')
       .select(`
@@ -469,6 +556,7 @@ export const getSalesConversion = async (vendedorId?: string | null, isAdmin?: b
           valor_total
         )
       `)
+      .eq('profile', adminId)
     
     // Se não for admin, filtrar apenas o vendedor atual
     if (!isAdmin && vendedorId) {
@@ -514,12 +602,32 @@ export const getSalesConversion = async (vendedorId?: string | null, isAdmin?: b
 // Buscar pipeline de vendas
 export const getSalesPipeline = async (vendedorId?: string | null, isAdmin?: boolean): Promise<PipelineStage[]> => {
   try {
-    // Buscar propostas agrupadas por status
+    // Get current user's profile to filter by company
+    const { data: { user: currentUser } } = await supabase.auth.getUser()
+    if (!currentUser) {
+      throw new Error('Usuário não autenticado')
+    }
+
+    const { data: currentProfile } = await supabase
+      .from('profiles')
+      .select('id, role, admin_profile_id')
+      .eq('id', currentUser.id)
+      .single()
+
+    if (!currentProfile) {
+      throw new Error('Perfil do usuário não encontrado')
+    }
+
+    // Determine company profile ID for filtering
+    const adminId = currentProfile.admin_profile_id || currentProfile.id
+
+    // Buscar propostas agrupadas por status com filtro multi-tenant
     let propostasQuery = supabase
       .from('propostas')
       .select('status, valor_total')
+      .eq('profile', adminId)
     
-    // Se não for admin, filtrar por vendedor
+    // Se não for admin, filtrar também por vendedor
     if (!isAdmin && vendedorId) {
       propostasQuery = propostasQuery.eq('vendedor_id', vendedorId)
     }
