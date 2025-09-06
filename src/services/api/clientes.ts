@@ -23,6 +23,7 @@ export interface Cliente {
   observacoes?: string
   vendedor_id?: string
   data_ultima_etapa?: string
+  profile: string // Campo para filtro por empresa
   created_at: string
   updated_at: string
 }
@@ -58,9 +59,29 @@ export const clientesService = {
     classificacao?: string
     search?: string
   }): Promise<Cliente[]> {
+    // Get current user's profile to filter by company
+    const { data: { user: currentUser } } = await supabase.auth.getUser()
+    if (!currentUser) {
+      throw new Error('Usuário não autenticado')
+    }
+
+    const { data: currentProfile } = await supabase
+      .from('profiles')
+      .select('id, admin_profile_id')
+      .eq('id', currentUser.id)
+      .single()
+
+    if (!currentProfile) {
+      throw new Error('Perfil não encontrado')
+    }
+
+    // Use admin_profile_id to filter clientes
+    const adminId = currentProfile.admin_profile_id || currentProfile.id
+
     let query = supabase
       .from('clientes')
       .select('*')
+      .eq('profile', adminId) // Filter by company
       .order('created_at', { ascending: false })
 
     if (filters?.vendedorId) {
@@ -109,6 +130,24 @@ export const clientesService = {
       throw new Error('Nome do contato é obrigatório')
     }
 
+    // Get current user's profile for company filtering
+    const { data: { user: currentUser } } = await supabase.auth.getUser()
+    if (!currentUser) {
+      throw new Error('Usuário não autenticado')
+    }
+
+    const { data: currentProfile } = await supabase
+      .from('profiles')
+      .select('id, admin_profile_id')
+      .eq('id', currentUser.id)
+      .single()
+
+    if (!currentProfile) {
+      throw new Error('Perfil não encontrado')
+    }
+
+    const adminId = currentProfile.admin_profile_id || currentProfile.id
+
     const { data, error } = await supabase
       .from('clientes')
       .insert({
@@ -118,6 +157,7 @@ export const clientesService = {
         origem: clienteData.origem || 'manual',
         probabilidade: clienteData.probabilidade || 50,
         valor_estimado: clienteData.valor_estimado || 0,
+        profile: adminId, // Add company filter
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       })

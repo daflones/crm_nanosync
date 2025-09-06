@@ -47,6 +47,7 @@ export interface Agendamento {
   created_at: string // timestamptz
   updated_at: string // timestamptz
   user_id: string // uuid foreign key to auth.users.id
+  profile: string // uuid foreign key to profiles.id for multi-tenant
 }
 
 export interface AgendamentoCreateData {
@@ -106,14 +107,34 @@ export const agendamentosService = {
     user_id?: string
     user_role?: string
   }): Promise<Agendamento[]> {
-    let query = supabaseAdmin
+    // Obter usuário atual e perfil para filtro multi-tenant
+    const { data: { user: currentUser } } = await supabase.auth.getUser()
+    if (!currentUser) {
+      throw new Error('Usuário não autenticado')
+    }
+
+    const { data: currentProfile } = await supabase
+      .from('profiles')
+      .select('id, role, admin_profile_id')
+      .eq('id', currentUser.id)
+      .single()
+
+    if (!currentProfile) {
+      throw new Error('Perfil não encontrado')
+    }
+
+    // Determinar o ID da empresa (admin_profile_id ou próprio ID se for admin)
+    const adminId = currentProfile.admin_profile_id || currentProfile.id
+
+    let query = supabase
       .from('agendamentos')
       .select('*')
+      .eq('profile', adminId)
       .order('data_inicio', { ascending: true })
 
-    // Apply role-based filtering
-    if (filters?.user_role !== 'admin' && filters?.user_id) {
-      query = query.eq('user_id', filters.user_id)
+    // Filtro adicional por role: vendedores só veem seus próprios agendamentos
+    if (currentProfile.role === 'vendedor') {
+      query = query.eq('user_id', currentUser.id)
     }
 
     if (filters?.vendedor_id) {
@@ -146,7 +167,26 @@ export const agendamentosService = {
   },
 
   async getById(id: string): Promise<Agendamento | null> {
-    const { data, error } = await supabaseAdmin
+    // Obter usuário atual e perfil para filtro multi-tenant
+    const { data: { user: currentUser } } = await supabase.auth.getUser()
+    if (!currentUser) {
+      throw new Error('Usuário não autenticado')
+    }
+
+    const { data: currentProfile } = await supabase
+      .from('profiles')
+      .select('id, role, admin_profile_id')
+      .eq('id', currentUser.id)
+      .single()
+
+    if (!currentProfile) {
+      throw new Error('Perfil não encontrado')
+    }
+
+    // Determinar o ID da empresa (admin_profile_id ou próprio ID se for admin)
+    const adminId = currentProfile.admin_profile_id || currentProfile.id
+
+    let query = supabase
       .from('agendamentos')
       .select(`
         *,
@@ -154,7 +194,14 @@ export const agendamentosService = {
         vendedores!inner(nome, email)
       `)
       .eq('id', id)
-      .single()
+      .eq('profile', adminId)
+
+    // Filtro adicional por role: vendedores só veem seus próprios agendamentos
+    if (currentProfile.role === 'vendedor') {
+      query = query.eq('user_id', currentUser.id)
+    }
+
+    const { data, error } = await query.single()
 
     if (error) {
       console.error('Erro ao buscar agendamento:', error)
@@ -165,11 +212,24 @@ export const agendamentosService = {
   },
 
   async create(agendamentoData: AgendamentoCreateData): Promise<Agendamento> {
-    console.log('=== AGENDAMENTO CREATE DEBUG ===')
-    console.log('Dados recebidos (tipo):', typeof agendamentoData)
-    console.log('Dados recebidos (keys):', Object.keys(agendamentoData))
-    console.log('Dados recebidos (completo):', JSON.stringify(agendamentoData, null, 2))
-    console.log('Tem user_id?:', 'user_id' in agendamentoData)
+    // Obter usuário atual e perfil para multi-tenant
+    const { data: { user: currentUser } } = await supabase.auth.getUser()
+    if (!currentUser) {
+      throw new Error('Usuário não autenticado')
+    }
+
+    const { data: currentProfile } = await supabase
+      .from('profiles')
+      .select('id, role, admin_profile_id')
+      .eq('id', currentUser.id)
+      .single()
+
+    if (!currentProfile) {
+      throw new Error('Perfil não encontrado')
+    }
+
+    // Determinar o ID da empresa (admin_profile_id ou próprio ID se for admin)
+    const adminId = currentProfile.admin_profile_id || currentProfile.id
     
     // Criar objeto com todos os campos da tabela agendamentos
     const insertData = {
@@ -213,30 +273,20 @@ export const agendamentosService = {
       contador_reagendamentos: agendamentoData.contador_reagendamentos || 0,
       google_event_id: agendamentoData.google_event_id || null,
       outlook_event_id: agendamentoData.outlook_event_id || null,
-      user_id: agendamentoData.user_id || null
+      user_id: agendamentoData.user_id || currentUser.id,
+      profile: adminId
     }
     
-    console.log('Dados finais para DB (keys):', Object.keys(insertData))
-    console.log('Dados finais para DB (completo):', JSON.stringify(insertData, null, 2))
-    console.log('=== FIM DEBUG ===')
-    
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await supabase
       .from('agendamentos')
       .insert(insertData)
       .select('*')
       .single()
 
     if (error) {
-      console.error('❌ ERRO AO INSERIR NO BANCO:', error)
-      console.error('Código do erro:', error.code)
-      console.error('Detalhes do erro:', error.details)
-      console.error('Hint do erro:', error.hint)
-      console.error('Dados que tentamos inserir:', JSON.stringify(insertData, null, 2))
+      console.error('Erro ao criar agendamento:', error)
       throw new Error(`Erro ao criar agendamento: ${error.message}`)
     }
-
-    console.log('✅ AGENDAMENTO CRIADO COM SUCESSO!')
-    console.log('Dados salvos no banco:', JSON.stringify(data, null, 2))
 
     // Registrar atividade
     await AtividadeService.criar(

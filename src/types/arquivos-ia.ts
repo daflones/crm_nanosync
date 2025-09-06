@@ -47,6 +47,9 @@ export interface ArquivoIA {
   downloads: number
   ultima_utilizacao_ia?: string
   
+  // Multi-tenant field
+  profile: string
+  
   // Audit fields
   criado_por?: string
   atualizado_por?: string

@@ -18,9 +18,29 @@ export const generateFolderPath = (categoria: string, subcategoria?: string): st
 // Get all AI files with filters
 export const getArquivosIA = async (filters?: ArquivoIAFilters): Promise<ArquivoIA[]> => {
   try {
+    // Obter usuário atual e perfil para filtro multi-tenant
+    const { data: { user: currentUser } } = await supabase.auth.getUser()
+    if (!currentUser) {
+      throw new Error('Usuário não autenticado')
+    }
+
+    const { data: currentProfile } = await supabase
+      .from('profiles')
+      .select('id, role, admin_profile_id')
+      .eq('id', currentUser.id)
+      .single()
+
+    if (!currentProfile) {
+      throw new Error('Perfil não encontrado')
+    }
+
+    // Determinar o ID da empresa (admin_profile_id ou próprio ID se for admin)
+    const adminId = currentProfile.admin_profile_id || currentProfile.id
+
     let query = supabase
       .from('arquivos_ia')
       .select('*')
+      .eq('profile', adminId)
       .order('created_at', { ascending: false })
 
     // Apply filters
@@ -80,6 +100,25 @@ export const getArquivosIA = async (filters?: ArquivoIAFilters): Promise<Arquivo
 
 // Get single AI file by ID
 export const getArquivoIA = async (id: string): Promise<ArquivoIA | null> => {
+  // Obter usuário atual e perfil para filtro multi-tenant
+  const { data: { user: currentUser } } = await supabase.auth.getUser()
+  if (!currentUser) {
+    throw new Error('Usuário não autenticado')
+  }
+
+  const { data: currentProfile } = await supabase
+    .from('profiles')
+    .select('id, role, admin_profile_id')
+    .eq('id', currentUser.id)
+    .single()
+
+  if (!currentProfile) {
+    throw new Error('Perfil não encontrado')
+  }
+
+  // Determinar o ID da empresa (admin_profile_id ou próprio ID se for admin)
+  const adminId = currentProfile.admin_profile_id || currentProfile.id
+
   const { data, error } = await supabase
     .from('arquivos_ia')
     .select(`
@@ -89,6 +128,7 @@ export const getArquivoIA = async (id: string): Promise<ArquivoIA | null> => {
       propostas:proposta_id(id, titulo)
     `)
     .eq('id', id)
+    .eq('profile', adminId)
     .is('deleted_at', null)
     .single()
 
@@ -103,6 +143,25 @@ export const getArquivoIA = async (id: string): Promise<ArquivoIA | null> => {
 // Upload and create AI file
 export const uploadArquivoIA = async (file: File, data: CreateArquivoIAData): Promise<ArquivoIA> => {
   try {
+    // Obter usuário atual e perfil para multi-tenant
+    const { data: { user: currentUser } } = await supabase.auth.getUser()
+    if (!currentUser) {
+      throw new Error('Usuário não autenticado')
+    }
+
+    const { data: currentProfile } = await supabase
+      .from('profiles')
+      .select('id, role, admin_profile_id')
+      .eq('id', currentUser.id)
+      .single()
+
+    if (!currentProfile) {
+      throw new Error('Perfil não encontrado')
+    }
+
+    // Determinar o ID da empresa (admin_profile_id ou próprio ID se for admin)
+    const adminId = currentProfile.admin_profile_id || currentProfile.id
+
     // Generate folder path based on category
     const folderPath = generateFolderPath(data.categoria, data.subcategoria)
     
@@ -151,7 +210,8 @@ export const uploadArquivoIA = async (file: File, data: CreateArquivoIAData): Pr
       cliente_id: data.cliente_id || null,
       disponivel_ia: data.disponivel_ia !== false,
       processado_ia: false,
-      visibilidade: data.visibilidade || 'privado'
+      visibilidade: data.visibilidade || 'privado',
+      profile: adminId
     }
     
     const { data: newArquivo, error } = await supabase
@@ -276,10 +336,30 @@ export const updateUsageStats = async (id: string, type: 'view' | 'download' | '
 
 // Get files by category (for folder navigation)
 export const getArquivosByCategory = async (categoria: string, subcategoria?: string): Promise<ArquivoIA[]> => {
+  // Obter usuário atual e perfil para filtro multi-tenant
+  const { data: { user: currentUser } } = await supabase.auth.getUser()
+  if (!currentUser) {
+    throw new Error('Usuário não autenticado')
+  }
+
+  const { data: currentProfile } = await supabase
+    .from('profiles')
+    .select('id, role, admin_profile_id')
+    .eq('id', currentUser.id)
+    .single()
+
+  if (!currentProfile) {
+    throw new Error('Perfil não encontrado')
+  }
+
+  // Determinar o ID da empresa (admin_profile_id ou próprio ID se for admin)
+  const adminId = currentProfile.admin_profile_id || currentProfile.id
+
   let query = supabase
     .from('arquivos_ia')
     .select('*')
     .eq('categoria', categoria)
+    .eq('profile', adminId)
     .is('deleted_at', null)
     .order('nome')
 
@@ -299,9 +379,29 @@ export const getArquivosByCategory = async (categoria: string, subcategoria?: st
 
 // Get category statistics
 export const getCategoryStats = async () => {
+  // Obter usuário atual e perfil para filtro multi-tenant
+  const { data: { user: currentUser } } = await supabase.auth.getUser()
+  if (!currentUser) {
+    throw new Error('Usuário não autenticado')
+  }
+
+  const { data: currentProfile } = await supabase
+    .from('profiles')
+    .select('id, role, admin_profile_id')
+    .eq('id', currentUser.id)
+    .single()
+
+  if (!currentProfile) {
+    throw new Error('Perfil não encontrado')
+  }
+
+  // Determinar o ID da empresa (admin_profile_id ou próprio ID se for admin)
+  const adminId = currentProfile.admin_profile_id || currentProfile.id
+
   const { data, error } = await supabase
     .from('arquivos_ia')
     .select('categoria, status, disponivel_ia, processado_ia')
+    .eq('profile', adminId)
     .is('deleted_at', null)
 
   if (error) {

@@ -12,7 +12,7 @@ import {
   getArquivosByCategory,
   getCategoryStats
 } from '../services/api/arquivos-ia'
-import type { ArquivoIA, CreateArquivoIAData, UpdateArquivoIAData, ArquivoIAFilters } from '../types/arquivos-ia'
+import type { CreateArquivoIAData, UpdateArquivoIAData, ArquivoIAFilters } from '../types/arquivos-ia'
 
 // Query keys
 const QUERY_KEYS = {

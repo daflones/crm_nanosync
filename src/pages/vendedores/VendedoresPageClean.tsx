@@ -268,6 +268,7 @@ export default function VendedoresPage() {
             vendedor={vendedor}
             onView={() => handleViewVendedor(vendedor)}
             onEdit={() => handleEditVendedor(vendedor)}
+            onDelete={() => {}}
           />
         ))}
       </div>

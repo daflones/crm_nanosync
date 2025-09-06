@@ -23,9 +23,12 @@ import {
   Clock,
   Eye
 } from 'lucide-react'
-import { AtividadeService, type Atividade } from '@/services/api/atividades'
+import { useAtividades, type AtividadesFilters } from '@/hooks/useAtividades'
+import { useVendedores } from '@/hooks/useVendedores'
+import { useIsAdmin } from '@/hooks/useAuth'
 import { formatDistanceToNow } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
+import { toast } from 'sonner'
 
 const actionIcons = {
   criar: <Users className="h-4 w-4" />,
@@ -65,53 +68,43 @@ const entityTypeLabels = {
 }
 
 export function AtividadesPage() {
-  const [atividades, setAtividades] = useState<Atividade[]>([])
-  const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [filterAction, setFilterAction] = useState<string>('all')
   const [filterEntity, setFilterEntity] = useState<string>('all')
+  const [filterVendedor, setFilterVendedor] = useState<string>('all')
   const [currentPage, setCurrentPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(1)
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set())
   const itemsPerPage = 20
 
-  // Carregar atividades
-  const loadActivities = async () => {
-    try {
-      setLoading(true)
-      const data = await AtividadeService.buscarAtividades({
-        page: currentPage,
-        limit: itemsPerPage,
-        search: searchTerm || undefined,
-        action: filterAction !== 'all' ? filterAction : undefined,
-        entityType: filterEntity !== 'all' ? filterEntity : undefined
-      })
-      
-      // Resolver nomes de usuários e entidades
-      const atividadesComNomes = await AtividadeService.resolverNomes(data.atividades || [])
-      
-      setAtividades(atividadesComNomes)
-      if (data.total) {
-        setTotalPages(Math.ceil(data.total / itemsPerPage))
-      }
-    } catch (error) {
-      console.error('Erro ao carregar atividades:', error)
-      setAtividades([])
-    } finally {
-      setLoading(false)
-    }
+  // Hooks para dados e permissões
+  const isAdmin = useIsAdmin()
+  const { data: vendedores } = useVendedores()
+
+  // Preparar filtros para o hook
+  const filters: AtividadesFilters = {
+    page: currentPage,
+    limit: itemsPerPage,
+    search: searchTerm || undefined,
+    action: filterAction !== 'all' ? filterAction : undefined,
+    entityType: filterEntity !== 'all' ? filterEntity : undefined,
+    usuario_id: filterVendedor !== 'all' ? filterVendedor : undefined
   }
 
-  useEffect(() => {
-    loadActivities()
-  }, [currentPage, filterAction, filterEntity])
+  // Usar o hook para buscar atividades com multi-tenant
+  const { 
+    data: atividadesData, 
+    isLoading: loading, 
+    error,
+    refetch 
+  } = useAtividades(filters)
 
-  // Buscar com delay
+  const atividades = atividadesData?.atividades || []
+  const totalPages = atividadesData?.total ? Math.ceil(atividadesData.total / itemsPerPage) : 1
+
+  // Buscar com delay para o searchTerm
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (currentPage === 1) {
-        loadActivities()
-      } else {
+      if (currentPage !== 1) {
         setCurrentPage(1)
       }
     }, 500)
@@ -119,8 +112,16 @@ export function AtividadesPage() {
     return () => clearTimeout(timer)
   }, [searchTerm])
 
+  // Mostrar erro se houver
+  useEffect(() => {
+    if (error) {
+      console.error('Erro ao carregar atividades:', error)
+      toast.error('Erro ao carregar atividades')
+    }
+  }, [error])
+
   const handleRefresh = () => {
-    loadActivities()
+    refetch()
   }
 
   const toggleExpanded = (id: string) => {
@@ -296,7 +297,7 @@ export function AtividadesPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Search */}
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -340,9 +341,28 @@ export function AtividadesPage() {
                 <SelectItem value="vendedor">Vendedores</SelectItem>
                 <SelectItem value="arquivo">Arquivos</SelectItem>
                 <SelectItem value="agendamento">Agendamentos</SelectItem>
+                <SelectItem value="categoria">Categorias</SelectItem>
+                <SelectItem value="segmento">Segmentos</SelectItem>
                 <SelectItem value="auth">Autenticação</SelectItem>
               </SelectContent>
             </Select>
+
+            {/* Vendedor Filter - Only for Admins */}
+            {isAdmin && (
+              <Select value={filterVendedor} onValueChange={setFilterVendedor}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Filtrar por vendedor" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os vendedores</SelectItem>
+                  {vendedores?.map((vendedor) => (
+                    <SelectItem key={vendedor.id} value={vendedor.user_id || vendedor.id}>
+                      {vendedor.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
         </CardContent>
       </Card>

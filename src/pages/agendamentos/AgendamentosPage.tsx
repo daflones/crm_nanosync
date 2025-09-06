@@ -33,7 +33,7 @@ export function AgendamentosPage() {
   const [agendamentoToDelete, setAgendamentoToDelete] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list')
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
-  const [prefilledData, setPrefilledData] = useState<Partial<Agendamento> | null>(null)
+  const [, setPrefilledData] = useState<Partial<Agendamento> | null>(null)
 
   // Carregar dados iniciais
   useEffect(() => {

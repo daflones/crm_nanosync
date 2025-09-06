@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase'
+import { AtividadeService } from './atividades'
 
 export interface Segmento {
   id: string
@@ -15,6 +16,7 @@ export interface Segmento {
     prazo_entrega_padrao?: string
     observacoes_padrao?: string
   }
+  profile: string // Campo para filtro por empresa
   created_at: string
   updated_at: string
 }
@@ -39,9 +41,29 @@ export interface SegmentoUpdateData extends Partial<SegmentoCreateData> {}
 
 export const segmentosService = {
   async getAll(): Promise<Segmento[]> {
+    // Get current user's profile to filter by company
+    const { data: { user: currentUser } } = await supabase.auth.getUser()
+    if (!currentUser) {
+      throw new Error('Usuário não autenticado')
+    }
+
+    const { data: currentProfile } = await supabase
+      .from('profiles')
+      .select('id, admin_profile_id')
+      .eq('id', currentUser.id)
+      .single()
+
+    if (!currentProfile) {
+      throw new Error('Perfil não encontrado')
+    }
+
+    // Use admin_profile_id to filter segmentos
+    const adminId = currentProfile.admin_profile_id || currentProfile.id
+
     const { data, error } = await supabase
       .from('segmentos')
       .select('*')
+      .eq('profile', adminId) // Filter by company
       .order('nome', { ascending: true })
 
     if (error) {
@@ -68,11 +90,30 @@ export const segmentosService = {
   },
 
   async create(segmentoData: SegmentoCreateData): Promise<Segmento> {
+    // Get current user's profile for company filtering
+    const { data: { user: currentUser } } = await supabase.auth.getUser()
+    if (!currentUser) {
+      throw new Error('Usuário não autenticado')
+    }
+
+    const { data: currentProfile } = await supabase
+      .from('profiles')
+      .select('id, admin_profile_id')
+      .eq('id', currentUser.id)
+      .single()
+
+    if (!currentProfile) {
+      throw new Error('Perfil não encontrado')
+    }
+
+    const adminId = currentProfile.admin_profile_id || currentProfile.id
+
     const { data, error } = await supabase
       .from('segmentos')
       .insert({
         ...segmentoData,
         status: segmentoData.status || 'ativo',
+        profile: adminId, // Add company filter
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       })
@@ -84,10 +125,21 @@ export const segmentosService = {
       throw new Error(`Erro ao criar segmento: ${error.message}`)
     }
 
+    // Registrar atividade
+    await AtividadeService.criar(
+      'segmento',
+      data.id,
+      data,
+      `Segmento criado: ${data.nome} (${data.codigo})`
+    )
+
     return data
   },
 
   async update(id: string, updates: SegmentoUpdateData): Promise<Segmento> {
+    // Buscar dados anteriores para o log
+    const segmentoAnterior = await this.getById(id)
+    
     const { data, error } = await supabase
       .from('segmentos')
       .update({
@@ -103,10 +155,22 @@ export const segmentosService = {
       throw new Error(`Erro ao atualizar segmento: ${error.message}`)
     }
 
+    // Registrar atividade
+    await AtividadeService.editar(
+      'segmento',
+      data.id,
+      segmentoAnterior,
+      data,
+      `Segmento editado: ${data.nome} (${data.codigo})`
+    )
+
     return data
   },
 
   async delete(id: string): Promise<void> {
+    // Buscar dados do segmento antes de deletar
+    const segmento = await this.getById(id)
+    
     const { error } = await supabase
       .from('segmentos')
       .delete()
@@ -115,6 +179,16 @@ export const segmentosService = {
     if (error) {
       console.error('Erro ao deletar segmento:', error)
       throw new Error(`Erro ao deletar segmento: ${error.message}`)
+    }
+
+    // Registrar atividade
+    if (segmento) {
+      await AtividadeService.deletar(
+        'segmento',
+        id,
+        segmento,
+        `Segmento deletado: ${segmento.nome} (${segmento.codigo})`
+      )
     }
   }
 }

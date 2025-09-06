@@ -93,15 +93,15 @@ export function ClientesPage() {
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [selectedCliente, setSelectedCliente] = useState<any>(null)
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+  const [viewMode, setViewMode] = useState<'grid' | 'list' | 'kanban'>('grid')
 
   const { data: clientes = [], isLoading } = useClientes()
-  const { data: vendedores = [] } = useVendedores()
+  const { data: _vendedores = [] } = useVendedores()
   const createCliente = useCreateCliente()
   const updateCliente = useUpdateCliente()
   const deleteCliente = useDeleteCliente()
   const updatePipelineStage = useUpdatePipelineStage()
-  const { addNotification } = useNotifications()
+  const { addNotification: _addNotification } = useNotifications()
   
   // Role-based access control
   const isAdmin = useIsAdmin()

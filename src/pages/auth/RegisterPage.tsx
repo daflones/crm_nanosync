@@ -175,6 +175,7 @@ export function RegisterPage() {
                 />
               </div>
 
+
               <div className="space-y-2">
                 <Label htmlFor="password">Senha</Label>
                 <div className="relative">

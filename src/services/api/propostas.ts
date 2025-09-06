@@ -48,6 +48,7 @@ export interface Proposta {
   tempo_visualizacao: number
   paginas_visualizadas?: number[]
   ultima_interacao?: string
+  profile: string // Campo para filtro por empresa
   requer_aprovacao: boolean
   aprovada_por?: string
   motivo_aprovacao?: string
@@ -124,10 +125,35 @@ export const propostasService = {
     data_inicio?: string
     data_fim?: string
   }): Promise<Proposta[]> {
+    // Obter usuário atual e perfil para filtro multi-tenant
+    const { data: { user: currentUser } } = await supabase.auth.getUser()
+    if (!currentUser) {
+      throw new Error('Usuário não autenticado')
+    }
+
+    const { data: currentProfile } = await supabase
+      .from('profiles')
+      .select('id, role, admin_profile_id')
+      .eq('id', currentUser.id)
+      .single()
+
+    if (!currentProfile) {
+      throw new Error('Perfil não encontrado')
+    }
+
+    // Determinar o ID da empresa (admin_profile_id ou próprio ID se for admin)
+    const adminId = currentProfile.admin_profile_id || currentProfile.id
+
     let query = supabase
       .from('propostas')
       .select('*, itens:proposta_itens(*)')
+      .eq('profile', adminId)
       .order('created_at', { ascending: false })
+
+    // Filtro adicional por role: vendedores só veem suas próprias propostas
+    if (currentProfile.role === 'vendedor') {
+      query = query.eq('vendedor_id', currentUser.id)
+    }
 
     if (filters?.vendedor_id) {
       query = query.eq('vendedor_id', filters.vendedor_id)
@@ -156,11 +182,37 @@ export const propostasService = {
   },
 
   async getById(id: string): Promise<Proposta | null> {
-    const { data, error } = await supabase
+    // Obter usuário atual e perfil para filtro multi-tenant
+    const { data: { user: currentUser } } = await supabase.auth.getUser()
+    if (!currentUser) {
+      throw new Error('Usuário não autenticado')
+    }
+
+    const { data: currentProfile } = await supabase
+      .from('profiles')
+      .select('id, role, admin_profile_id')
+      .eq('id', currentUser.id)
+      .single()
+
+    if (!currentProfile) {
+      throw new Error('Perfil não encontrado')
+    }
+
+    // Determinar o ID da empresa (admin_profile_id ou próprio ID se for admin)
+    const adminId = currentProfile.admin_profile_id || currentProfile.id
+
+    let query = supabase
       .from('propostas')
       .select('*, itens:proposta_itens(*)')
       .eq('id', id)
-      .single()
+      .eq('profile', adminId)
+
+    // Filtro adicional por role: vendedores só veem suas próprias propostas
+    if (currentProfile.role === 'vendedor') {
+      query = query.eq('vendedor_id', currentUser.id)
+    }
+
+    const { data, error } = await query.single()
 
     if (error) {
       console.error('Erro ao buscar proposta:', error)
@@ -171,6 +223,24 @@ export const propostasService = {
   },
 
   async create(propostaData: PropostaCreateData): Promise<Proposta> {
+    // Get current user's profile for company filtering
+    const { data: { user: currentUser } } = await supabase.auth.getUser()
+    if (!currentUser) {
+      throw new Error('Usuário não autenticado')
+    }
+
+    const { data: currentProfile } = await supabase
+      .from('profiles')
+      .select('id, admin_profile_id')
+      .eq('id', currentUser.id)
+      .single()
+
+    if (!currentProfile) {
+      throw new Error('Perfil não encontrado')
+    }
+
+    const adminId = currentProfile.admin_profile_id || currentProfile.id
+
     // Gerar número da proposta
     const numeroSequencial = Date.now().toString().slice(-6)
     const numero_proposta = `PROP-${new Date().getFullYear()}-${numeroSequencial}`
@@ -206,6 +276,7 @@ export const propostasService = {
         condicoes_especiais: propostaData.condicoes_especiais,
         garantia: propostaData.garantia,
         suporte_incluido: propostaData.suporte_incluido || false,
+        profile: adminId, // Add company filter
         treinamento_incluido: propostaData.treinamento_incluido || false,
         status: propostaData.status || 'rascunho',
         validade_dias: propostaData.validade_dias || 30,

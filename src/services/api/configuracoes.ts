@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabase'
 export interface Configuracoes {
   id?: string
   user_id: string
+  profile: string // Campo para filtro por empresa
   // Notificações
   notificacoes_email: boolean
   notificacoes_novos_clientes: boolean
@@ -24,16 +25,36 @@ export interface Configuracoes {
 // Buscar configurações do usuário
 export const getConfiguracoes = async (userId: string) => {
   try {
+    // Get current user's profile to filter by company
+    const { data: { user: currentUser } } = await supabase.auth.getUser()
+    if (!currentUser) {
+      throw new Error('Usuário não autenticado')
+    }
+
+    const { data: currentProfile } = await supabase
+      .from('profiles')
+      .select('id, admin_profile_id')
+      .eq('id', currentUser.id)
+      .single()
+
+    if (!currentProfile) {
+      throw new Error('Perfil não encontrado')
+    }
+
+    const adminId = currentProfile.admin_profile_id || currentProfile.id
+
     const { data, error } = await supabase
       .from('configuracoes')
       .select('*')
       .eq('user_id', userId)
+      .eq('profile', adminId) // Filter by company
       .single()
 
     if (error && error.code === 'PGRST116') {
-      // Configurações não existem, criar padrão
-      const defaultConfig: Partial<Configuracoes> = {
+      // Configurações não existem, retornar valores padrão sem criar row
+      const defaultConfig: Configuracoes = {
         user_id: userId,
+        profile: adminId,
         notificacoes_email: true,
         notificacoes_novos_clientes: true,
         notificacoes_propostas_vencendo: true,
@@ -46,13 +67,7 @@ export const getConfiguracoes = async (userId: string) => {
         limite_arquivos_mb: 100
       }
 
-      const { data: newData, error: createError } = await supabase
-        .from('configuracoes')
-        .insert([defaultConfig])
-        .select()
-        .single()
-
-      return { data: newData, error: createError }
+      return { data: defaultConfig, error: null }
     }
 
     return { data, error }
@@ -65,11 +80,30 @@ export const getConfiguracoes = async (userId: string) => {
 // Salvar/Atualizar configurações
 export const upsertConfiguracoes = async (userId: string, configuracoes: Partial<Configuracoes>) => {
   try {
+    // Get current user's profile for company filtering
+    const { data: { user: currentUser } } = await supabase.auth.getUser()
+    if (!currentUser) {
+      throw new Error('Usuário não autenticado')
+    }
+
+    const { data: currentProfile } = await supabase
+      .from('profiles')
+      .select('id, admin_profile_id')
+      .eq('id', currentUser.id)
+      .single()
+
+    if (!currentProfile) {
+      throw new Error('Perfil não encontrado')
+    }
+
+    const adminId = currentProfile.admin_profile_id || currentProfile.id
+
     // Primeiro, verificar se já existe uma configuração para o usuário
     const { data: existingConfig } = await supabase
       .from('configuracoes')
       .select('id')
       .eq('user_id', userId)
+      .eq('profile', adminId) // Filter by company
       .single()
 
     if (existingConfig) {
@@ -78,9 +112,11 @@ export const upsertConfiguracoes = async (userId: string, configuracoes: Partial
         .from('configuracoes')
         .update({ 
           ...configuracoes,
+          profile: adminId, // Ensure company filter is maintained
           updated_at: new Date().toISOString()
         })
         .eq('user_id', userId)
+        .eq('profile', adminId) // Filter by company
         .select()
         .single()
 
@@ -91,6 +127,7 @@ export const upsertConfiguracoes = async (userId: string, configuracoes: Partial
         .from('configuracoes')
         .insert([{ 
           user_id: userId, 
+          profile: adminId, // Add company filter
           ...configuracoes,
           updated_at: new Date().toISOString()
         }])
@@ -144,9 +181,9 @@ export const updateProfile = async (userId: string, profile: any) => {
       updated_at: new Date().toISOString()
     }
     
-    // Só incluir phone se não estiver vazio
+    // Só incluir telefone se não estiver vazio
     if (profile.phone && profile.phone.trim()) {
-      updateData.phone = profile.phone
+      updateData.telefone = profile.phone
     }
     
     console.log('Dados para update:', updateData)

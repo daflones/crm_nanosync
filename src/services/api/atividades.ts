@@ -36,6 +36,7 @@ export interface Atividade {
   dados_anteriores?: any
   dados_novos?: any
   metadata?: any
+  profile: string
   created_at: string
   // Campos resolvidos
   usuario_nome?: string
@@ -55,6 +56,21 @@ export class AtividadeService {
         return
       }
 
+      // Obter perfil do usuário para multi-tenant
+      const { data: currentProfile } = await supabase
+        .from('profiles')
+        .select('id, role, admin_profile_id')
+        .eq('id', user.id)
+        .single()
+
+      if (!currentProfile) {
+        console.warn('Perfil não encontrado - atividade não registrada')
+        return
+      }
+
+      // Determinar o ID da empresa (admin_profile_id ou próprio ID se for admin)
+      const adminId = currentProfile.admin_profile_id || currentProfile.id
+
       const atividade = {
         entidade_tipo: data.entidade_tipo,
         entidade_id: data.entidade_id,
@@ -63,7 +79,8 @@ export class AtividadeService {
         descricao: data.descricao,
         dados_anteriores: data.dados_anteriores || null,
         dados_novos: data.dados_novos || null,
-        metadata: data.metadata || null
+        metadata: data.metadata || null,
+        profile: adminId
       }
 
       const { error } = await supabase
@@ -188,6 +205,25 @@ export class AtividadeService {
     action?: string
   }): Promise<{ atividades: Atividade[], total: number }> {
     try {
+      // Obter usuário atual e perfil para filtro multi-tenant
+      const { data: { user: currentUser } } = await supabase.auth.getUser()
+      if (!currentUser) {
+        throw new Error('Usuário não autenticado')
+      }
+
+      const { data: currentProfile } = await supabase
+        .from('profiles')
+        .select('id, role, admin_profile_id')
+        .eq('id', currentUser.id)
+        .single()
+
+      if (!currentProfile) {
+        throw new Error('Perfil não encontrado')
+      }
+
+      // Determinar o ID da empresa (admin_profile_id ou próprio ID se for admin)
+      const adminId = currentProfile.admin_profile_id || currentProfile.id
+
       const page = filtros?.page || 1
       const limit = filtros?.limit || 20
       const offset = (page - 1) * limit
@@ -204,8 +240,10 @@ export class AtividadeService {
           dados_anteriores,
           dados_novos,
           metadata,
+          profile,
           created_at
         `)
+        .eq('profile', adminId)
         .order('created_at', { ascending: false })
 
       // Filtros de compatibilidade
@@ -231,6 +269,7 @@ export class AtividadeService {
       let countQuery = supabase
         .from('atividades')
         .select('id', { count: 'exact', head: true })
+        .eq('profile', adminId)
 
       if (filtros?.entidade_tipo || filtros?.entityType) {
         countQuery = countQuery.eq('entidade_tipo', filtros.entidade_tipo || filtros.entityType)

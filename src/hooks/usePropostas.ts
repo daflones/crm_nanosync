@@ -1,8 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { propostasService, type Proposta, type PropostaCreateData, type PropostaUpdateData } from '@/services/api/propostas'
-import { useIsAdmin, useCurrentVendedorId } from '@/hooks/useAuth'
 import { toast } from 'sonner'
-import { useMemo } from 'react'
 
 export const usePropostas = (filters?: {
   vendedor_id?: string
@@ -11,9 +9,6 @@ export const usePropostas = (filters?: {
   data_inicio?: string
   data_fim?: string
 }) => {
-  const isAdmin = useIsAdmin()
-  const currentVendedorId = useCurrentVendedorId()
-
   const query = useQuery<Proposta[]>({
     queryKey: ['propostas', filters],
     queryFn: () => propostasService.getAll(filters),
@@ -23,23 +18,7 @@ export const usePropostas = (filters?: {
     refetchOnReconnect: true,
   })
 
-  // Filter proposals based on user role
-  const filteredData = useMemo(() => {
-    if (!query.data) return []
-    
-    // Admins see all proposals
-    if (isAdmin) return query.data
-    
-    // Vendedores only see proposals assigned to them
-    return query.data.filter(proposta => 
-      proposta.vendedor_id === currentVendedorId && proposta.vendedor_id !== null
-    )
-  }, [query.data, isAdmin, currentVendedorId])
-
-  return {
-    ...query,
-    data: filteredData
-  }
+  return query
 }
 
 export const useProposta = (id: string) => {

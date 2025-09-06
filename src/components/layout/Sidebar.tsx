@@ -13,7 +13,8 @@ import {
   Tags,
   Building2,
   LogOut,
-  Activity
+  Activity,
+  Bot
 } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 import { Button } from '@/components/ui/button'
@@ -97,6 +98,13 @@ const menuItems = [
     icon: Settings, 
     href: '/configuracoes',
     color: 'text-gray-600',
+    adminOnly: true
+  },
+  { 
+    label: 'Configurações IA', 
+    icon: Bot, 
+    href: '/configuracoes-ia',
+    color: 'text-purple-600',
     adminOnly: true
   },
 ]

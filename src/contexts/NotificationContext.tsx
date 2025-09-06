@@ -76,7 +76,7 @@ export function NotificationProvider({ children }: NotificationProviderProps) {
           filter: `user_id=eq.${user.id}`
         }, (payload) => {
           const notificacao = payload.new as Notificacao
-          const toastType = NotificacaoService.mapToToastType(notificacao.tipo)
+          const toastType = NotificacaoService.getToastType(notificacao.tipo)
           
           // Adicionar à lista local também
           addNotification({

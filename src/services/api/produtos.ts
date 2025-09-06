@@ -37,6 +37,7 @@ export interface Produto {
   controla_estoque?: boolean
   estoque_atual?: number
   estoque_minimo?: number
+  profile: string // Campo para filtro por empresa
   created_at: string
   updated_at: string
   // Relations
@@ -88,6 +89,25 @@ export const produtosService = {
     status?: string
     search?: string
   }): Promise<Produto[]> {
+    // Get current user's profile to filter by company
+    const { data: { user: currentUser } } = await supabase.auth.getUser()
+    if (!currentUser) {
+      throw new Error('Usuário não autenticado')
+    }
+
+    const { data: currentProfile } = await supabase
+      .from('profiles')
+      .select('id, admin_profile_id')
+      .eq('id', currentUser.id)
+      .single()
+
+    if (!currentProfile) {
+      throw new Error('Perfil não encontrado')
+    }
+
+    // Use admin_profile_id to filter produtos
+    const adminId = currentProfile.admin_profile_id || currentProfile.id
+
     let query = supabase
       .from('produtos')
       .select(`
@@ -95,6 +115,7 @@ export const produtosService = {
         categoria:categorias(nome),
         segmento:segmentos(nome)
       `)
+      .eq('profile', adminId) // Filter by company
       .order('nome', { ascending: true })
 
     if (filters?.categoria_id) {
@@ -167,6 +188,24 @@ export const produtosService = {
   },
 
   async create(produtoData: ProdutoCreateData): Promise<Produto> {
+    // Get current user's profile for company filtering
+    const { data: { user: currentUser } } = await supabase.auth.getUser()
+    if (!currentUser) {
+      throw new Error('Usuário não autenticado')
+    }
+
+    const { data: currentProfile } = await supabase
+      .from('profiles')
+      .select('id, admin_profile_id')
+      .eq('id', currentUser.id)
+      .single()
+
+    if (!currentProfile) {
+      throw new Error('Perfil não encontrado')
+    }
+
+    const adminId = currentProfile.admin_profile_id || currentProfile.id
+
     // Clean empty strings to null and ensure required fields
     const cleanData = { ...produtoData }
     Object.keys(cleanData).forEach(key => {
@@ -218,7 +257,8 @@ export const produtosService = {
         palavras_chave: cleanData.palavras_chave || [],
         controla_estoque: cleanData.controla_estoque || false,
         estoque_atual: cleanData.estoque_atual || 0,
-        estoque_minimo: cleanData.estoque_minimo || 0
+        estoque_minimo: cleanData.estoque_minimo || 0,
+        profile: adminId // Add company filter
       })
       .select('*')
       .single()

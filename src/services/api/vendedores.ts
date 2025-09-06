@@ -26,6 +26,7 @@ export interface Vendedor {
   salario_base?: number
   status?: 'ativo' | 'inativo' | 'ferias' | 'afastado' | 'desligado'
   observacoes?: string
+  profile: string // Campo para filtro por empresa
   created_at: string
   updated_at: string
   // Profile fields
@@ -75,6 +76,25 @@ export interface VendedorUpdateData {
 
 export const vendedoresService = {
   async getAll(): Promise<Vendedor[]> {
+    // Get current user's profile to filter by company
+    const { data: { user: currentUser } } = await supabase.auth.getUser()
+    if (!currentUser) {
+      throw new Error('Usuário não autenticado')
+    }
+
+    const { data: currentProfile } = await supabase
+      .from('profiles')
+      .select('id, admin_profile_id')
+      .eq('id', currentUser.id)
+      .single()
+
+    if (!currentProfile) {
+      throw new Error('Perfil não encontrado')
+    }
+
+    // Use admin_profile_id to filter vendedores
+    const adminId = currentProfile.admin_profile_id || currentProfile.id
+
     const { data, error } = await supabase
       .from('vendedores')
       .select(`
@@ -100,6 +120,7 @@ export const vendedoresService = {
         salario_base,
         status,
         observacoes,
+        profile,
         created_at,
         updated_at,
         profiles!vendedores_user_id_fkey(
@@ -109,6 +130,7 @@ export const vendedoresService = {
           role
         )
       `)
+      .eq('profile', adminId) // Filter by company
 
     if (error) {
       console.error('Erro ao buscar vendedores:', error)
@@ -211,8 +233,11 @@ export const vendedoresService = {
 
   async create(vendedorData: VendedorCreateData): Promise<Vendedor> {
     try {
+      console.log('🚀 Iniciando criação de vendedor:', vendedorData.nome)
+      
       // Step 1: Create auth user
       const password = vendedorData.senha || Math.random().toString(36).slice(-8) + 'A1!'
+      console.log('📧 Criando usuário de autenticação para:', vendedorData.email)
       
       const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
         email: vendedorData.email,
@@ -225,31 +250,63 @@ export const vendedoresService = {
       })
 
       if (authError) {
-        console.error('Erro ao criar usuário de autenticação:', authError)
+        console.error('❌ Erro ao criar usuário de autenticação:', authError)
         throw new Error(`Erro ao criar usuário: ${authError.message}`)
       }
 
       const userId = authData.user.id
+      console.log('✅ Usuário de autenticação criado com ID:', userId)
 
       try {
-        // Step 2: Update or create profile (may already exist from trigger)
-        const { error: profileError } = await supabase
+        // Step 2: Get current admin's profile ID for admin_profile_id
+        console.log('👤 Buscando perfil do admin atual...')
+        const { data: { user: currentUser } } = await supabase.auth.getUser()
+        if (!currentUser) {
+          throw new Error('Usuário não autenticado')
+        }
+
+        const { data: adminProfile, error: adminError } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('id', currentUser.id)
+          .single()
+
+        if (adminError) {
+          console.error('❌ Erro ao buscar perfil do admin:', adminError)
+          throw new Error(`Erro ao buscar perfil do admin: ${adminError.message}`)
+        }
+
+        if (!adminProfile) {
+          throw new Error('Perfil do admin não encontrado')
+        }
+
+        console.log('✅ Perfil do admin encontrado:', adminProfile.id)
+
+        // Step 3: Create profile for vendedor with admin_profile_id using supabaseAdmin
+        console.log('👥 Criando perfil do vendedor...')
+        const { data: profileData, error: profileError } = await supabaseAdmin
           .from('profiles')
           .upsert({
             id: userId,
             full_name: vendedorData.nome,
             email: vendedorData.email,
-            role: 'vendedor'
+            role: 'vendedor',
+            status: 'ativo',
+            admin_profile_id: adminProfile.id, // ID do admin da empresa
+            vendedor_id: null // Será atualizado após criar o vendedor
           })
           .select()
           .single()
 
         if (profileError) {
-          console.error('Erro ao criar/atualizar profile:', profileError)
+          console.error('❌ Erro ao criar/atualizar profile:', profileError)
           throw new Error(`Erro ao criar profile: ${profileError.message}`)
         }
 
-        // Step 3: Create vendedor linked to user
+        console.log('✅ Perfil do vendedor criado:', profileData)
+
+        // Step 4: Create vendedor linked to user with profile field
+        console.log('🏢 Criando registro do vendedor na tabela vendedores...')
         const insertData: any = {
           user_id: userId,
           cpf: vendedorData.cpf || null,
@@ -274,7 +331,8 @@ export const vendedoresService = {
           status: vendedorData.status || 'ativo',
           observacoes: vendedorData.observacoes || null,
           nome: vendedorData.nome,
-          email: vendedorData.email
+          email: vendedorData.email,
+          profile: adminProfile.id // Campo para filtro por empresa
         }
 
         // Remove empty string values that should be null for database
@@ -284,6 +342,8 @@ export const vendedoresService = {
           }
         })
 
+        console.log('📝 Dados do vendedor a serem inseridos:', insertData)
+
         const { data: vendedorResult, error: vendedorError } = await supabase
           .from('vendedores')
           .insert(insertData)
@@ -291,18 +351,40 @@ export const vendedoresService = {
           .single()
 
         if (vendedorError) {
-          console.error('Erro ao criar vendedor:', vendedorError)
+          console.error('❌ Erro ao criar vendedor:', vendedorError)
           throw new Error(`Erro ao criar vendedor: ${vendedorError.message}`)
         }
 
-        // Registrar atividade
-        await AtividadeService.criar(
-          'vendedor',
-          vendedorResult.id,
-          vendedorResult,
-          `Vendedor criado: ${vendedorResult.nome} (${vendedorResult.email})`
-        )
+        console.log('✅ Vendedor criado com sucesso:', vendedorResult)
 
+        // Step 5: Update profile with vendedor_id
+        console.log('🔄 Atualizando profile com vendedor_id...')
+        const { error: updateProfileError } = await supabaseAdmin
+          .from('profiles')
+          .update({ vendedor_id: vendedorResult.id })
+          .eq('id', userId)
+
+        if (updateProfileError) {
+          console.error('⚠️ Erro ao atualizar profile com vendedor_id (não crítico):', updateProfileError)
+        } else {
+          console.log('✅ Profile atualizado com vendedor_id:', vendedorResult.id)
+        }
+
+        // Registrar atividade
+        console.log('📋 Registrando atividade...')
+        try {
+          await AtividadeService.criar(
+            'vendedor',
+            vendedorResult.id,
+            vendedorResult,
+            `Vendedor criado: ${vendedorResult.nome} (${vendedorResult.email})`
+          )
+          console.log('✅ Atividade registrada com sucesso')
+        } catch (atividadeError) {
+          console.error('⚠️ Erro ao registrar atividade (não crítico):', atividadeError)
+        }
+
+        console.log('🎉 Processo de criação de vendedor concluído com sucesso!')
         return vendedorResult
 
       } catch (error) {

@@ -74,7 +74,7 @@ export function useCreateNotificacao() {
       queryClient.invalidateQueries({ queryKey: ['notificacoes-recentes'] })
       
       // Mostrar toast baseado no tipo
-      const toastType = NotificacaoService.mapToToastType(data.tipo)
+      const toastType = NotificacaoService.getToastType(data.tipo)
       toast[toastType](data.titulo, {
         description: data.descricao
       })
@@ -205,7 +205,7 @@ export function useNotificacoesRealTime() {
         queryClient.invalidateQueries({ queryKey: ['notificacoes-recentes'] })
         
         // Mostrar toast
-        const toastType = NotificacaoService.mapToToastType(notificacao.tipo)
+        const toastType = NotificacaoService.getToastType(notificacao.tipo)
         toast[toastType](notificacao.titulo, {
           description: notificacao.descricao
         })

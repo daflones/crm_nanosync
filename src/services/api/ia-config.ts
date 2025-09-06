@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabase'
 export interface IAConfig {
   id?: string
   user_id: string
+  profile: string // Campo para filtro multi-tenant
   // Contexto e personalidade da IA
   contexto_ia: string
   tom_fala: 'profissional' | 'casual' | 'formal' | 'amigavel' | 'tecnico'
@@ -61,19 +62,40 @@ export interface IAConfig {
   updated_at?: string
 }
 
-// Buscar configurações IA do usuário
+// Buscar configurações IA do usuário com filtro multi-tenant
 export const getIAConfig = async (userId: string) => {
   try {
+    // Get current user's profile to filter by company
+    const { data: { user: currentUser } } = await supabase.auth.getUser()
+    if (!currentUser) {
+      throw new Error('Usuário não autenticado')
+    }
+
+    const { data: currentProfile } = await supabase
+      .from('profiles')
+      .select('id, role, admin_profile_id')
+      .eq('id', currentUser.id)
+      .single()
+
+    if (!currentProfile) {
+      throw new Error('Perfil do usuário não encontrado')
+    }
+
+    // Determine company profile ID for filtering
+    const adminId = currentProfile.admin_profile_id || currentProfile.id
+
     const { data, error } = await supabase
       .from('ia_config')
       .select('*')
       .eq('user_id', userId)
+      .eq('profile', adminId)
       .single()
 
     if (error && error.code === 'PGRST116') {
       // Configurações não existem, criar padrão
       const defaultConfig: Partial<IAConfig> = {
         user_id: userId,
+        profile: adminId,
         contexto_ia: 'Você é um assistente inteligente especializado em vendas e atendimento ao cliente para a empresa. Seja sempre prestativo, profissional e focado em ajudar o cliente.',
         tom_fala: 'profissional',
         regras_especificas: 'Sempre confirme informações importantes antes de prosseguir. Seja claro e objetivo nas respostas.',
@@ -133,14 +155,34 @@ export const getIAConfig = async (userId: string) => {
   }
 }
 
-// Salvar/Atualizar configurações IA
+// Salvar/Atualizar configurações IA com filtro multi-tenant
 export const upsertIAConfig = async (userId: string, config: Partial<IAConfig>) => {
   try {
+    // Get current user's profile to filter by company
+    const { data: { user: currentUser } } = await supabase.auth.getUser()
+    if (!currentUser) {
+      throw new Error('Usuário não autenticado')
+    }
+
+    const { data: currentProfile } = await supabase
+      .from('profiles')
+      .select('id, role, admin_profile_id')
+      .eq('id', currentUser.id)
+      .single()
+
+    if (!currentProfile) {
+      throw new Error('Perfil do usuário não encontrado')
+    }
+
+    // Determine company profile ID for filtering
+    const adminId = currentProfile.admin_profile_id || currentProfile.id
+
     // Primeiro, verificar se já existe uma configuração para o usuário
     const { data: existingConfig } = await supabase
       .from('ia_config')
       .select('id')
       .eq('user_id', userId)
+      .eq('profile', adminId)
       .single()
 
     if (existingConfig) {
@@ -149,9 +191,11 @@ export const upsertIAConfig = async (userId: string, config: Partial<IAConfig>) 
         .from('ia_config')
         .update({ 
           ...config,
+          profile: adminId,
           updated_at: new Date().toISOString()
         })
         .eq('user_id', userId)
+        .eq('profile', adminId)
         .select()
         .single()
 
@@ -162,6 +206,7 @@ export const upsertIAConfig = async (userId: string, config: Partial<IAConfig>) 
         .from('ia_config')
         .insert([{ 
           user_id: userId, 
+          profile: adminId,
           ...config,
           updated_at: new Date().toISOString()
         }])
@@ -177,7 +222,7 @@ export const upsertIAConfig = async (userId: string, config: Partial<IAConfig>) 
 }
 
 // Testar configurações IA
-export const testIAConfig = async (config: Partial<IAConfig>) => {
+export const testIAConfig = async (_config: Partial<IAConfig>) => {
   // Simular teste das configurações
   return new Promise((resolve) => {
     setTimeout(() => {

@@ -96,20 +96,6 @@ export default function ArquivosIAPage() {
     return true
   }) || []
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      setSelectedFile(file)
-      setUploadData(prev => ({
-        ...prev,
-        nome: file.name.split('.')[0],
-        nome_original: file.name,
-        tamanho: file.size,
-        tipo_mime: file.type,
-        extensao: file.name.split('.').pop()
-      }))
-    }
-  }
 
   const handleViewFile = (arquivo: ArquivoIA) => {
     setSelectedArquivo(arquivo)
@@ -596,7 +582,7 @@ export default function ArquivosIAPage() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="cliente_id">Cliente</Label>
-                <Select value={uploadData.cliente_id || 'none'} onValueChange={(value) => setUploadData({...uploadData, cliente_id: value === 'none' ? null : value})}>
+                <Select value={uploadData.cliente_id || 'none'} onValueChange={(value) => setUploadData({...uploadData, cliente_id: value === 'none' ? undefined : value})}>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione um cliente" />
                   </SelectTrigger>

@@ -79,20 +79,34 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       if (error) throw error
 
       if (data.user) {
-        // Criar perfil - usar upsert para evitar conflito 409
+        // Primeiro criar o perfil sem admin_profile_id
         const { error: profileError } = await supabase
           .from('profiles')
           .upsert({
             id: data.user.id,
-            email,
+            email: email,
             full_name: fullName,
-            role: 'vendedor', // Padrão para vendedor
+            role: 'admin',
             status: 'ativo',
           }, {
             onConflict: 'id'
           })
 
-        if (profileError) throw profileError
+        if (profileError) {
+          console.error('Erro ao criar perfil:', profileError)
+          throw profileError
+        }
+
+        // Depois atualizar com admin_profile_id igual ao próprio ID
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({ admin_profile_id: data.user.id })
+          .eq('id', data.user.id)
+
+        if (updateError) {
+          console.error('Erro ao atualizar admin_profile_id:', updateError)
+          throw updateError
+        }
       }
 
       set({ loading: false })

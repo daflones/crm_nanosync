@@ -18,6 +18,7 @@ const ArquivosPage = lazy(() => import('./pages/arquivos/ArquivosPage').then(m =
 const ArquivosIAPage = lazy(() => import('./pages/arquivos-ia/ArquivosIAPage').then(m => ({ default: m.default })))
 const RelatoriosPage = lazy(() => import('./pages/relatorios/RelatoriosPage').then(m => ({ default: m.RelatoriosPage })))
 const ConfiguracoesPage = lazy(() => import('./pages/configuracoes/ConfiguracoesPage').then(m => ({ default: m.ConfiguracoesPage })))
+const IAConfigPage = lazy(() => import('./pages/configuracoes/IAConfigPage').then(m => ({ default: m.IAConfigPage })))
 const AtividadesPage = lazy(() => import('./pages/atividades/AtividadesPage').then(m => ({ default: m.AtividadesPage })))
 const LandingPage = lazy(() => import('./pages/landing/LandingPage').then(m => ({ default: m.LandingPage })))
 
@@ -113,6 +114,10 @@ export const router = createBrowserRouter([
       {
         path: 'configuracoes',
         element: withSuspense(ConfiguracoesPage),
+      },
+      {
+        path: 'configuracoes-ia',
+        element: withSuspense(IAConfigPage),
       },
       {
         path: 'atividades',

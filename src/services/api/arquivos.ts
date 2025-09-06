@@ -22,6 +22,7 @@ export interface Arquivo {
   entity_id?: string
   downloaded_times?: number
   downloaded_at?: string
+  profile: string // Campo para filtro multi-tenant
   created_at: string
   updated_at: string
 }
@@ -85,14 +86,34 @@ export const arquivosService = {
     entity_id?: string
     tags?: string[]
   }): Promise<Arquivo[]> {
-    // Special handling for produtos category to include existing product images
-    if (filters?.categoria === 'produtos') {
-      return this.getProdutosFiles()
+    // Obter usuário atual e perfil para filtro multi-tenant
+    const { data: { user: currentUser } } = await supabase.auth.getUser()
+    if (!currentUser) {
+      throw new Error('Usuário não autenticado')
     }
 
-    let query = supabaseAdmin
+    const { data: currentProfile } = await supabase
+      .from('profiles')
+      .select('id, role, admin_profile_id')
+      .eq('id', currentUser.id)
+      .single()
+
+    if (!currentProfile) {
+      throw new Error('Perfil não encontrado')
+    }
+
+    // Determinar o ID da empresa (admin_profile_id ou próprio ID se for admin)
+    const adminId = currentProfile.admin_profile_id || currentProfile.id
+
+    // Special handling for produtos category to include existing product images
+    if (filters?.categoria === 'produtos') {
+      return this.getProdutosFiles(adminId)
+    }
+
+    let query = supabase
       .from('arquivos')
       .select('*')
+      .eq('profile', adminId)
       .order('created_at', { ascending: false })
 
     if (filters?.categoria) {
@@ -120,12 +141,13 @@ export const arquivosService = {
     return data || []
   },
 
-  async getProdutosFiles(): Promise<Arquivo[]> {
+  async getProdutosFiles(adminId: string): Promise<Arquivo[]> {
     // Get files from arquivos table with categoria 'produtos' only
-    const { data: arquivosData, error: arquivosError } = await supabaseAdmin
+    const { data: arquivosData, error: arquivosError } = await supabase
       .from('arquivos')
       .select('*')
       .eq('categoria', 'produtos')
+      .eq('profile', adminId)
       .order('created_at', { ascending: false })
 
     if (arquivosError) {
@@ -138,10 +160,30 @@ export const arquivosService = {
   },
 
   async getById(id: string): Promise<Arquivo | null> {
-    const { data, error } = await supabaseAdmin
+    // Obter usuário atual e perfil para filtro multi-tenant
+    const { data: { user: currentUser } } = await supabase.auth.getUser()
+    if (!currentUser) {
+      throw new Error('Usuário não autenticado')
+    }
+
+    const { data: currentProfile } = await supabase
+      .from('profiles')
+      .select('id, role, admin_profile_id')
+      .eq('id', currentUser.id)
+      .single()
+
+    if (!currentProfile) {
+      throw new Error('Perfil não encontrado')
+    }
+
+    // Determinar o ID da empresa (admin_profile_id ou próprio ID se for admin)
+    const adminId = currentProfile.admin_profile_id || currentProfile.id
+
+    const { data, error } = await supabase
       .from('arquivos')
       .select('*')
       .eq('id', id)
+      .eq('profile', adminId)
       .single()
 
     if (error) {
@@ -187,6 +229,25 @@ export const arquivosService = {
   },
 
   async upload(file: File, data: ArquivoCreateData): Promise<Arquivo> {
+    // Obter usuário atual e perfil para multi-tenant
+    const { data: { user: currentUser } } = await supabase.auth.getUser()
+    if (!currentUser) {
+      throw new Error('Usuário não autenticado')
+    }
+
+    const { data: currentProfile } = await supabase
+      .from('profiles')
+      .select('id, role, admin_profile_id')
+      .eq('id', currentUser.id)
+      .single()
+
+    if (!currentProfile) {
+      throw new Error('Perfil não encontrado')
+    }
+
+    // Determinar o ID da empresa (admin_profile_id ou próprio ID se for admin)
+    const adminId = currentProfile.admin_profile_id || currentProfile.id
+
     const { bucket, path } = getBucketInfo(data.categoria, file.name)
     
     // Validate file type and size
@@ -266,7 +327,8 @@ export const arquivosService = {
         entity_id: data.entity_id && data.entity_id !== 'none' ? data.entity_id : undefined,
         descricao: data.descricao,
         tags: data.tags || [],
-        metadata: data.metadata || {}
+        metadata: data.metadata || {},
+        profile: adminId
       })
       .select()
       .single()
@@ -341,6 +403,7 @@ export const arquivosService = {
         descricao: data.descricao || 'Imagem de produto',
         tags: data.tags || [],
         metadata: data.metadata || {},
+        profile: 'legacy', // Para arquivos legados
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       }

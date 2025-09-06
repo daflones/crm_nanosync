@@ -1,8 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { agendamentosService, type Agendamento, type AgendamentoCreateData, type AgendamentoUpdateData } from '@/services/api/agendamentos'
-import { useIsAdmin, useCurrentVendedorId } from '@/hooks/useAuth'
 import { toast } from 'sonner'
-import { useMemo } from 'react'
 
 export const useAgendamentos = (filters?: {
   vendedor_id?: string
@@ -12,9 +10,6 @@ export const useAgendamentos = (filters?: {
   data_inicio?: string
   data_fim?: string
 }) => {
-  const isAdmin = useIsAdmin()
-  const currentVendedorId = useCurrentVendedorId()
-
   const query = useQuery<Agendamento[]>({
     queryKey: ['agendamentos', filters],
     queryFn: () => agendamentosService.getAll(filters),
@@ -24,23 +19,7 @@ export const useAgendamentos = (filters?: {
     refetchOnReconnect: true,
   })
 
-  // Filter agendamentos based on user role
-  const filteredData = useMemo(() => {
-    if (!query.data) return []
-    
-    // Admins see all agendamentos
-    if (isAdmin) return query.data
-    
-    // Vendedores only see agendamentos assigned to them
-    return query.data.filter(agendamento => 
-      agendamento.vendedor_id === currentVendedorId && agendamento.vendedor_id !== null
-    )
-  }, [query.data, isAdmin, currentVendedorId])
-
-  return {
-    ...query,
-    data: filteredData
-  }
+  return query
 }
 
 export const useAgendamento = (id: string) => {
