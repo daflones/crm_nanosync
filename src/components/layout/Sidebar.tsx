@@ -120,21 +120,16 @@ export function Sidebar() {
   return (
     <div className="flex h-full w-64 flex-col bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 shadow-lg">
       {/* Logo */}
-      <div className="flex h-20 items-center justify-center border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-primary-50 to-primary-100 dark:from-primary-900/20 dark:to-primary-800/20">
-        <Link to="/app/dashboard" className="flex items-center space-x-3 px-4">
+      <div className="flex h-20 items-center justify-center border-b border-gray-200 dark:border-gray-700">
+        <Link to="/app/dashboard" className="flex flex-col items-center px-4">
           <img 
             src="/Logo.ico" 
             alt="Logo" 
-            className="h-10 w-10 object-contain"
+            className="h-12 w-12 object-contain"
           />
-          <div className="flex flex-col">
-            <span className="text-xl font-bold text-gray-900 dark:text-white">
-              CRM
-            </span>
-            <span className="text-xs text-gray-600 dark:text-gray-400">
-              Sistema de Gestão
-            </span>
-          </div>
+          <span className="text-xs font-medium text-gray-700 dark:text-gray-300 mt-1">
+            CRM
+          </span>
         </Link>
       </div>
 

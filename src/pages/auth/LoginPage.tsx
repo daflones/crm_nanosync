@@ -53,9 +53,9 @@ export function LoginPage() {
                 <div>
                   <div className="flex flex-col items-center lg:items-start mb-4">
                     <img 
-                      src="/Logo.png" 
+                      src="/Logo.ico" 
                       alt="Logo" 
-                      className="w-120 h-80 mb-1 object-contain"
+                      className="w-24 h-24 mb-2 object-contain"
                     />
                     <h1 className="text-6xl font-black bg-gradient-to-r from-white via-blue-100 to-purple-100 bg-clip-text text-transparent leading-tight">
                       CRM

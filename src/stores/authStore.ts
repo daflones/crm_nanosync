@@ -66,6 +66,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   signUp: async (email: string, password: string, fullName: string) => {
     set({ loading: true, error: null })
     try {
+      console.log('Iniciando cadastro para:', email)
+      
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -76,41 +78,24 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         },
       })
 
-      if (error) throw error
+      console.log('Resposta do signUp:', { data, error })
+
+      if (error) {
+        console.error('Erro no signUp:', error)
+        throw error
+      }
 
       if (data.user) {
-        // Primeiro criar o perfil sem admin_profile_id
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .upsert({
-            id: data.user.id,
-            email: email,
-            full_name: fullName,
-            role: 'admin',
-            status: 'ativo',
-          }, {
-            onConflict: 'id'
-          })
-
-        if (profileError) {
-          console.error('Erro ao criar perfil:', profileError)
-          throw profileError
-        }
-
-        // Depois atualizar com admin_profile_id igual ao próprio ID
-        const { error: updateError } = await supabase
-          .from('profiles')
-          .update({ admin_profile_id: data.user.id })
-          .eq('id', data.user.id)
-
-        if (updateError) {
-          console.error('Erro ao atualizar admin_profile_id:', updateError)
-          throw updateError
-        }
+        console.log('Usuário criado, aguardando confirmação de email...')
+        console.log('Email de confirmação enviado para:', email)
+        
+        // Não criar perfil imediatamente - aguardar confirmação de email
+        // O perfil será criado via trigger no Supabase após confirmação
       }
 
       set({ loading: false })
     } catch (error: any) {
+      console.error('Erro geral no cadastro:', error)
       set({ error: error.message, loading: false })
       throw error
     }

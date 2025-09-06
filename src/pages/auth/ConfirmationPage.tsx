@@ -42,7 +42,12 @@ export function ConfirmationPage() {
             }
           } else {
             setStatus('success')
-            setMessage('Conta confirmada com sucesso! Você já pode fazer login.')
+            setMessage('Conta confirmada com sucesso! Seu perfil foi criado automaticamente. Você já pode fazer login.')
+            
+            // Aguardar um pouco para garantir que o trigger criou o perfil
+            setTimeout(() => {
+              navigate('/login')
+            }, 2000)
           }
         } else if (type === 'recovery') {
           // Recuperação de senha - redirecionar para página de reset

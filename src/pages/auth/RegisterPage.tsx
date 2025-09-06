@@ -50,10 +50,13 @@ export function RegisterPage() {
     if (!validateForm()) return
 
     try {
+      console.log('Iniciando processo de cadastro...')
       await signUp(formData.email, formData.password, formData.fullName)
-      toast.success('Conta criada com sucesso! Verifique seu e-mail para confirmar.')
+      console.log('Cadastro finalizado, redirecionando...')
+      toast.success('Conta criada com sucesso! Verifique seu e-mail para confirmar sua conta antes de fazer login.')
       navigate('/login')
     } catch (error: any) {
+      console.error('Erro no handleSubmit:', error)
       toast.error(error.message || 'Erro ao criar conta')
     }
   }

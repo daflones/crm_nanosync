@@ -98,7 +98,7 @@ export function MobileNav({ open, onClose }: MobileNavProps) {
                   <img 
                     src="/Logo.ico" 
                     alt="Logo" 
-                    className="h-8 w-8 object-contain"
+                    className="h-10 w-10 object-contain"
                   />
                   <span className="ml-2 text-xl font-bold text-gray-900 dark:text-white">
                     CRM
