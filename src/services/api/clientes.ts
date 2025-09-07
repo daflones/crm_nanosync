@@ -182,7 +182,7 @@ export const clientesService = {
 
   async update(id: string, updates: ClienteUpdateData): Promise<Cliente> {
     // Buscar dados anteriores para o log
-    const clienteAnterior = await this.getById(id)
+    const clienteAnterior = await clientesService.getById(id)
     
     const { data, error } = await supabase
       .from('clientes')
@@ -213,7 +213,7 @@ export const clientesService = {
 
   async delete(id: string): Promise<void> {
     // Buscar dados do cliente antes de deletar
-    const cliente = await this.getById(id)
+    const cliente = await clientesService.getById(id)
     
     const { error } = await supabase
       .from('clientes')
@@ -238,7 +238,7 @@ export const clientesService = {
 
   async updatePipelineStage(id: string, novaEtapa: string): Promise<Cliente> {
     // Buscar dados anteriores
-    const clienteAnterior = await this.getById(id)
+    const clienteAnterior = await clientesService.getById(id)
     
     const { data, error } = await supabase
       .from('clientes')

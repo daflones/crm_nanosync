@@ -9,9 +9,28 @@ export function useAutoRefreshOnFocus() {
     console.log('useAutoRefreshOnFocus: Hook inicializado')
     
     const handleVisibilityChange = () => {
-      // Desativar autorefresh na página de planos para evitar erros
-      if (window.location.pathname.includes('/planos')) {
-        console.log('AutoRefresh desativado na página Planos')
+      // Páginas onde o autorefresh deve ser desativado
+      const disableRefreshPaths = [
+        '/planos',
+        '/app/configuracoes-ia',
+        '/app/whatsapp'
+      ]
+      
+      // Verificar se está em alguma página que deve desabilitar o refresh
+      const shouldDisableRefresh = disableRefreshPaths.some(path => 
+        window.location.pathname.includes(path)
+      )
+      
+      if (shouldDisableRefresh) {
+        console.log('AutoRefresh desativado na página:', window.location.pathname)
+        return
+      }
+      
+      // Verificar se há modais abertos (elementos com data-state="open")
+      const hasOpenModal = document.querySelector('[data-state="open"]') !== null
+      
+      if (hasOpenModal) {
+        console.log('AutoRefresh desativado - modal aberto detectado')
         return
       }
       

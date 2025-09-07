@@ -349,6 +349,26 @@ export function IAConfigPage() {
                 rows={4}
               />
             </div>
+            <div className="grid gap-2">
+              <Label htmlFor="principais-clientes">Principais Clientes</Label>
+              <Textarea
+                id="principais-clientes"
+                placeholder="Descreva os principais tipos de clientes ou segmentos que a empresa atende..."
+                value={iaConfig.detalhes_empresa?.principais_clientes || ''}
+                onChange={(e) => updateDetalhesEmpresa('principais_clientes', e.target.value)}
+                rows={3}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="produtos-servicos-mais-vendidos">Produtos ou Serviços mais vendidos</Label>
+              <Textarea
+                id="produtos-servicos-mais-vendidos"
+                placeholder="Liste os produtos ou serviços que mais vendem e suas características..."
+                value={iaConfig.detalhes_empresa?.produtos_servicos_mais_vendidos || ''}
+                onChange={(e) => updateDetalhesEmpresa('produtos_servicos_mais_vendidos', e.target.value)}
+                rows={3}
+              />
+            </div>
           </CardContent>
         </Card>
 
