@@ -52,7 +52,6 @@ export function AgendamentosPage() {
       setClientes(clientesData)
       setVendedores(vendedoresData)
     } catch (error) {
-      console.error('Erro ao carregar dados:', error)
       toast.error('Erro ao carregar dados')
     } finally {
       setLoading(false)
@@ -100,15 +99,11 @@ export function AgendamentosPage() {
 
   // CRUD operations
   const handleCreateAgendamento = async (data: any) => {
-    console.log('=== handleCreateAgendamento CALLED ===')
-    console.log('Received data:', data)
     
     try {
-      console.log('Dados do formulário recebidos:', data)
       
       // Validar campos obrigatórios
       if (!data.cliente_id || !data.vendedor_id || !data.titulo || !data.data_inicio || !data.data_fim) {
-        console.log('Validation failed in handleCreateAgendamento')
         toast.error('Por favor, preencha todos os campos obrigatórios')
         return
       }
@@ -124,7 +119,6 @@ export function AgendamentosPage() {
         servicos_apresentar: data.servicos_apresentar || []
       }
       
-      console.log('Dados finais para criação:', agendamentoData)
       
       await agendamentosService.create(agendamentoData)
       toast.success('Agendamento criado com sucesso!')
@@ -132,7 +126,6 @@ export function AgendamentosPage() {
       setPrefilledData(null)
       loadData()
     } catch (error) {
-      console.error('Erro ao criar agendamento:', error)
       toast.error(`Erro ao criar agendamento: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
     }
   }
@@ -146,13 +139,11 @@ export function AgendamentosPage() {
       setSelectedAgendamento(null)
       loadData()
     } catch (error) {
-      console.error('Erro ao atualizar agendamento:', error)
       toast.error('Erro ao atualizar agendamento')
     }
   }
 
   const handleDeleteAgendamento = (id: string) => {
-    console.log('handleDeleteAgendamento called with id:', id)
     setAgendamentoToDelete(id)
     setIsDeleteModalOpen(true)
   }
@@ -160,42 +151,32 @@ export function AgendamentosPage() {
   const confirmDeleteAgendamento = async () => {
     if (!agendamentoToDelete) return
     
-    console.log('confirmDeleteAgendamento called with id:', agendamentoToDelete)
-    console.log('currentUser:', currentUser)
     
     try {
       // Find the agendamento to validate permissions
       const agendamento = agendamentos?.find(a => a.id === agendamentoToDelete)
-      console.log('Found agendamento:', agendamento)
       
       if (!agendamento) {
-        console.log('Agendamento not found in local state')
         toast.error('Agendamento não encontrado')
         return
       }
 
       // Validate user permissions using middleware
       const validation = validateAgendamentoDelete(agendamento, currentUser)
-      console.log('Validation result:', validation)
       
       if (!validation.isValid) {
-        console.log('Validation failed:', validation.error)
         toast.error(validation.error || 'Sem permissão para excluir este agendamento')
         return
       }
 
-      console.log('Calling agendamentosService.delete with id:', agendamentoToDelete)
       await agendamentosService.delete(agendamentoToDelete)
-      console.log('Delete successful, showing success toast')
       toast.success('Agendamento excluído com sucesso!')
-      console.log('Reloading data...')
       loadData()
       
       // Close modal and reset state
       setIsDeleteModalOpen(false)
       setAgendamentoToDelete(null)
     } catch (error) {
-      console.error('Erro ao excluir agendamento:', error)
       toast.error(`Erro ao excluir agendamento: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
     }
   }
@@ -584,7 +565,6 @@ export function AgendamentosPage() {
                         variant="destructive"
                         size="sm"
                         onClick={() => {
-                          console.log('Delete button clicked for agendamento:', agendamento.id)
                           handleDeleteAgendamento(agendamento.id)
                         }}
                         title="Excluir"

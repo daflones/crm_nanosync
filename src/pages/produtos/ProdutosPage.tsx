@@ -169,7 +169,6 @@ export function ProdutosPage() {
         imageUrl = await handleImageUpload('')
       }
 
-      console.log('Criando produto:', { ...newProduct, imagem_principal: imageUrl })
 
       const result = await createProduto.mutateAsync({
         ...newProduct,
@@ -192,7 +191,6 @@ export function ProdutosPage() {
         prioridade: 'normal'
       })
     } catch (error) {
-      console.error('Erro ao criar produto:', error)
       toast.error(`Erro ao criar produto: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
     }
   }
@@ -209,7 +207,6 @@ export function ProdutosPage() {
     }
 
     try {
-      console.log('Atualizando produto:', selectedProduto.id, editProduct)
       
       await updateProduto.mutateAsync({
         id: selectedProduto.id,

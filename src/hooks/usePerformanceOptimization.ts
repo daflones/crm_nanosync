@@ -27,15 +27,8 @@ export function usePerformanceOptimization() {
     // Set up periodic cleanup every 10 minutes
     const cleanupInterval = setInterval(performCleanup, 10 * 60 * 1000)
 
-    // Clean up on page visibility change (when user returns to tab)
-    const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        // User returned to tab, clean up stale data
-        setTimeout(performCleanup, 1000)
-      }
-    }
-
-    document.addEventListener('visibilitychange', handleVisibilityChange)
+    // Removido o listener de visibilitychange para evitar conflito com useAutoRefreshOnFocus
+    // O auto refresh será gerenciado pelo hook específico
     
     // Memory pressure handling (simplified)
     const handleBeforeUnload = () => {
@@ -47,7 +40,6 @@ export function usePerformanceOptimization() {
     return () => {
       clearTimeout(initialCleanupTimer)
       clearInterval(cleanupInterval)
-      document.removeEventListener('visibilitychange', handleVisibilityChange)
       window.removeEventListener('beforeunload', handleBeforeUnload)
     }
   }, [performCleanup, queryClient])

@@ -6,6 +6,7 @@ import { router } from './router'
 import { NotificationProvider } from './contexts/NotificationContext'
 import { CacheManager } from './utils/cacheManager'
 import { usePerformanceOptimization } from './hooks/usePerformanceOptimization'
+import { useAutoRefreshOnFocus } from './hooks/useAutoRefreshOnFocus'
 import './styles/globals.css'
 
 const queryClient = new QueryClient({
@@ -14,7 +15,7 @@ const queryClient = new QueryClient({
       staleTime: 2 * 60 * 1000, // 2 minutos (reduzido para melhor performance)
       gcTime: 5 * 60 * 1000, // 5 minutos (reduzido para economizar memória)
       retry: 2, // Reduzir tentativas para falhas mais rápidas
-      refetchOnWindowFocus: false, // Evitar refetch desnecessário
+      refetchOnWindowFocus: true, // Auto refresh ao voltar para aba
       refetchOnReconnect: true, // Manter refetch na reconexão
     },
     mutations: {
@@ -29,6 +30,9 @@ CacheManager.setQueryClient(queryClient)
 function App() {
   // Initialize performance optimization
   usePerformanceOptimization()
+  
+  // Auto refresh quando voltar para aba
+  useAutoRefreshOnFocus()
 
   useEffect(() => {
     // Aplicar tema salvo

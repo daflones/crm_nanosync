@@ -13,7 +13,8 @@ import {
   Tags,
   LogOut,
   Activity,
-  Bot
+  Bot,
+  MessageCircle
 } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 import { Button } from '@/components/ui/button'
@@ -104,6 +105,13 @@ const menuItems = [
     icon: Bot, 
     href: '/configuracoes-ia',
     color: 'text-purple-600',
+    adminOnly: true
+  },
+  { 
+    label: 'WhatsApp', 
+    icon: MessageCircle, 
+    href: '/whatsapp',
+    color: 'text-green-600',
     adminOnly: true
   },
 ]

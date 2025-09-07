@@ -67,7 +67,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   signUp: async (email: string, password: string, fullName: string) => {
     set({ loading: true, error: null })
     try {
-      console.log('Iniciando cadastro para:', email)
       
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -79,16 +78,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         },
       })
 
-      console.log('Resposta do signUp:', { data, error })
 
       if (error) {
-        console.error('Erro no signUp:', error)
         throw error
       }
 
       if (data.user) {
-        console.log('Usuário criado, aguardando confirmação de email...')
-        console.log('Email de confirmação enviado para:', email)
         
         // Não criar perfil imediatamente - aguardar confirmação de email
         // O perfil será criado via trigger no Supabase após confirmação
@@ -96,7 +91,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       set({ loading: false })
     } catch (error: any) {
-      console.error('Erro geral no cadastro:', error)
       set({ error: error.message, loading: false })
       throw error
     }

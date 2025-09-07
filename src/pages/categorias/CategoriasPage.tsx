@@ -372,7 +372,6 @@ export function CategoriasPage() {
               prioridade: 'normal'
             })
           } catch (error) {
-            console.error('Erro ao criar categoria:', error)
             toast.error('Erro ao criar categoria')
           }
         }
@@ -400,7 +399,6 @@ export function CategoriasPage() {
               prioridade: 'normal'
             })
           } catch (error) {
-            console.error('Erro ao atualizar categoria:', error)
             toast.error('Erro ao atualizar categoria')
           }
         }

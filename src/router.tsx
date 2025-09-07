@@ -22,6 +22,7 @@ const RelatoriosPage = lazy(() => import('./pages/relatorios/RelatoriosPage').th
 const ConfiguracoesPage = lazy(() => import('./pages/configuracoes/ConfiguracoesPage').then(m => ({ default: m.ConfiguracoesPage })))
 const IAConfigPage = lazy(() => import('./pages/configuracoes/IAConfigPage').then(m => ({ default: m.IAConfigPage })))
 const AtividadesPage = lazy(() => import('./pages/atividades/AtividadesPage').then(m => ({ default: m.AtividadesPage })))
+const WhatsAppPage = lazy(() => import('./pages/WhatsAppPage'))
 const LandingPage = lazy(() => import('./pages/landing/LandingPage').then(m => ({ default: m.LandingPage })))
 
 // Loading component for Suspense fallback
@@ -132,6 +133,10 @@ export const router = createBrowserRouter([
       {
         path: 'atividades',
         element: withSuspense(AtividadesPage),
+      },
+      {
+        path: 'whatsapp',
+        element: withSuspense(WhatsAppPage),
       },
     ],
   },
