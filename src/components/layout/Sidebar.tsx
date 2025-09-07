@@ -14,9 +14,12 @@ import {
   LogOut,
   Activity,
   Bot,
-  MessageCircle
+  MessageCircle,
+  CreditCard
 } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
+import { usePlanoAtivo } from '@/hooks/usePlanoAtivo'
+import { SubscriptionStatusBanner } from '@/components/SubscriptionNotifications'
 import { Button } from '@/components/ui/button'
 
 const menuItems = [
@@ -114,16 +117,29 @@ const menuItems = [
     color: 'text-green-600',
     adminOnly: true
   },
+  { 
+    label: 'Planos', 
+    icon: CreditCard, 
+    href: '/planos',
+    color: 'text-yellow-600'
+  },
 ]
 
 export function Sidebar() {
   const location = useLocation()
   const { user, signOut } = useAuthStore()
+  const { planoAtivo, isLoading: planoLoading } = usePlanoAtivo()
   const isAdmin = user?.role === 'admin'
 
-  const filteredMenuItems = menuItems.filter(item => 
-    !item.adminOnly || (item.adminOnly && isAdmin)
-  )
+  const filteredMenuItems = menuItems.filter(item => {
+    // Filtrar por permissão de admin
+    if (item.adminOnly && !isAdmin) return false
+    
+    // Ocultar página Planos se o usuário já tem plano ativo OU ainda está carregando
+    if (item.href === '/planos' && (planoAtivo || planoLoading)) return false
+    
+    return true
+  })
 
   return (
     <div className="flex h-full w-64 flex-col bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 shadow-lg">
@@ -139,7 +155,7 @@ export function Sidebar() {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 space-y-2 px-4 py-6 overflow-y-auto">
+      <nav className="flex-1 space-y-1 px-4 py-4 overflow-y-auto">
         {filteredMenuItems.map((item) => {
           const Icon = item.icon
           const isActive = location.pathname === `/app${item.href}` || location.pathname.startsWith(`/app${item.href}/`)
@@ -149,7 +165,7 @@ export function Sidebar() {
               key={item.href}
               to={`/app${item.href}`}
               className={cn(
-                'flex items-center space-x-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200 group',
+                'flex items-center space-x-3 rounded-xl px-4 py-2.5 text-sm font-medium transition-all duration-200 group',
                 isActive
                   ? 'bg-primary-600 text-white shadow-lg shadow-primary-600/25'
                   : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700 hover:shadow-md'
@@ -184,6 +200,9 @@ export function Sidebar() {
             </div>
           </div>
         </div>
+        
+        {/* Subscription Status Banner */}
+        <SubscriptionStatusBanner />
         
         <Button
           variant="outline"

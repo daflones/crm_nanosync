@@ -20,6 +20,7 @@ import { useClientes, useCreateCliente, useUpdateCliente, useDeleteCliente, useU
 import { useVendedores } from '@/hooks/useVendedores'
 import { useIsAdmin, useCurrentVendedorId } from '@/hooks/useAuth'
 import { VendedorSelector } from '@/components/VendedorSelector'
+import { PlanoAtivoButton } from '@/components/PlanoAtivoGuard'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -385,7 +386,7 @@ export function ClientesPage() {
             </div>
             
             {/* New Client Button */}
-            <button 
+            <PlanoAtivoButton
               onClick={() => {
                 reset()
                 if (!isAdmin && currentVendedorId) {
@@ -393,11 +394,12 @@ export function ClientesPage() {
                 }
                 setIsCreateModalOpen(true)
               }}
-              className="px-4 py-2 text-sm font-medium text-white bg-primary-600 border border-primary-600 rounded-md hover:bg-primary-700 flex items-center gap-2"
+              className="flex items-center gap-2"
+              variant="primary"
             >
               <Plus className="h-4 w-4" />
               <span className="hidden lg:inline">Novo Cliente</span>
-            </button>
+            </PlanoAtivoButton>
           </div>
 
           {/* Mobile View Toggle */}
@@ -586,18 +588,22 @@ export function ClientesPage() {
                             >
                               <Eye className="h-4 w-4" />
                             </button>
-                            <button
+                            <PlanoAtivoButton
                               onClick={() => openEditModal(cliente)}
                               className="p-2 text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-gray-100 dark:hover:bg-gray-600 rounded"
+                              variant="secondary"
+                              size="sm"
                             >
                               <Edit className="h-4 w-4" />
-                            </button>
-                            <button
+                            </PlanoAtivoButton>
+                            <PlanoAtivoButton
                               onClick={() => openDeleteDialog(cliente)}
                               className="p-2 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-600 rounded"
+                              variant="danger"
+                              size="sm"
                             >
                               <Trash2 className="h-4 w-4" />
-                            </button>
+                            </PlanoAtivoButton>
                           </div>
                         </div>
                       </div>
@@ -1227,16 +1233,16 @@ export function ClientesPage() {
             >
               Fechar
             </Button>
-            <Button 
-              type="button" 
+            <PlanoAtivoButton 
               onClick={() => {
                 setIsDetailModalOpen(false)
                 openEditModal(selectedCliente)
               }}
+              variant="primary"
             >
               <Edit className="mr-2 h-4 w-4" />
-              Editar Cliente
-            </Button>
+              Editar
+            </PlanoAtivoButton>
           </DialogFooter>
         </DialogContent>
       </Dialog>

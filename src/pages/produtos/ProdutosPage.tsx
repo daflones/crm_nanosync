@@ -22,6 +22,7 @@ import { useProdutos, useCreateProduto, useUpdateProduto, useDeleteProduto } fro
 import { useCategorias } from '@/hooks/useCategorias'
 import { useSegmentos } from '@/hooks/useSegmentos'
 import { useIsAdmin } from '@/hooks/useAuth'
+import { PlanoAtivoButton } from '@/components/PlanoAtivoGuard'
 import { storageService } from '@/services/storage'
 import { toast } from 'sonner'
 import { useNotifications } from '@/contexts/NotificationContext'
@@ -322,10 +323,10 @@ export function ProdutosPage() {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Produtos</h1>
         {isAdmin && (
-          <Button onClick={() => setIsCreateModalOpen(true)}>
+          <PlanoAtivoButton onClick={() => setIsCreateModalOpen(true)} variant="primary">
             <Plus className="w-4 h-4 mr-2" />
             Novo Produto
-          </Button>
+          </PlanoAtivoButton>
         )}
       </div>
 
@@ -568,10 +569,10 @@ export function ProdutosPage() {
                 : 'Comece criando seu primeiro produto.'}
             </p>
             {isAdmin && (
-              <Button onClick={() => setIsCreateModalOpen(true)}>
+              <PlanoAtivoButton onClick={() => setIsCreateModalOpen(true)} variant="primary">
                 <Plus className="w-4 h-4 mr-2" />
                 Novo Produto
-              </Button>
+              </PlanoAtivoButton>
             )}
           </CardContent>
         </Card>

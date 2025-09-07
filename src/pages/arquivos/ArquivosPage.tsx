@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
 import { useNotifications } from '@/contexts/NotificationContext'
+import { PlanoAtivoButton } from '@/components/PlanoAtivoGuard'
 import { 
   Upload, 
   Search,
@@ -439,13 +440,14 @@ export function ArquivosPage() {
             Gerencie documentos e arquivos da empresa
           </p>
         </div>
-        <Button 
+        <PlanoAtivoButton 
           onClick={openUploadModal}
           className="bg-primary-600 hover:bg-primary-700"
+          variant="primary"
         >
           <Upload className="mr-2 h-4 w-4" />
           Upload
-        </Button>
+        </PlanoAtivoButton>
       </div>
 
       {/* Stats */}
@@ -554,13 +556,14 @@ export function ArquivosPage() {
             <List className="h-4 w-4" />
           </Button>
           {selectedCategory !== 'todos' && (
-            <Button 
+            <PlanoAtivoButton 
               onClick={openUploadModal}
               className="bg-primary-600 hover:bg-primary-700"
+              variant="primary"
             >
               <Plus className="mr-2 h-4 w-4" />
               Upload
-            </Button>
+            </PlanoAtivoButton>
           )}
         </div>
       </div>
@@ -585,14 +588,14 @@ export function ArquivosPage() {
                 Nenhum arquivo encontrado
               </p>
               {selectedCategory !== 'todos' && (
-                <Button 
+                <PlanoAtivoButton 
                   onClick={openUploadModal}
                   className="mt-4"
-                  variant="outline"
+                  variant="secondary"
                 >
                   <Upload className="mr-2 h-4 w-4" />
                   Fazer upload do primeiro arquivo
-                </Button>
+                </PlanoAtivoButton>
               )}
             </div>
           ) : null}

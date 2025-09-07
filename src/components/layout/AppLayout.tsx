@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
 import { Outlet, Navigate, useLocation } from 'react-router-dom'
-import { useAuthStore } from '@/stores/authStore'
 import { Sidebar } from './Sidebar'
 import { Header } from './Header'
-import { MobileNav } from './MobileNav'
+import { PlanoExpiracaoAviso } from '../PlanoExpiracaoAviso'
 import { NotificationCenter } from '@/components/notifications/NotificationCenter'
+import { SubscriptionNotifications } from '@/components/SubscriptionNotifications'
 import { Loader2 } from 'lucide-react'
+import { useAuthStore } from '@/stores/authStore'
+import { MobileNav } from './MobileNav'
 
 export function AppLayout() {
   const { user, loading, initialized, checkAuth } = useAuthStore()
@@ -54,6 +56,7 @@ export function AppLayout() {
         
         <main className="flex-1 w-full h-full overflow-y-auto bg-gray-50 dark:bg-gray-900">
           <div className="w-full h-full px-4 sm:px-6 lg:px-8 py-6 max-w-full overflow-x-hidden">
+            <PlanoExpiracaoAviso />
             <Outlet />
           </div>
         </main>
@@ -67,6 +70,9 @@ export function AppLayout() {
         open={notificationCenterOpen} 
         onOpenChange={setNotificationCenterOpen} 
       />
+      
+      {/* Subscription Notifications */}
+      <SubscriptionNotifications />
     </div>
   )
 }

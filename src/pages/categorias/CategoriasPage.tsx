@@ -3,17 +3,20 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { 
   Plus, 
   Search,
   Tag,
   Edit,
   Trash2,
-  Eye,
   Package,
+  Eye
+} from 'lucide-react'
+import { PlanoAtivoButton } from '@/components/PlanoAtivoGuard'
+import { 
   Layers,
   Hash,
   Palette,
@@ -162,13 +165,14 @@ export function CategoriasPage() {
             Organize seus produtos em categorias
           </p>
         </div>
-        <Button 
+        <PlanoAtivoButton
           onClick={() => setIsCreateModalOpen(true)}
           className="bg-primary-600 hover:bg-primary-700"
+          variant="primary"
         >
           <Plus className="mr-2 h-4 w-4" />
           Nova Categoria
-        </Button>
+        </PlanoAtivoButton>
       </div>
 
       {/* Stats */}

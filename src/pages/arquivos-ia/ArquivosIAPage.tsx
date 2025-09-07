@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useNotifications } from '@/contexts/NotificationContext'
+import { PlanoAtivoButton } from '@/components/PlanoAtivoGuard'
 import { cn } from '../../lib/utils'
 import { useArquivosIA, useUploadArquivoIA, useDeleteArquivoIA, useUpdateArquivoIA } from '../../hooks/useArquivosIA'
 import { useClientes } from '../../hooks/useClientes'
@@ -273,10 +274,10 @@ export default function ArquivosIAPage() {
             Gerencie arquivos específicos para uso da inteligência artificial
           </p>
         </div>
-        <Button onClick={() => setIsUploadModalOpen(true)}>
+        <PlanoAtivoButton onClick={() => setIsUploadModalOpen(true)} variant="primary">
           <Plus className="h-4 w-4 mr-2" />
           Adicionar Arquivo
-        </Button>
+        </PlanoAtivoButton>
       </div>
 
       {/* Filters and Search */}
@@ -368,10 +369,10 @@ export default function ArquivosIAPage() {
       ) : filteredArquivos.length === 0 ? (
         <div className="text-center py-8">
           <div className="text-muted-foreground mb-2">Nenhum arquivo encontrado</div>
-          <Button onClick={() => setIsUploadModalOpen(true)} variant="outline">
+          <PlanoAtivoButton onClick={() => setIsUploadModalOpen(true)} variant="secondary">
             <Plus className="h-4 w-4 mr-2" />
             Adicionar primeiro arquivo
-          </Button>
+          </PlanoAtivoButton>
         </div>
       ) : (
         <div className={cn(

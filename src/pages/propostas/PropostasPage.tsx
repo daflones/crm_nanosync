@@ -24,6 +24,7 @@ import { usePropostas, useCreateProposta, useUpdateProposta, useDeleteProposta }
 import { useClientes } from '@/hooks/useClientes'
 import { useVendedores } from '@/hooks/useVendedores'
 import { useProdutos } from '@/hooks/useProdutos'
+import { PlanoAtivoButton } from '@/components/PlanoAtivoGuard'
 import { type PropostaCreateData } from '@/services/api/propostas'
 import { toast } from 'sonner'
 import { useNotifications } from '@/contexts/NotificationContext'
@@ -229,16 +230,16 @@ export function PropostasPage() {
             Gerencie suas propostas e negociações
           </p>
         </div>
-        <Button 
+        <PlanoAtivoButton
           className="bg-primary-600 hover:bg-primary-700"
+          variant="primary"
           onClick={() => {
-            setNewProposta(initialPropostaState)
             setIsCreateModalOpen(true)
           }}
         >
           <Plus className="mr-2 h-4 w-4" />
           Nova Proposta
-        </Button>
+        </PlanoAtivoButton>
       </div>
 
       {/* Stats */}

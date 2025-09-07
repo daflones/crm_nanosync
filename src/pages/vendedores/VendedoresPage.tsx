@@ -9,6 +9,7 @@ import { VendedorCard } from '@/components/VendedorCard'
 import { VendedorDetailedView } from '@/components/VendedorDetailedView'
 import { useVendedores, useCreateVendedor, useUpdateVendedor, useDeleteVendedor } from '@/hooks/useVendedores'
 import { useNotifications } from '@/contexts/NotificationContext'
+import { PlanoAtivoButton } from '@/components/PlanoAtivoGuard'
 import type { Vendedor } from '@/services/api/vendedores'
 import { toast } from 'sonner'
 
@@ -229,10 +230,10 @@ export default function VendedoresPage() {
             Gerencie sua equipe de vendas e acompanhe o desempenho
           </p>
         </div>
-        <Button onClick={() => setIsCreateModalOpen(true)} className="bg-primary-600 hover:bg-primary-700">
+        <PlanoAtivoButton onClick={() => setIsCreateModalOpen(true)} className="bg-primary-600 hover:bg-primary-700" variant="primary">
           <Plus className="mr-2 h-4 w-4" />
           Novo Vendedor
-        </Button>
+        </PlanoAtivoButton>
       </div>
 
       {/* Stats Cards */}

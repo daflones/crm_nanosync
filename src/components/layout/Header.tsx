@@ -70,7 +70,7 @@ export function Header({ onMenuClick, onNotificationCenterOpen }: HeaderProps) {
         <NotificationButton onOpenCenter={onNotificationCenterOpen} />
 
         {/* Profile */}
-        <Link to="/perfil">
+        <Link to="/app/configuracoes">
           <Button
             variant="ghost"
             size="icon"

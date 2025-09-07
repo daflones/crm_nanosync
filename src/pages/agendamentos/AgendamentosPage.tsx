@@ -13,6 +13,7 @@ import { vendedoresService, type Vendedor } from '@/services/api/vendedores'
 import { AgendamentoForm } from '@/components/agendamentos/AgendamentoForm'
 import { toast } from 'sonner'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
+import { PlanoAtivoButton } from '@/components/PlanoAtivoGuard'
 import { validateAgendamentoDelete } from '@/middleware/agendamentosValidation'
 import { filterAgendamentosByUser, canUserModifyAgendamento } from '@/utils/agendamentosFilters'
 
@@ -360,10 +361,10 @@ export function AgendamentosPage() {
           <div className="sm:hidden">
             <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
               <DialogTrigger asChild>
-                <Button className="w-full">
+                <PlanoAtivoButton className="w-full" variant="primary">
                   <Plus className="mr-2 h-4 w-4" />
                   Novo Agendamento
-                </Button>
+                </PlanoAtivoButton>
               </DialogTrigger>
               <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
@@ -404,10 +405,10 @@ export function AgendamentosPage() {
             {/* New Appointment Button */}
             <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
               <DialogTrigger asChild>
-                <Button>
+                <PlanoAtivoButton variant="primary">
                   <Plus className="mr-2 h-4 w-4" />
                   <span className="hidden lg:inline">Novo Agendamento</span>
-                </Button>
+                </PlanoAtivoButton>
               </DialogTrigger>
               <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>

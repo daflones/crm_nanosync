@@ -9,6 +9,12 @@ export function useAutoRefreshOnFocus() {
     console.log('useAutoRefreshOnFocus: Hook inicializado')
     
     const handleVisibilityChange = () => {
+      // Desativar autorefresh na página de planos para evitar erros
+      if (window.location.pathname.includes('/planos')) {
+        console.log('AutoRefresh desativado na página Planos')
+        return
+      }
+      
       console.log('Visibility change detectado:', {
         hidden: document.hidden,
         wasHidden: wasHiddenRef.current
