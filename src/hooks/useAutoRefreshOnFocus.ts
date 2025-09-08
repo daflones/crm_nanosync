@@ -1,12 +1,22 @@
 import { useEffect, useRef } from 'react'
-import { useQueryClient } from '@tanstack/react-query'
+import { useAuthStore } from '@/stores/authStore'
 
 export function useAutoRefreshOnFocus() {
-  const queryClient = useQueryClient()
   const wasHiddenRef = useRef(false)
+  const refreshUser = useAuthStore(state => state.refreshUser)
 
   useEffect(() => {
     console.log('useAutoRefreshOnFocus: Hook inicializado')
+    
+    // Função para atualizar dados do usuário quando voltar para a aba
+    const refreshUserData = async () => {
+      try {
+        console.log('Refreshing user data after tab focus...')
+        await refreshUser()
+      } catch (error) {
+        console.error('Erro ao atualizar dados do usuário:', error)
+      }
+    }
     
     const handleVisibilityChange = () => {
       // Páginas onde o autorefresh deve ser desativado
@@ -45,27 +55,26 @@ export function useAutoRefreshOnFocus() {
         wasHiddenRef.current = true
       } else if (wasHiddenRef.current) {
         // Usuário voltou para a aba após ter saído
-        console.log('Usuário voltou para a aba - iniciando refresh')
+        console.log('Usuário voltou para a aba - validando sessão')
         wasHiddenRef.current = false
         
-        // Fazer refresh imediato e forçar reload da página
-        console.log('Forçando reload completo da página...')
-        window.location.reload()
+        // Atualizar dados do usuário
+        refreshUserData()
         
-        console.log('Reload da página executado')
+        console.log('Validação de sessão executada')
       } else {
         console.log('Aba ficou visível mas não estava hidden antes - sem ação')
       }
     }
 
     // Adicionar listener para mudanças de visibilidade
-    document.addEventListener('visibilitychange', handleVisibilityChange)
+    document.addEventListener('visibilitychange', handleVisibilityChange, true)
     
     // Cleanup
     return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      document.removeEventListener('visibilitychange', handleVisibilityChange, true)
     }
-  }, [queryClient])
+  }, [refreshUser])
 
   return {
     isVisible: !document.hidden,

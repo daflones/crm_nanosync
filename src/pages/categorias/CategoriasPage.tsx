@@ -217,6 +217,32 @@ export function CategoriasPage() {
         <div className="text-center py-8">
           <p className="text-gray-500">Carregando categorias...</p>
         </div>
+      ) : categorias.length === 0 ? (
+        <div className="w-full flex justify-center items-center py-16">
+          <Card className="max-w-md w-full text-center border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-primary-400 dark:hover:border-primary-500 transition-colors duration-200">
+            <CardHeader className="pb-4">
+              <div className="mx-auto w-16 h-16 bg-primary-100 dark:bg-primary-900/20 rounded-full flex items-center justify-center mb-4">
+                <Tag className="h-8 w-8 text-primary-600 dark:text-primary-400" />
+              </div>
+              <CardTitle className="text-xl text-gray-900 dark:text-white">
+                Nenhuma categoria encontrada
+              </CardTitle>
+              <CardDescription className="text-gray-600 dark:text-gray-400">
+                Crie sua primeira categoria para organizar seus produtos
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <PlanoAtivoButton
+                onClick={() => setIsCreateModalOpen(true)}
+                className="w-full bg-primary-600 hover:bg-primary-700"
+                variant="primary"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Criar primeira categoria
+              </PlanoAtivoButton>
+            </CardContent>
+          </Card>
+        </div>
       ) : (
         <div className="w-full grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6">
           {categorias
@@ -363,7 +389,6 @@ export function CategoriasPage() {
             const result = await createCategoria.mutateAsync(newCategoria)
             setIsCreateModalOpen(false)
             setNewCategoria(initialCategoriaState)
-            toast.success('Categoria criada com sucesso!')
             
             // Criar notificação no banco
             await createDatabaseNotification({
@@ -390,7 +415,6 @@ export function CategoriasPage() {
             setIsEditModalOpen(false)
             setSelectedCategoria(null)
             setEditCategoria(initialCategoriaState)
-            toast.success('Categoria atualizada com sucesso!')
             
             // Criar notificação no banco
             await createDatabaseNotification({
@@ -412,7 +436,6 @@ export function CategoriasPage() {
             deleteCategoria.mutate(categoriaToDelete, {
               onSuccess: () => {
                 setCategoriaToDelete(null)
-                toast.success('Categoria excluída com sucesso!')
               },
               onError: () => {
                 toast.error('Erro ao excluir categoria')

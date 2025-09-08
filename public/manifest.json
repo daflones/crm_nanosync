@@ -1,0 +1,91 @@
+{
+  "name": "NanoSync CRM - Automação com IA WhatsApp Integrada",
+  "short_name": "NanoSync CRM",
+  "description": "Plataforma de CRM com automação inteligente via WhatsApp. Capture leads 24h por dia com IA avançada",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#25D366",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "pt-BR",
+  "categories": ["business", "productivity", "sales"],
+  "icons": [
+    {
+      "src": "/Logo.ico",
+      "sizes": "16x16 32x32 48x48",
+      "type": "image/x-icon",
+      "purpose": "any"
+    },
+    {
+      "src": "/LogoNanoSyncBranca.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/LogoNanoSyncBranca.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/LogoNanoSyncBranca.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "description": "Acesso rápido ao dashboard",
+      "url": "/app/dashboard",
+      "icons": [
+        {
+          "src": "/LogoNanoSyncBranca.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "WhatsApp",
+      "short_name": "WhatsApp",
+      "description": "Gerenciar automação WhatsApp",
+      "url": "/app/whatsapp",
+      "icons": [
+        {
+          "src": "/LogoNanoSyncBranca.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Leads",
+      "short_name": "Leads",
+      "description": "Capturar e gerenciar leads",
+      "url": "/app/clientes",
+      "icons": [
+        {
+          "src": "/LogoNanoSyncBranca.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Propostas",
+      "short_name": "Propostas",
+      "description": "Gerenciar propostas e vendas",
+      "url": "/app/propostas",
+      "icons": [
+        {
+          "src": "/LogoNanoSyncBranca.png",
+          "sizes": "96x96"
+        }
+      ]
+    }
+  ]
+}

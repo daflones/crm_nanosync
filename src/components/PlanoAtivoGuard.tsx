@@ -61,23 +61,23 @@ export function PlanoAtivoGuard({
 }
 
 // Componente para desabilitar botões quando plano não está ativo
-interface PlanoAtivoButtonProps {
-  children: React.ReactNode;
-  className?: string;
-  onClick?: () => void;
-  disabled?: boolean;
+interface PlanoAtivoButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'danger';
   size?: 'sm' | 'md' | 'lg';
 }
 
-export function PlanoAtivoButton({ 
-  children, 
-  className = '', 
-  onClick, 
-  disabled = false,
-  variant = 'primary',
-  size = 'md'
-}: PlanoAtivoButtonProps) {
+export const PlanoAtivoButton = React.forwardRef<HTMLButtonElement, PlanoAtivoButtonProps>(function PlanoAtivoButton(
+  { 
+    children,
+    className = '',
+    disabled = false,
+    variant = 'primary',
+    size = 'md',
+    onClick,
+    ...rest
+  },
+  ref
+) {
   const { planoAtivo } = usePlanoAtivo();
 
   // Se o plano está ativo, renderizar botão normal
@@ -105,9 +105,11 @@ export function PlanoAtivoButton({
 
     return (
       <button
+        ref={ref}
         className={buttonClasses}
         onClick={onClick}
         disabled={disabled}
+        {...rest}
       >
         {children}
       </button>
@@ -137,16 +139,18 @@ export function PlanoAtivoButton({
 
   return (
     <button
+      ref={ref}
       className={buttonClasses}
       onClick={handleClick}
       disabled={true}
       title="Plano ativo necessário"
+      {...rest}
     >
       <Lock className="h-4 w-4 mr-1" />
       {children}
     </button>
   );
-}
+});
 
 // Hook para verificar se uma ação pode ser executada
 export function usePlanoAtivoAction() {

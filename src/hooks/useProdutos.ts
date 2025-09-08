@@ -48,7 +48,7 @@ export const useCreateProduto = () => {
       // Immediately refetch data for real-time updates
       queryClient.invalidateQueries({ queryKey: ['produtos'] })
       queryClient.refetchQueries({ queryKey: ['produtos'] })
-      // Toast will be handled by the component
+      toast.success('Produto criado com sucesso!')
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Erro ao criar produto')
@@ -68,7 +68,7 @@ export const useUpdateProduto = () => {
       // Immediately refetch data for real-time updates
       queryClient.invalidateQueries({ queryKey: ['produtos'] })
       queryClient.refetchQueries({ queryKey: ['produtos'] })
-      // Toast will be handled by the component
+      toast.success('Produto atualizado com sucesso!')
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Erro ao atualizar produto')
@@ -87,7 +87,7 @@ export const useDeleteProduto = () => {
       // Immediately refetch data for real-time updates
       queryClient.invalidateQueries({ queryKey: ['produtos'] })
       queryClient.refetchQueries({ queryKey: ['produtos'] })
-      // Toast will be handled by the component
+      toast.success('Produto excluído com sucesso!')
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Erro ao excluir produto')

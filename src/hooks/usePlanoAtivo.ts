@@ -100,7 +100,7 @@ export function usePlanoAtivo(): PlanoAtivoHook {
           table: 'profiles',
           filter: `id=eq.${user.id}`
         },
-        (payload) => {
+        (payload: any) => {
           console.log('Atualização do plano recebida:', payload);
           if (payload.new && typeof payload.new.plano_ativo === 'boolean') {
             const isActive = payload.new.plano_ativo;

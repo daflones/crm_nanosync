@@ -75,7 +75,7 @@ export const useUploadArquivoIA = () => {
     mutationFn: ({ file, data }: { file: File; data: CreateArquivoIAData }) =>
       uploadArquivoIA(file, data),
     onSuccess: () => {
-      // Toast will be handled by the component
+      toast.success('Arquivo IA enviado com sucesso!')
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.arquivosIA })
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.categoryStats })
     },
@@ -96,7 +96,7 @@ export const useUpdateArquivoIA = () => {
     mutationFn: ({ id, data }: { id: string; data: UpdateArquivoIAData }) =>
       updateArquivoIA(id, data),
     onSuccess: (updatedArquivo) => {
-      // Toast will be handled by the component
+      toast.success('Arquivo IA atualizado com sucesso!')
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.arquivosIA })
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.arquivoIA(updatedArquivo.id) })
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.categoryStats })
@@ -117,7 +117,7 @@ export const useDeleteArquivoIA = () => {
   return useMutation({
     mutationFn: deleteArquivoIA,
     onSuccess: () => {
-      // Toast will be handled by the component
+      toast.success('Arquivo IA excluído com sucesso!')
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.arquivosIA })
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.categoryStats })
     },

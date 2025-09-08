@@ -84,7 +84,7 @@ export function usePaymentStatus(): PaymentStatusHook {
               table: 'pagamentos',
               filter: `mercadopago_payment_id=eq.${paymentId}`
             },
-            (payload) => {
+            (payload: any) => {
               console.log('Atualização recebida via Realtime:', payload);
               
               if (payload.new) {
@@ -201,7 +201,7 @@ export function usePaymentStatus(): PaymentStatusHook {
           table: 'pagamentos',
           filter: `mercadopago_payment_id=eq.${paymentId}`
         },
-        (payload) => {
+        (payload: any) => {
           console.log('Atualização recebida via Realtime:', payload);
           
           if (payload.new) {
@@ -246,7 +246,7 @@ export function usePaymentStatus(): PaymentStatusHook {
           table: 'pagamentos',
           filter: `user_id=eq.${user.id}`
         },
-        (payload) => {
+        (payload: any) => {
           console.log('Pagamento atualizado via realtime:', payload);
           const updatedPayment = payload.new;
           setPayment({

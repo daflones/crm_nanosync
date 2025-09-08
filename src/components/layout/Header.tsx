@@ -3,11 +3,14 @@ import {
   Menu,
   Sun,
   Moon,
-  User
+  User,
+  CreditCard
 } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { NotificationButton } from '@/components/notifications/NotificationButton'
+import { useSubscriptionStatus } from '@/hooks/useSubscriptionStatus'
+import { useCurrentUser } from '@/hooks/useCurrentUser'
 
 interface HeaderProps {
   onMenuClick: () => void
@@ -16,6 +19,9 @@ interface HeaderProps {
 
 export function Header({ onMenuClick, onNotificationCenterOpen }: HeaderProps) {
   const [isDark, setIsDark] = useState(false)
+  const navigate = useNavigate()
+  const { data: user } = useCurrentUser()
+  const { isActive, status, daysRemaining } = useSubscriptionStatus()
 
   useEffect(() => {
     const isDarkMode = document.documentElement.classList.contains('dark')
@@ -32,6 +38,33 @@ export function Header({ onMenuClick, onNotificationCenterOpen }: HeaderProps) {
     } else {
       document.documentElement.classList.remove('dark')
       localStorage.setItem('theme', 'light')
+    }
+  }
+
+  // Determinar se deve mostrar botão de assinatura
+  const shouldShowSubscriptionButton = () => {
+    if (!user) return false
+    
+    // Mostrar se nunca assinou (status inactive) ou se expirou
+    return status === 'inactive' || status === 'expired' || (!isActive && daysRemaining !== null && daysRemaining < 0)
+  }
+
+  // Determinar texto do botão
+  const getSubscriptionButtonText = () => {
+    if (status === 'expired' || (!isActive && daysRemaining !== null && daysRemaining < 0)) {
+      return 'Renovar'
+    }
+    return 'Assinar'
+  }
+
+  // Determinar para onde navegar
+  const handleSubscriptionClick = () => {
+    // Se é renovação (já teve assinatura), vai direto para planos
+    if (status === 'expired' || (!isActive && daysRemaining !== null && daysRemaining < 0)) {
+      navigate('/planos')
+    } else {
+      // Se nunca assinou, vai para página de planos para ver primeiro
+      navigate('/planos')
     }
   }
 
@@ -52,6 +85,18 @@ export function Header({ onMenuClick, onNotificationCenterOpen }: HeaderProps) {
 
       {/* Actions */}
       <div className="flex items-center space-x-2">
+        {/* Subscription Button - Only on mobile when needed */}
+        {shouldShowSubscriptionButton() && (
+          <Button
+            onClick={handleSubscriptionClick}
+            size="sm"
+            className="lg:hidden bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 text-xs"
+          >
+            <CreditCard className="h-3 w-3 mr-1" />
+            {getSubscriptionButtonText()}
+          </Button>
+        )}
+
         {/* Theme Toggle */}
         <Button
           variant="ghost"

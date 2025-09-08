@@ -96,7 +96,6 @@ export default function VendedoresPage() {
         }
       })
 
-      toast.success('Vendedor criado com sucesso!')
       setIsCreateModalOpen(false)
       resetForm()
     } catch (error) {

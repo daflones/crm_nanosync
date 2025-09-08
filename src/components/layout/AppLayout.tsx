@@ -10,16 +10,16 @@ import { useAuthStore } from '@/stores/authStore'
 import { MobileNav } from './MobileNav'
 
 export function AppLayout() {
-  const { user, loading, initialized, checkAuth } = useAuthStore()
+  const { user, loading, initialized, initializeAuth } = useAuthStore()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [notificationCenterOpen, setNotificationCenterOpen] = useState(false)
   const location = useLocation()
 
   useEffect(() => {
     if (!initialized) {
-      checkAuth()
+      initializeAuth()
     }
-  }, [checkAuth, initialized])
+  }, [initializeAuth, initialized])
 
   useEffect(() => {
     // Fechar sidebar mobile ao mudar de rota

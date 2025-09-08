@@ -41,7 +41,7 @@ export const useCreateAgendamento = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['agendamentos'] })
       queryClient.refetchQueries({ queryKey: ['agendamentos'] })
-      // Toast will be handled by the component
+      toast.success('Agendamento criado com sucesso!')
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Erro ao criar agendamento')
@@ -59,7 +59,7 @@ export const useUpdateAgendamento = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['agendamentos'] })
       queryClient.refetchQueries({ queryKey: ['agendamentos'] })
-      // Toast will be handled by the component
+      toast.success('Agendamento atualizado com sucesso!')
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Erro ao atualizar agendamento')
@@ -76,7 +76,7 @@ export const useDeleteAgendamento = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['agendamentos'] })
       queryClient.refetchQueries({ queryKey: ['agendamentos'] })
-      // Toast will be handled by the component
+      toast.success('Agendamento excluído com sucesso!')
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Erro ao excluir agendamento')

@@ -168,7 +168,6 @@ export function ClientesPage() {
       const result = await createCliente.mutateAsync(cleanedData as any)
       setIsCreateModalOpen(false)
       reset()
-      toast.success('Cliente criado com sucesso!')
       
       // Criar notificação no banco
       await createDatabaseNotification({
@@ -203,7 +202,6 @@ export function ClientesPage() {
       setIsEditModalOpen(false)
       setSelectedCliente(null)
       reset()
-      toast.success('Cliente atualizado com sucesso!')
       
       // Criar notificação no banco
       await createDatabaseNotification({
@@ -298,7 +296,6 @@ export function ClientesPage() {
       await deleteCliente.mutateAsync(selectedCliente.id)
       setIsDeleteDialogOpen(false)
       setSelectedCliente(null)
-      toast.success('Cliente excluído com sucesso!')
     } catch (error) {
       console.error('Erro ao deletar cliente:', error)
       toast.error('Erro ao excluir cliente')

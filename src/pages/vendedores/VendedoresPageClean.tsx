@@ -92,7 +92,6 @@ export default function VendedoresPage() {
         }
       })
 
-      toast.success('Vendedor criado com sucesso!')
       setIsCreateModalOpen(false)
       resetForm()
     } catch (error) {
@@ -151,7 +150,6 @@ export default function VendedoresPage() {
         }
       })
 
-      toast.success('Vendedor atualizado com sucesso!')
       setIsEditModalOpen(false)
       setSelectedVendedor(null)
       resetForm()

@@ -85,7 +85,7 @@ export function usePaymentStatus(): PaymentStatusHook {
           table: 'profiles',
           filter: `id=eq.${user.id}`
         },
-        (payload) => {
+        (payload: any) => {
           console.log('📡 Atualização recebida na tabela profiles:', payload);
           
           if (payload.new && payload.new.plano_ativo === true) {

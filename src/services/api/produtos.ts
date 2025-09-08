@@ -156,15 +156,15 @@ export const produtosService = {
 
     const stats = {
       total: data.length,
-      ativos: data.filter(p => p.status === 'ativo').length,
-      inativos: data.filter(p => p.status === 'inativo').length,
-      baixo_estoque: data.filter(p => 
+      ativos: data.filter((p: any) => p.status === 'ativo').length,
+      inativos: data.filter((p: any) => p.status === 'inativo').length,
+      baixo_estoque: data.filter((p: any) => 
         p.controla_estoque && 
         p.estoque_atual !== null && 
         p.estoque_minimo !== null && 
         p.estoque_atual <= p.estoque_minimo
       ).length,
-      valor_total_estoque: data.reduce((total, p) => 
+      valor_total_estoque: data.reduce((total: number, p: any) => 
         total + ((p.estoque_atual || 0) * (p.valor_unitario || 0)), 0
       )
     }

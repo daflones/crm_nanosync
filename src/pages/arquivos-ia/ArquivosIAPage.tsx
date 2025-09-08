@@ -146,7 +146,6 @@ export default function ArquivosIAPage() {
           disponivel_ia: editData.disponivel_ia
         }
       })
-      toast.success('Arquivo atualizado com sucesso!')
       
       // Criar notificação no banco
       await createDatabaseNotification({
@@ -180,7 +179,6 @@ export default function ArquivosIAPage() {
     
     try {
       await deleteMutation.mutateAsync(selectedArquivo.id)
-      toast.success('Arquivo excluído com sucesso!')
       
       // Criar notificação no banco
       await createDatabaseNotification({
@@ -232,7 +230,6 @@ export default function ArquivosIAPage() {
 
     try {
       await uploadMutation.mutateAsync({ file: selectedFile, data: completeData })
-      toast.success('Arquivo enviado com sucesso!')
       
       // Criar notificação no banco
       await createDatabaseNotification({

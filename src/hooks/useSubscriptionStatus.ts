@@ -183,7 +183,7 @@ export function useSubscriptionStatus(): SubscriptionStatus {
           table: 'profiles',
           filter: `id=eq.${user.id}`,
         },
-        (payload) => {
+        (payload: any) => {
           console.log('Mudança detectada no plano:', payload);
           checkSubscriptionStatus();
         }

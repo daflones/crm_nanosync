@@ -210,15 +210,15 @@ export const arquivosService = {
     }
 
     const totalFiles = files?.length || 0
-    const totalSize = files?.reduce((sum, file) => sum + (file.tamanho || 0), 0) || 0
+    const totalSize = files?.reduce((sum: number, file: any) => sum + (file.tamanho || 0), 0) || 0
     
-    const categoryCounts = files?.reduce((acc, file) => {
+    const categoryCounts = files?.reduce((acc: any, file: any) => {
       acc[file.categoria as CategoriaArquivo] = (acc[file.categoria as CategoriaArquivo] || 0) + 1
       return acc
     }, {} as Record<CategoriaArquivo, number>) || {} as Record<CategoriaArquivo, number>
 
     const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
-    const recentFiles = files?.filter(file => file.created_at > oneDayAgo).length || 0
+    const recentFiles = files?.filter((file: any) => file.created_at > oneDayAgo).length || 0
 
     return {
       totalFiles,

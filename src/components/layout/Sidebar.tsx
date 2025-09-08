@@ -135,6 +135,9 @@ export function Sidebar() {
     // Filtrar por permissão de admin
     if (item.adminOnly && !isAdmin) return false
     
+    // Ocultar página Planos para vendedores (só admins podem ver)
+    if (item.href === '/planos' && user?.role === 'vendedor') return false
+    
     // Ocultar página Planos se o usuário já tem plano ativo OU ainda está carregando
     if (item.href === '/planos' && (planoAtivo || planoLoading)) return false
     

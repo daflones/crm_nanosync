@@ -21,7 +21,7 @@ export function useClientes(options: UseClientesOptions = {}) {
     queryFn: () => clientesService.getAll(options),
     staleTime: 1000 * 30, // 30 seconds for real-time updates
     refetchInterval: 1000 * 60, // Refetch every minute
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: true, // Habilitado - React Query nativo gerencia refresh
     refetchOnReconnect: true,
   })
 
@@ -50,7 +50,7 @@ export function useCliente(id: string) {
     queryFn: () => clientesService.getById(id),
     enabled: !!id,
     staleTime: 1000 * 30, // 30 seconds for real-time updates
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: true, // Habilitado - React Query nativo gerencia refresh
     refetchOnReconnect: true,
   })
 }
@@ -63,7 +63,7 @@ export function useCreateCliente() {
     mutationFn: clientesService.create,
     onSuccess: async () => {
       await refreshAfterMutation('cliente', 'create')
-      // Toast will be handled by the component
+      toast.success('Cliente criado com sucesso!')
     },
     onError: (error: Error) => {
       toast.error(`Erro ao criar cliente: ${error.message}`)
@@ -81,7 +81,7 @@ export function useUpdateCliente() {
       clientesService.update(id, data),
     onSuccess: async () => {
       await refreshAfterMutation('cliente', 'update')
-      // Toast will be handled by the component
+      toast.success('Cliente atualizado com sucesso!')
     },
     onError: (error: Error) => {
       toast.error(`Erro ao atualizar cliente: ${error.message}`)
@@ -98,7 +98,7 @@ export function useDeleteCliente() {
     mutationFn: clientesService.delete,
     onSuccess: async () => {
       await refreshAfterMutation('cliente', 'delete')
-      // Toast will be handled by the component
+      toast.success('Cliente excluído com sucesso!')
     },
     onError: (error: Error) => {
       toast.error(`Erro ao remover cliente: ${error.message}`)

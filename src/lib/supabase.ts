@@ -1,24 +1,31 @@
 import { createClient } from '@supabase/supabase-js'
 
 // Configuração do Supabase - Substituir com suas credenciais
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://your-project.supabase.co'
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'your-anon-key'
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error('Missing Supabase environment variables. Please check your .env file.')
+}
+
+const globalAny = globalThis as any
+
+export const supabase = globalAny.__supabase ?? (globalAny.__supabase = createClient(supabaseUrl, supabaseAnonKey, {
   db: {
     schema: 'public'
   },
   auth: {
     autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: true
+    detectSessionInUrl: true,
+    storageKey: 'sb-public'
   },
   global: {
     headers: {
       'Accept': 'application/json'
     }
   }
-})
+}))
 
 // Tipos do banco de dados
 export interface Profile {

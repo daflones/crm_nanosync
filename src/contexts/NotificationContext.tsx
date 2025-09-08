@@ -74,7 +74,7 @@ export function NotificationProvider({ children }: NotificationProviderProps) {
           schema: 'public',
           table: 'notificacoes',
           filter: `user_id=eq.${user.id}`
-        }, (payload) => {
+        }, (payload: any) => {
           const notificacao = payload.new as Notificacao
           const toastType = NotificacaoService.getToastType(notificacao.tipo)
           
@@ -85,7 +85,7 @@ export function NotificationProvider({ children }: NotificationProviderProps) {
             type: toastType,
           })
         })
-        .subscribe((status) => {
+        .subscribe((status: any) => {
           setIsRealTimeConnected(status === 'SUBSCRIBED')
         })
 

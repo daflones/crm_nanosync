@@ -115,7 +115,7 @@ export const useUploadArquivo = () => {
       queryClient.invalidateQueries({ queryKey: ['arquivos-stats'] })
       queryClient.refetchQueries({ queryKey: ['arquivos'] })
       queryClient.refetchQueries({ queryKey: ['arquivos-stats'] })
-      // Remove individual success toast - will be handled in batch by the component
+      toast.success('Arquivo enviado com sucesso!')
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Erro ao enviar arquivo')
@@ -138,7 +138,7 @@ export const useUpdateArquivo = () => {
       queryClient.invalidateQueries({ queryKey: ['arquivos-stats'] })
       queryClient.refetchQueries({ queryKey: ['arquivos'] })
       queryClient.refetchQueries({ queryKey: ['arquivos-stats'] })
-      // Toast will be handled by the component
+      toast.success('Arquivo atualizado com sucesso!')
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Erro ao atualizar arquivo')
@@ -160,7 +160,7 @@ export const useDeleteArquivo = () => {
       queryClient.invalidateQueries({ queryKey: ['arquivos-stats'] })
       queryClient.refetchQueries({ queryKey: ['arquivos'] })
       queryClient.refetchQueries({ queryKey: ['arquivos-stats'] })
-      // Toast will be handled by the component
+      toast.success('Arquivo excluído com sucesso!')
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Erro ao excluir arquivo')

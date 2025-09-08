@@ -219,6 +219,32 @@ export function SegmentosPage() {
         <div className="text-center py-8">
           <p className="text-gray-500">Carregando segmentos...</p>
         </div>
+      ) : segmentos.length === 0 ? (
+        <div className="w-full flex justify-center items-center py-16">
+          <Card className="max-w-md w-full text-center border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-primary-400 dark:hover:border-primary-500 transition-colors duration-200">
+            <CardHeader className="pb-4">
+              <div className="mx-auto w-16 h-16 bg-primary-100 dark:bg-primary-900/20 rounded-full flex items-center justify-center mb-4">
+                <Layers className="h-8 w-8 text-primary-600 dark:text-primary-400" />
+              </div>
+              <CardTitle className="text-xl text-gray-900 dark:text-white">
+                Nenhum segmento encontrado
+              </CardTitle>
+              <CardDescription className="text-gray-600 dark:text-gray-400">
+                Crie seu primeiro segmento para categorizar melhor seus produtos
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <PlanoAtivoButton
+                onClick={() => setIsCreateModalOpen(true)}
+                className="w-full bg-primary-600 hover:bg-primary-700"
+                variant="primary"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Criar primeiro segmento
+              </PlanoAtivoButton>
+            </CardContent>
+          </Card>
+        </div>
       ) : (
         <div className="w-full grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6">
           {segmentos
@@ -559,7 +585,6 @@ export function SegmentosPage() {
                   onSuccess: async (result) => {
                     setIsCreateModalOpen(false)
                     setNewSegmento(initialSegmentoState)
-                    toast.success('Segmento criado com sucesso!')
                     
                     // Criar notificação no banco
                     await createDatabaseNotification({
@@ -882,7 +907,6 @@ export function SegmentosPage() {
                       setIsEditModalOpen(false)
                       setEditSegmento(initialSegmentoState)
                       setSelectedSegmento(null)
-                      toast.success('Segmento atualizado com sucesso!')
                       
                       // Criar notificação no banco
                       await createDatabaseNotification({
@@ -931,7 +955,6 @@ export function SegmentosPage() {
                   deleteSegmento.mutate(segmentoToDelete, {
                     onSuccess: () => {
                       setSegmentoToDelete(null)
-                      toast.success('Segmento excluído com sucesso!')
                     },
                     onError: () => {
                       toast.error('Erro ao excluir segmento')

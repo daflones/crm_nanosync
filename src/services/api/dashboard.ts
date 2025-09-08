@@ -130,35 +130,35 @@ export const getDashboardStats = async (vendedorId?: string | null, isAdmin?: bo
 
     // Calcular estatísticas dos clientes (baseado na página de clientes)
     const totalClientes = clientesData?.length || 0
-    const clientesAtivos = clientesData?.filter(c => 
+    const clientesAtivos = clientesData?.filter((c: any) => 
       !['perdido', 'inativo'].includes(c.etapa_pipeline || '')
     ).length || 0
-    const clientesNovos = clientesData?.filter(c => 
+    const clientesNovos = clientesData?.filter((c: any) => 
       new Date(c.created_at) >= startOfMonth
     ).length || 0
 
     // Calcular estatísticas das propostas (baseado na página de propostas)
-    const propostasAbertas = propostasData?.filter(p => 
+    const propostasAbertas = propostasData?.filter((p: any) => 
       ['rascunho', 'revisao', 'aprovada_interna', 'enviada', 'visualizada', 'em_negociacao'].includes(p.status)
     ).length || 0
     
-    const propostasEnviadas = propostasData?.filter(p => p.status === 'enviada').length || 0
-    const propostasGanhas = propostasData?.filter(p => p.status === 'aprovada').length || 0
-    const propostasPerdidas = propostasData?.filter(p => 
+    const propostasEnviadas = propostasData?.filter((p: any) => p.status === 'enviada').length || 0
+    const propostasGanhas = propostasData?.filter((p: any) => p.status === 'aprovada').length || 0
+    const propostasPerdidas = propostasData?.filter((p: any) => 
       ['rejeitada', 'vencida'].includes(p.status)
     ).length || 0
 
     // Calcular estatísticas dos agendamentos (baseado na página de agendamentos)
-    const agendamentosHoje = agendamentosData?.filter(a => {
+    const agendamentosHoje = agendamentosData?.filter((a: any) => {
       const agendamentoDate = new Date(a.data_inicio)
       return agendamentoDate >= today && agendamentoDate < tomorrow
     }).length || 0
     
-    const agendamentosConfirmados = agendamentosData?.filter(a => a.status === 'confirmado').length || 0
-    const agendamentosPendentes = agendamentosData?.filter(a => a.status === 'agendado').length || 0
+    const agendamentosConfirmados = agendamentosData?.filter((a: any) => a.status === 'confirmado').length || 0
+    const agendamentosPendentes = agendamentosData?.filter((a: any) => a.status === 'agendado').length || 0
 
     // Calcular faturamento mensal (propostas aprovadas no mês atual)
-    const propostasAprovadasMes = propostasData?.filter(p => {
+    const propostasAprovadasMes = propostasData?.filter((p: any) => {
       if (p.status !== 'aprovada') return false
       // Usar data_aprovacao_interna se disponível, senão updated_at
       const dataAprovacao = p.data_aprovacao_interna || p.updated_at
@@ -166,17 +166,17 @@ export const getDashboardStats = async (vendedorId?: string | null, isAdmin?: bo
     }) || []
     
     const faturamentoMensal = propostasAprovadasMes
-      .reduce((sum, p) => sum + (p.valor_total || 0), 0)
+      .reduce((sum: number, p: any) => sum + (p.valor_total || 0), 0)
     
     // Faturamento anual
-    const propostasAprovadasAno = propostasData?.filter(p => {
+    const propostasAprovadasAno = propostasData?.filter((p: any) => {
       if (p.status !== 'aprovada') return false
       const dataAprovacao = p.data_aprovacao_interna || p.updated_at
       return new Date(dataAprovacao) >= startOfYear
     }) || []
     
     const faturamentoAnual = propostasAprovadasAno
-      .reduce((sum, p) => sum + (p.valor_total || 0), 0)
+      .reduce((sum: number, p: any) => sum + (p.valor_total || 0), 0)
 
     const ticketMedio = propostasAprovadasAno.length > 0 
       ? faturamentoAnual / propostasAprovadasAno.length 
@@ -184,11 +184,11 @@ export const getDashboardStats = async (vendedorId?: string | null, isAdmin?: bo
 
     // Calcular estatísticas dos produtos
     const totalProdutos = produtosData?.length || 0
-    const produtosAtivos = produtosData?.filter(p => p.status === 'ativo').length || 0
+    const produtosAtivos = produtosData?.filter((p: any) => p.status === 'ativo').length || 0
 
     // Calcular estatísticas dos vendedores
     const totalVendedores = vendedoresData?.length || 0
-    const vendedoresAtivos = vendedoresData?.filter(v => v.status === 'ativo').length || 0
+    const vendedoresAtivos = vendedoresData?.filter((v: any) => v.status === 'ativo').length || 0
 
     return {
       totalClientes,
@@ -256,7 +256,7 @@ export const getRecentActivities = async (limit: number = 10): Promise<RecentAct
 
     if (!atividadesData) return []
 
-    const activities: RecentActivity[] = atividadesData.map(atividade => {
+    const activities: RecentActivity[] = atividadesData.map((atividade: any) => {
       const usuario = (atividade.profiles as any)?.nome || (atividade.profiles as any)?.email || 'Sistema'
       
       let icone = 'activity'
@@ -337,7 +337,7 @@ export const getRecentActivities = async (limit: number = 10): Promise<RecentAct
     const activities: RecentActivity[] = []
 
     // Adicionar clientes recentes
-    clientesRecentes?.forEach(cliente => {
+    clientesRecentes?.forEach((cliente: any) => {
       activities.push({
         id: `cliente-${cliente.id}`,
         tipo: 'cliente',
@@ -350,7 +350,7 @@ export const getRecentActivities = async (limit: number = 10): Promise<RecentAct
     })
 
     // Adicionar propostas recentes
-    propostasRecentes?.forEach(proposta => {
+    propostasRecentes?.forEach((proposta: any) => {
       activities.push({
         id: `proposta-${proposta.id}`,
         tipo: 'proposta',
@@ -363,7 +363,7 @@ export const getRecentActivities = async (limit: number = 10): Promise<RecentAct
     })
 
     // Adicionar agendamentos recentes
-    agendamentosRecentes?.forEach(agendamento => {
+    agendamentosRecentes?.forEach((agendamento: any) => {
       activities.push({
         id: `agendamento-${agendamento.id}`,
         tipo: 'agendamento',
@@ -443,7 +443,7 @@ export const getRecentProposals = async (limit: number = 5, vendedorId?: string 
     }
 
     // Buscar clientes separadamente com filtro multi-tenant
-    const clienteIds = [...new Set(propostas.map(p => p.cliente_id).filter(Boolean))]
+    const clienteIds = [...new Set(propostas.map((p: any) => p.cliente_id).filter(Boolean))]
     console.log('IDs de clientes para buscar:', clienteIds)
     
     const { data: clientes } = await supabase
@@ -456,7 +456,7 @@ export const getRecentProposals = async (limit: number = 5, vendedorId?: string 
     console.log('Dados dos clientes:', clientes)
 
     // Buscar vendedores separadamente com filtro multi-tenant
-    const vendedorIds = [...new Set(propostas.map(p => p.vendedor_id).filter(Boolean))]
+    const vendedorIds = [...new Set(propostas.map((p: any) => p.vendedor_id).filter(Boolean))]
     console.log('IDs de vendedores para buscar:', vendedorIds)
     
     const { data: vendedores } = await supabase
@@ -469,17 +469,17 @@ export const getRecentProposals = async (limit: number = 5, vendedorId?: string 
     console.log('Dados dos vendedores:', vendedores)
 
     // Criar mapas para acesso rápido
-    const clientesMap = new Map(clientes?.map(c => [c.id, {
+    const clientesMap = new Map(clientes?.map((c: any) => [c.id, {
       nome_contato: c.nome_contato,
       nome_empresa: c.nome_empresa
     }]) || [])
-    const vendedoresMap = new Map(vendedores?.map(v => [v.id, v.nome]) || [])
+    const vendedoresMap = new Map(vendedores?.map((v: any) => [v.id, v.nome]) || [])
     
     console.log('Mapa de clientes:', Array.from(clientesMap.entries()))
     console.log('Mapa de vendedores:', Array.from(vendedoresMap.entries()))
 
-    const result = propostas.map(proposta => {
-      const clienteData = clientesMap.get(proposta.cliente_id)
+    const result = propostas.map((proposta: any) => {
+      const clienteData = clientesMap.get(proposta.cliente_id) || {} as any
       const vendedorNome = vendedoresMap.get(proposta.vendedor_id)
       
       // Formatar nome do cliente: "Nome do Contato (Nome da Empresa)" ou apenas um deles
@@ -570,13 +570,13 @@ export const getSalesConversion = async (vendedorId?: string | null, isAdmin?: b
       return []
     }
 
-    const conversaoData = vendedores?.map(vendedor => {
+    const conversaoData = vendedores?.map((vendedor: any) => {
       const propostas = vendedor.propostas || []
       const totalPropostas = propostas.length
-      const propostasAprovadas = propostas.filter(p => p.status === 'aprovada').length
+      const propostasAprovadas = propostas.filter((p: any) => p.status === 'aprovada').length
       const valorAprovado = propostas
-        .filter(p => p.status === 'aprovada')
-        .reduce((sum, p) => sum + (p.valor_total || 0), 0)
+        .filter((p: any) => p.status === 'aprovada')
+        .reduce((sum: number, p: any) => sum + (p.valor_total || 0), 0)
       
       const taxaConversao = totalPropostas > 0 ? (propostasAprovadas / totalPropostas) * 100 : 0
 
@@ -588,8 +588,8 @@ export const getSalesConversion = async (vendedorId?: string | null, isAdmin?: b
         taxa_conversao: taxaConversao,
         valor_aprovado: valorAprovado
       }
-    }).filter(v => v.total_propostas > 0) // Só mostrar vendedores com propostas
-    .sort((a, b) => b.taxa_conversao - a.taxa_conversao) || []
+    }).filter((v: any) => v.total_propostas > 0) // Só mostrar vendedores com propostas
+    .sort((a: any, b: any) => b.taxa_conversao - a.taxa_conversao) || []
 
     return conversaoData
 
@@ -650,9 +650,9 @@ export const getSalesPipeline = async (vendedorId?: string | null, isAdmin?: boo
 
     // Calcular estatísticas para cada etapa
     const pipeline = pipelineStages.map(stage => {
-      const propostasEtapa = propostas.filter(p => p.status === stage.status)
+      const propostasEtapa = propostas.filter((p: any) => p.status === stage.status)
       const quantidade = propostasEtapa.length
-      const valor_total = propostasEtapa.reduce((sum, p) => sum + (p.valor_total || 0), 0)
+      const valor_total = propostasEtapa.reduce((sum: number, p: any) => sum + (p.valor_total || 0), 0)
 
       return {
         etapa: stage.etapa,
@@ -692,7 +692,7 @@ export const getMonthlyRevenue = async (months: number = 12): Promise<MonthlyRev
     }
 
     // Agrupar por mês usando data de aprovação
-    propostas.forEach(proposta => {
+    propostas.forEach((proposta: any) => {
       const dataAprovacao = proposta.data_aprovacao_interna || proposta.updated_at
       const date = new Date(dataAprovacao)
       const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`

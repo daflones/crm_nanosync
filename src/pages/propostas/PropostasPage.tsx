@@ -1160,7 +1160,6 @@ export function PropostasPage() {
                   onSuccess: async (result) => {
                     setIsCreateModalOpen(false)
                     setNewProposta(initialPropostaState)
-                    toast.success('Proposta criada com sucesso!')
                     
                     // Criar notificação no banco
                     await createDatabaseNotification({
@@ -2053,7 +2052,6 @@ export function PropostasPage() {
                     setIsEditModalOpen(false)
                     setSelectedProposta(null)
                     setEditProposta(initialPropostaState)
-                    toast.success('Proposta atualizada com sucesso!')
                     
                     // Criar notificação no banco
                     await createDatabaseNotification({
@@ -2102,7 +2100,6 @@ export function PropostasPage() {
                   deleteProposta.mutate(propostaToDelete, {
                     onSuccess: () => {
                       setPropostaToDelete(null)
-                      toast.success('Proposta excluída com sucesso!')
                     },
                     onError: () => {
                       toast.error('Erro ao excluir proposta')

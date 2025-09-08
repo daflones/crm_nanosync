@@ -165,21 +165,27 @@ export function ProdutosPage() {
     }
 
     try {
-      let imageUrl = ''
-      if (selectedImage) {
-        imageUrl = await handleImageUpload('')
-      }
-
-
+      // First create the product without image
       const result = await createProduto.mutateAsync({
         ...newProduct,
-        imagem_principal: imageUrl
+        imagem_principal: ''
       })
+
+      // Then upload image if selected and update the product
+      let imageUrl = ''
+      if (selectedImage) {
+        imageUrl = await handleImageUpload(result.id)
+        
+        // Update product with image URL
+        await updateProduto.mutateAsync({
+          id: result.id,
+          data: { imagem_principal: imageUrl }
+        })
+      }
       setIsCreateModalOpen(false)
       setNewProduct(initialProductState)
       setSelectedImage(null)
       setSelectedImageName('')
-      toast.success('Produto criado com sucesso!')
       
       // Criar notificação no banco
       await createDatabaseNotification({
@@ -208,15 +214,23 @@ export function ProdutosPage() {
     }
 
     try {
+      let updatedProductData = { ...editProduct }
+      
+      // Upload image if selected
+      if (selectedImage) {
+        const imageUrl = await handleImageUpload(selectedProduto.id)
+        updatedProductData.imagem_principal = imageUrl
+      }
       
       await updateProduto.mutateAsync({
         id: selectedProduto.id,
-        data: editProduct
+        data: updatedProductData
       })
       setIsEditModalOpen(false)
       setSelectedProduto(null)
       setEditProduct(initialProductState)
-      toast.success('Produto atualizado com sucesso!')
+      setSelectedImage(null)
+      setSelectedImageName('')
       
       // Criar notificação no banco
       await createDatabaseNotification({
@@ -247,7 +261,6 @@ export function ProdutosPage() {
     if (productToDelete) {
       deleteProduto.mutate(productToDelete, {
         onSuccess: () => {
-          toast.success('Produto excluído com sucesso!')
           setProductToDelete(null)
         },
         onError: (error) => {

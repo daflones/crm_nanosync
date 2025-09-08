@@ -25,10 +25,14 @@ export function SubscriptionNotifications() {
   // Verificar se deve mostrar notificações
   useEffect(() => {
     // Aguardar carregamento do plano ativo
-    if (planoLoading) return;
+    if (planoLoading) {
+      console.log('SubscriptionNotifications: Aguardando carregamento do plano...');
+      return;
+    }
     
     // Se o usuário tem plano ativo, não mostrar nenhum popup
     if (planoAtivo) {
+      console.log('✅ SubscriptionNotifications: Usuário tem plano ativo, ocultando popups');
       // Garantir que os popups estejam fechados
       setNotifications(prev => ({
         ...prev,
@@ -38,35 +42,67 @@ export function SubscriptionNotifications() {
       return;
     }
 
-    if (subscription.isLoading) return;
+    if (subscription.isLoading) {
+      console.log('SubscriptionNotifications: Aguardando carregamento da subscription...');
+      return;
+    }
+
+    console.log('🔍 SubscriptionNotifications: Verificando condições', {
+      planoAtivo,
+      subscriptionStatus: subscription.status,
+      planId: subscription.planId,
+      expiresAt: subscription.expiresAt,
+      isActive: subscription.isActive,
+      dismissedInactive: notifications.dismissedInactive,
+      dismissedExpired: notifications.dismissedExpired
+    });
 
     const now = new Date();
     const hasExpiredPlan = subscription.expiresAt && new Date(subscription.expiresAt) < now;
+    
+    // Condições mais flexíveis para usuários sem plano
     const hasNeverSubscribed = !subscription.planId && subscription.status === 'inactive';
+    const hasInactivePlan = !subscription.isActive && !planoAtivo;
+    
+    console.log('📊 SubscriptionNotifications: Análise das condições', {
+      hasExpiredPlan,
+      hasNeverSubscribed,
+      hasInactivePlan,
+      dismissedInactive: notifications.dismissedInactive,
+      dismissedExpired: notifications.dismissedExpired,
+      shouldShowInactive: (hasNeverSubscribed || hasInactivePlan) && !notifications.dismissedInactive,
+      shouldShowExpired: hasExpiredPlan && !notifications.dismissedExpired
+    });
 
-    // Mostrar popup para usuários que nunca assinaram
-    if (hasNeverSubscribed && !notifications.dismissedInactive) {
+    // Mostrar popup para usuários que nunca assinaram OU que têm plano inativo
+    if ((hasNeverSubscribed || hasInactivePlan) && !notifications.dismissedInactive) {
+      console.log('SubscriptionNotifications: Agendando popup de plano inativo em 3 segundos');
       setTimeout(() => {
+        console.log('SubscriptionNotifications: Mostrando popup de plano inativo');
         setNotifications(prev => ({ ...prev, showInactivePopup: true }));
       }, 3000); // Mostrar após 3 segundos
     }
 
     // Mostrar popup para usuários com assinatura expirada
     if (hasExpiredPlan && !notifications.dismissedExpired) {
+      console.log('SubscriptionNotifications: Agendando popup de plano expirado em 2 segundos');
       setTimeout(() => {
+        console.log('SubscriptionNotifications: Mostrando popup de plano expirado');
         setNotifications(prev => ({ ...prev, showExpiredPopup: true }));
       }, 2000); // Mostrar após 2 segundos
     }
   }, [subscription, notifications.dismissedInactive, notifications.dismissedExpired, planoAtivo, planoLoading]);
 
   const dismissInactivePopup = () => {
+    console.log('❌ SubscriptionNotifications: Dispensando popup de plano inativo');
     setNotifications(prev => ({
       ...prev,
       showInactivePopup: false,
       dismissedInactive: true
     }));
-    // Salvar no localStorage para não mostrar novamente na sessão
-    localStorage.setItem('dismissedInactivePopup', 'true');
+    // Salvar no localStorage para não mostrar novamente por 24 horas
+    const dismissTime = new Date().getTime() + (24 * 60 * 60 * 1000); // 24 horas
+    localStorage.setItem('dismissedInactivePopup', dismissTime.toString());
   };
 
   const dismissExpiredPopup = () => {
@@ -81,8 +117,28 @@ export function SubscriptionNotifications() {
 
   // Verificar localStorage na inicialização
   useEffect(() => {
-    const dismissedInactive = localStorage.getItem('dismissedInactivePopup') === 'true';
+    // Verificar se o popup inativo foi dispensado e se ainda está dentro do prazo
+    const dismissedInactiveTime = localStorage.getItem('dismissedInactivePopup');
     const dismissedExpired = localStorage.getItem('dismissedExpiredPopup') === 'true';
+    
+    let dismissedInactive = false;
+    if (dismissedInactiveTime) {
+      const dismissTime = parseInt(dismissedInactiveTime);
+      const now = new Date().getTime();
+      dismissedInactive = now < dismissTime; // Só considera dispensado se ainda está dentro do prazo
+      
+      if (!dismissedInactive) {
+        // Se passou do prazo, remove do localStorage
+        localStorage.removeItem('dismissedInactivePopup');
+      }
+    }
+    
+    console.log('💾 SubscriptionNotifications: Estado do localStorage', {
+      dismissedInactive,
+      dismissedExpired,
+      dismissedInactiveTime,
+      timeRemaining: dismissedInactiveTime ? Math.max(0, parseInt(dismissedInactiveTime) - new Date().getTime()) : 0
+    });
     
     setNotifications(prev => ({
       ...prev,
@@ -91,62 +147,129 @@ export function SubscriptionNotifications() {
     }));
   }, []);
 
+  // Função para resetar localStorage (útil para debug)
+  useEffect(() => {
+    // Adicionar função global para debug
+    (window as any).resetSubscriptionPopups = () => {
+      localStorage.removeItem('dismissedInactivePopup');
+      localStorage.removeItem('dismissedExpiredPopup');
+      setNotifications(prev => ({
+        ...prev,
+        dismissedInactive: false,
+        dismissedExpired: false,
+        showInactivePopup: false,
+        showExpiredPopup: false
+      }));
+      console.log('SubscriptionNotifications: Popups resetados!');
+    };
+  }, []);
+
   // Popup para usuários que nunca assinaram
   const InactivePopup = () => (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6 relative animate-pulse">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-300">
+      <div className="bg-gradient-to-br from-white via-white to-purple-50/30 rounded-2xl shadow-2xl max-w-lg w-full relative overflow-hidden animate-in slide-in-from-bottom-4 duration-500">
+        {/* Background Pattern */}
+        <div className="absolute inset-0 bg-gradient-to-br from-purple-600/5 via-transparent to-blue-600/5"></div>
+        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-purple-200/20 to-transparent rounded-full -translate-y-16 translate-x-16"></div>
+        <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-blue-200/20 to-transparent rounded-full translate-y-12 -translate-x-12"></div>
+        
         <button
           onClick={dismissInactivePopup}
-          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors z-10 p-1 rounded-full hover:bg-gray-100"
         >
           <X className="h-5 w-5" />
         </button>
         
-        <div className="text-center">
-          <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 mb-4">
-            <CreditCard className="h-6 w-6 text-blue-600" />
+        <div className="relative p-8 text-center">
+          {/* Icon with gradient background */}
+          <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-2xl bg-gradient-to-br from-purple-500 to-blue-600 mb-6 shadow-lg">
+            <svg className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
           </div>
           
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
-            Libere Diversas Funções!
+          <h3 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent mb-3">
+            Turbine Suas Vendas com IA!
           </h3>
           
-          <p className="text-sm text-gray-600 mb-6">
-            Visite a página de planos para desbloquear recursos avançados como:
+          <p className="text-gray-600 mb-6 leading-relaxed">
+            Desbloqueie o poder da <span className="font-semibold text-purple-600">automação inteligente</span> e 
+            transforme seu negócio com nossa IA trabalhando <span className="font-semibold text-blue-600">24 horas por dia</span>!
           </p>
           
-          <ul className="text-left text-sm text-gray-600 mb-6 space-y-2">
-            <li className="flex items-center">
-              <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
-              Clientes e pets ilimitados
-            </li>
-            <li className="flex items-center">
-              <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
-              Relatórios avançados
-            </li>
-            <li className="flex items-center">
-              <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
-              Múltiplos usuários
-            </li>
-            <li className="flex items-center">
-              <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
-              Suporte prioritário
-            </li>
-          </ul>
+          <div className="grid grid-cols-1 gap-3 mb-8 text-left">
+            <div className="flex items-center p-3 bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl border border-purple-100">
+              <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center mr-3">
+                <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
+              </div>
+              <div>
+                <div className="font-semibold text-gray-800">WhatsApp IA Integrado</div>
+                <div className="text-sm text-gray-600">Atendimento automático 24/7</div>
+              </div>
+            </div>
+            
+            <div className="flex items-center p-3 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl border border-blue-100">
+              <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center mr-3">
+                <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                </svg>
+              </div>
+              <div>
+                <div className="font-semibold text-gray-800">Captura de Leads Inteligente</div>
+                <div className="text-sm text-gray-600">Converta visitantes em clientes</div>
+              </div>
+            </div>
+            
+            <div className="flex items-center p-3 bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl border border-purple-100">
+              <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-purple-500 to-blue-500 rounded-lg flex items-center justify-center mr-3">
+                <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 00-2-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+              </div>
+              <div>
+                <div className="font-semibold text-gray-800">Relatórios Avançados</div>
+                <div className="text-sm text-gray-600">Insights poderosos para crescer</div>
+              </div>
+            </div>
+            
+            <div className="flex items-center p-3 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl border border-blue-100">
+              <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg flex items-center justify-center mr-3">
+                <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+              </div>
+              <div>
+                <div className="font-semibold text-gray-800">Equipe Ilimitada</div>
+                <div className="text-sm text-gray-600">Colaboração sem limites</div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-gradient-to-r from-purple-100 to-blue-100 rounded-xl p-4 mb-6 border border-purple-200">
+            <div className="flex items-center justify-center mb-2">
+              <Clock className="h-5 w-5 text-purple-600 mr-2" />
+              <span className="font-semibold text-purple-800">Oferta Especial</span>
+            </div>
+            <p className="text-sm text-purple-700">
+              <strong>Comece hoje</strong> e tenha sua IA trabalhando para você ainda hoje!
+            </p>
+          </div>
           
           <div className="flex space-x-3">
             <button
               onClick={dismissInactivePopup}
-              className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+              className="flex-1 px-6 py-3 text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl transition-all duration-200 hover:scale-105"
             >
-              Depois
+              Talvez Depois
             </button>
             <Link
-              to="/app/planos"
+              to="/planos"
               onClick={dismissInactivePopup}
-              className="flex-1 px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 text-center"
+              className="flex-1 px-6 py-3 text-sm font-bold text-white bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 rounded-xl transition-all duration-200 hover:scale-105 shadow-lg hover:shadow-xl text-center"
             >
-              Ver Planos
+              Ativar Agora
             </Link>
           </div>
         </div>
@@ -198,7 +321,7 @@ export function SubscriptionNotifications() {
               Depois
             </button>
             <Link
-              to="/app/planos"
+              to="/planos"
               onClick={dismissExpiredPopup}
               className="flex-1 px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 text-center"
             >
@@ -246,7 +369,7 @@ export function SubscriptionStatusBanner() {
               Assine um plano para acessar funcionalidades avançadas
             </p>
             <Link
-              to="/app/planos"
+              to="/planos"
               className="text-xs text-blue-600 hover:text-blue-800 font-medium mt-1 inline-block"
             >
               Ver planos →
@@ -270,7 +393,7 @@ export function SubscriptionStatusBanner() {
               Renove para continuar usando todas as funcionalidades
             </p>
             <Link
-              to="/app/planos"
+              to="/planos"
               className="text-xs text-red-600 hover:text-red-800 font-medium mt-1 inline-block"
             >
               Renovar agora →

@@ -295,13 +295,13 @@ export class NotificacaoService {
       ])
 
       // Processar estatísticas por categoria
-      const categorias = porCategoria.data?.reduce((acc, item) => {
+      const categorias = porCategoria.data?.reduce((acc: any, item: any) => {
         acc[item.categoria] = (acc[item.categoria] || 0) + 1
         return acc
       }, {} as Record<string, number>) || {}
 
       // Processar estatísticas por prioridade
-      const prioridades = porPrioridade.data?.reduce((acc, item) => {
+      const prioridades = porPrioridade.data?.reduce((acc: any, item: any) => {
         acc[item.prioridade] = (acc[item.prioridade] || 0) + 1
         return acc
       }, {} as Record<string, number>) || {}

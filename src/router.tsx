@@ -24,7 +24,7 @@ const IAConfigPage = lazy(() => import('./pages/configuracoes/IAConfigPage').the
 const AtividadesPage = lazy(() => import('./pages/atividades/AtividadesPage').then(m => ({ default: m.AtividadesPage })))
 const WhatsAppPage = lazy(() => import('./pages/WhatsAppPage'))
 const LandingPage = lazy(() => import('./pages/landing/LandingPage').then(m => ({ default: m.LandingPage })))
-const PlanosPage = lazy(() => import('./pages/Planos').then(m => ({ default: m.Planos })))
+const PlanosPage = lazy(() => import('./pages/Planos'))
 
 // Loading component for Suspense fallback
 const PageLoader = () => (
@@ -66,6 +66,10 @@ export const router = createBrowserRouter([
   {
     path: '/landing',
     element: withSuspense(LandingPage),
+  },
+  {
+    path: '/planos',
+    element: withSuspense(PlanosPage),
   },
   {
     path: '/',
@@ -138,10 +142,6 @@ export const router = createBrowserRouter([
       {
         path: 'whatsapp',
         element: withSuspense(WhatsAppPage),
-      },
-      {
-        path: 'planos',
-        element: withSuspense(PlanosPage),
       },
     ],
   },

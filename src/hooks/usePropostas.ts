@@ -40,7 +40,7 @@ export const useCreateProposta = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['propostas'] })
       queryClient.refetchQueries({ queryKey: ['propostas'] })
-      // Toast will be handled by the component
+      toast.success('Proposta criada com sucesso!')
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Erro ao criar proposta')
@@ -58,7 +58,7 @@ export const useUpdateProposta = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['propostas'] })
       queryClient.refetchQueries({ queryKey: ['propostas'] })
-      // Toast will be handled by the component
+      toast.success('Proposta atualizada com sucesso!')
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Erro ao atualizar proposta')
@@ -75,7 +75,7 @@ export const useDeleteProposta = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['propostas'] })
       queryClient.refetchQueries({ queryKey: ['propostas'] })
-      // Toast will be handled by the component
+      toast.success('Proposta excluída com sucesso!')
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Erro ao excluir proposta')

@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Calendar, Plus, Search, Filter, Eye, Edit, Trash2, List, CalendarDays, Users, Presentation, Phone, Wrench, GraduationCap, HeadphonesIcon, Heart, MapPin } from 'lucide-react'
-import { agendamentosService, type Agendamento } from '@/services/api/agendamentos'
+import { agendamentosService, type Agendamento, type AgendamentoCreateData } from '@/services/api/agendamentos'
 import { clientesService, type Cliente } from '@/services/api/clientes'
 import { vendedoresService, type Vendedor } from '@/services/api/vendedores'
 import { AgendamentoForm } from '@/components/agendamentos/AgendamentoForm'
@@ -34,7 +34,7 @@ export function AgendamentosPage() {
   const [agendamentoToDelete, setAgendamentoToDelete] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list')
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
-  const [, setPrefilledData] = useState<Partial<Agendamento> | null>(null)
+  const [prefilledData, setPrefilledData] = useState<Partial<AgendamentoCreateData> | null>(null)
 
   // Carregar dados iniciais
   useEffect(() => {
@@ -122,7 +122,6 @@ export function AgendamentosPage() {
       
       
       await agendamentosService.create(agendamentoData)
-      toast.success('Agendamento criado com sucesso!')
       setIsCreateModalOpen(false)
       setPrefilledData(null)
       loadData()
@@ -135,7 +134,6 @@ export function AgendamentosPage() {
     if (!selectedAgendamento) return
     try {
       await agendamentosService.update(selectedAgendamento.id, data)
-      toast.success('Agendamento atualizado com sucesso!')
       setIsEditModalOpen(false)
       setSelectedAgendamento(null)
       loadData()
@@ -171,7 +169,6 @@ export function AgendamentosPage() {
       }
 
       await agendamentosService.delete(agendamentoToDelete)
-      toast.success('Agendamento excluído com sucesso!')
       loadData()
       
       // Close modal and reset state
@@ -277,12 +274,17 @@ export function AgendamentosPage() {
   ]
 
   const handleQuickAction = (template: any) => {
-    const now = new Date()
-    const endTime = new Date(now.getTime() + (template.data.duracao_minutos || 60) * 60000)
+    // Set to current date but with a reasonable hour (9 AM if before 9 AM, otherwise current hour)
+    const startTime = new Date()
+    if (startTime.getHours() < 9) {
+      startTime.setHours(9, 0, 0, 0)
+    }
+    
+    const endTime = new Date(startTime.getTime() + (template.data.duracao_minutos || 60) * 60000)
     
     setPrefilledData({
       ...template.data,
-      data_inicio: now.toISOString(),
+      data_inicio: startTime.toISOString(),
       data_fim: endTime.toISOString()
     })
     setIsCreateModalOpen(true)
@@ -378,6 +380,7 @@ export function AgendamentosPage() {
                     setIsCreateModalOpen(false)
                     setPrefilledData(null)
                   }}
+                  prefilledData={prefilledData || undefined}
                 />
               </DialogContent>
             </Dialog>
@@ -422,6 +425,7 @@ export function AgendamentosPage() {
                     setIsCreateModalOpen(false)
                     setPrefilledData(null)
                   }}
+                  prefilledData={prefilledData || undefined}
                 />
               </DialogContent>
             </Dialog>

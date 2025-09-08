@@ -339,7 +339,7 @@ export class AtividadeService {
           .select('id, nome, email')
           .in('id', usuarioIds)
         
-        usuarios?.forEach(user => {
+        usuarios?.forEach((user: any) => {
           usuariosMap.set(user.id, user.nome || user.email || 'Usuário')
         })
       }
@@ -430,7 +430,7 @@ export class AtividadeService {
             .select('id, nome, email')
             .in('id', idsNaoEncontrados)
           
-          profiles?.forEach(profile => {
+          profiles?.forEach((profile: any) => {
             entidadesMap.set(profile.id, profile.nome || profile.email || 'Usuário')
           })
         }

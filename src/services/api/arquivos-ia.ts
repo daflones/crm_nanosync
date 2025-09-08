@@ -410,7 +410,7 @@ export const getCategoryStats = async () => {
   }
 
   // Process statistics
-  const stats = data?.reduce((acc, arquivo) => {
+  const stats = data?.reduce((acc: any, arquivo: any) => {
     const cat = arquivo.categoria
     if (!acc[cat]) {
       acc[cat] = {

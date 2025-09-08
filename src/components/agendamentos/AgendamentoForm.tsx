@@ -19,6 +19,7 @@ interface AgendamentoFormProps {
   vendedores: Vendedor[]
   onSubmit: (data: AgendamentoCreateData) => void
   onCancel: () => void
+  prefilledData?: Partial<AgendamentoCreateData>
 }
 
 const defaultFormData: AgendamentoCreateData = {
@@ -71,7 +72,7 @@ const formatInputToDateTime = (inputValue: string): string => {
   return new Date(inputValue).toISOString()
 }
 
-export function AgendamentoForm({ agendamento, clientes, vendedores, onSubmit, onCancel }: AgendamentoFormProps) {
+export function AgendamentoForm({ agendamento, clientes, vendedores, onSubmit, onCancel, prefilledData }: AgendamentoFormProps) {
   const { data: currentUser } = useCurrentUser()
   const [formData, setFormData] = useState<AgendamentoCreateData>(defaultFormData)
   const [newParticipanteExterno, setNewParticipanteExterno] = useState('')
@@ -115,7 +116,7 @@ export function AgendamentoForm({ agendamento, clientes, vendedores, onSubmit, o
     return []
   }, [clientes, currentUser])
 
-  // Carregar dados do agendamento para edição
+  // Carregar dados do agendamento para edição ou dados pré-preenchidos
   useEffect(() => {
     if (agendamento) {
       setFormData({
@@ -146,8 +147,13 @@ export function AgendamentoForm({ agendamento, clientes, vendedores, onSubmit, o
         status: agendamento.status || 'agendado',
         user_id: agendamento.user_id || ''
       })
+    } else if (prefilledData) {
+      setFormData(prev => ({
+        ...prev,
+        ...prefilledData
+      }))
     }
-  }, [agendamento])
+  }, [agendamento, prefilledData])
 
   const updateField = (field: keyof AgendamentoCreateData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }))

@@ -165,7 +165,7 @@ export const vendedoresService = {
       .select('meta_mensal')
       .eq('status', 'ativo')
 
-    const metaTotal = metaData?.reduce((acc, v) => acc + (v.meta_mensal || 0), 0) || 0
+    const metaTotal = metaData?.reduce((acc: number, v: any) => acc + (v.meta_mensal || 0), 0) || 0
 
     // Vendas realizadas (soma de propostas aprovadas do mês atual)
     const inicioMes = new Date()
@@ -178,10 +178,10 @@ export const vendedoresService = {
       .eq('status', 'aprovada')
       .gte('created_at', inicioMes.toISOString())
 
-    const realizadoTotal = vendasData?.reduce((acc, v) => acc + (v.valor_total || 0), 0) || 0
+    const realizadoTotal = vendasData?.reduce((acc: number, v: any) => acc + (v.valor_total || 0), 0) || 0
 
     // Melhor vendedor do mês
-    const vendedorPerformance = vendasData?.reduce((acc: any, venda) => {
+    const vendedorPerformance = vendasData?.reduce((acc: any, venda: any) => {
       const vendedorId = venda.vendedor_id
       if (!acc[vendedorId]) {
         acc[vendedorId] = { total: 0, vendedor_id: vendedorId }
@@ -233,168 +233,61 @@ export const vendedoresService = {
 
   async create(vendedorData: VendedorCreateData): Promise<Vendedor> {
     try {
-      console.log('🚀 Iniciando criação de vendedor:', vendedorData.nome)
+      console.log('🚀 Iniciando criação de vendedor via Edge Function:', vendedorData.nome)
       
-      // Step 1: Create auth user
-      const password = vendedorData.senha || Math.random().toString(36).slice(-8) + 'A1!'
-      console.log('📧 Criando usuário de autenticação para:', vendedorData.email)
-      
-      const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-        email: vendedorData.email,
-        password: password,
-        email_confirm: true,
-        user_metadata: {
-          full_name: vendedorData.nome,
-          role: 'vendedor'
-        }
+      // Get current admin's profile ID
+      const { data: { user: currentUser } } = await supabase.auth.getUser()
+      if (!currentUser) {
+        throw new Error('Usuário não autenticado')
+      }
+
+      console.log('👤 Admin atual:', currentUser.id)
+
+      // Use Edge Function create-vendedor
+      console.log('🚀 Chamando Edge Function create-vendedor...')
+      const response = await fetch(`${supabase.supabaseUrl}/functions/v1/create-vendedor`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${supabase.supabaseKey}`,
+        },
+        body: JSON.stringify({
+          vendedorData,
+          adminId: currentUser.id
+        })
       })
 
-      if (authError) {
-        console.error('❌ Erro ao criar usuário de autenticação:', authError)
-        throw new Error(`Erro ao criar usuário: ${authError.message}`)
+      if (!response.ok) {
+        const errorData = await response.json()
+        console.error('❌ Erro na Edge Function:', errorData)
+        throw new Error(`Erro na Edge Function: ${errorData.error || 'Erro desconhecido'}`)
       }
 
-      const userId = authData.user.id
-      console.log('✅ Usuário de autenticação criado com ID:', userId)
+      const result = await response.json()
+      console.log('✅ Edge Function executada com sucesso:', result)
 
+      // Return the vendedor data from Edge Function response
+      const vendedorResult = result.vendedor
+
+      // Registrar atividade
+      console.log('📋 Registrando atividade...')
       try {
-        // Step 2: Get current admin's profile ID for admin_profile_id
-        console.log('👤 Buscando perfil do admin atual...')
-        const { data: { user: currentUser } } = await supabase.auth.getUser()
-        if (!currentUser) {
-          throw new Error('Usuário não autenticado')
-        }
-
-        const { data: adminProfile, error: adminError } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('id', currentUser.id)
-          .single()
-
-        if (adminError) {
-          console.error('❌ Erro ao buscar perfil do admin:', adminError)
-          throw new Error(`Erro ao buscar perfil do admin: ${adminError.message}`)
-        }
-
-        if (!adminProfile) {
-          throw new Error('Perfil do admin não encontrado')
-        }
-
-        console.log('✅ Perfil do admin encontrado:', adminProfile.id)
-
-        // Step 3: Create profile for vendedor with admin_profile_id using supabaseAdmin
-        console.log('👥 Criando perfil do vendedor...')
-        const { data: profileData, error: profileError } = await supabaseAdmin
-          .from('profiles')
-          .upsert({
-            id: userId,
-            full_name: vendedorData.nome,
-            email: vendedorData.email,
-            role: 'vendedor',
-            status: 'ativo',
-            admin_profile_id: adminProfile.id, // ID do admin da empresa
-            vendedor_id: null // Será atualizado após criar o vendedor
-          })
-          .select()
-          .single()
-
-        if (profileError) {
-          console.error('❌ Erro ao criar/atualizar profile:', profileError)
-          throw new Error(`Erro ao criar profile: ${profileError.message}`)
-        }
-
-        console.log('✅ Perfil do vendedor criado:', profileData)
-
-        // Step 4: Create vendedor linked to user with profile field
-        console.log('🏢 Criando registro do vendedor na tabela vendedores...')
-        const insertData: any = {
-          user_id: userId,
-          cpf: vendedorData.cpf || null,
-          whatsapp: vendedorData.whatsapp || null,
-          telefone: vendedorData.telefone || null,
-          data_nascimento: vendedorData.data_nascimento || null,
-          endereco: vendedorData.endereco || null,
-          numero: vendedorData.numero || null,
-          complemento: vendedorData.complemento || null,
-          bairro: vendedorData.bairro || null,
-          cidade: vendedorData.cidade || null,
-          estado: vendedorData.estado || null,
-          cep: vendedorData.cep || null,
-          segmentos_principais: vendedorData.segmentos_principais || null,
-          segmentos_secundarios: vendedorData.segmentos_secundarios || null,
-          regioes_atendimento: vendedorData.regioes_atendimento || null,
-          tipo_atendimento: vendedorData.tipo_atendimento || 'hibrido',
-          meta_mensal: vendedorData.meta_mensal || 0,
-          comissao_percentual: vendedorData.comissao_percentual || 5,
-          data_contratacao: vendedorData.data_contratacao || null,
-          salario_base: vendedorData.salario_base || 0,
-          status: vendedorData.status || 'ativo',
-          observacoes: vendedorData.observacoes || null,
-          nome: vendedorData.nome,
-          email: vendedorData.email,
-          profile: adminProfile.id // Campo para filtro por empresa
-        }
-
-        // Remove empty string values that should be null for database
-        Object.keys(insertData).forEach(key => {
-          if (insertData[key] === '') {
-            insertData[key] = null
-          }
-        })
-
-        console.log('📝 Dados do vendedor a serem inseridos:', insertData)
-
-        const { data: vendedorResult, error: vendedorError } = await supabase
-          .from('vendedores')
-          .insert(insertData)
-          .select()
-          .single()
-
-        if (vendedorError) {
-          console.error('❌ Erro ao criar vendedor:', vendedorError)
-          throw new Error(`Erro ao criar vendedor: ${vendedorError.message}`)
-        }
-
-        console.log('✅ Vendedor criado com sucesso:', vendedorResult)
-
-        // Step 5: Update profile with vendedor_id
-        console.log('🔄 Atualizando profile com vendedor_id...')
-        const { error: updateProfileError } = await supabaseAdmin
-          .from('profiles')
-          .update({ vendedor_id: vendedorResult.id })
-          .eq('id', userId)
-
-        if (updateProfileError) {
-          console.error('⚠️ Erro ao atualizar profile com vendedor_id (não crítico):', updateProfileError)
-        } else {
-          console.log('✅ Profile atualizado com vendedor_id:', vendedorResult.id)
-        }
-
-        // Registrar atividade
-        console.log('📋 Registrando atividade...')
-        try {
-          await AtividadeService.criar(
-            'vendedor',
-            vendedorResult.id,
-            vendedorResult,
-            `Vendedor criado: ${vendedorResult.nome} (${vendedorResult.email})`
-          )
-          console.log('✅ Atividade registrada com sucesso')
-        } catch (atividadeError) {
-          console.error('⚠️ Erro ao registrar atividade (não crítico):', atividadeError)
-        }
-
-        console.log('🎉 Processo de criação de vendedor concluído com sucesso!')
-        return vendedorResult
-
-      } catch (error) {
-        // If profile or vendedor creation fails, clean up the auth user
-        await supabaseAdmin.auth.admin.deleteUser(userId)
-        throw error
+        await AtividadeService.criar(
+          'vendedor',
+          vendedorResult.id,
+          vendedorResult,
+          `Vendedor criado: ${vendedorResult.nome || vendedorData.nome} (${vendedorResult.email || vendedorData.email})`
+        )
+        console.log('✅ Atividade registrada com sucesso')
+      } catch (atividadeError) {
+        console.error('⚠️ Erro ao registrar atividade (não crítico):', atividadeError)
       }
+
+      console.log('🎉 Processo de criação de vendedor concluído com sucesso!')
+      return vendedorResult
 
     } catch (error) {
-      console.error('Erro ao criar vendedor:', error)
+      console.error('❌ Erro ao criar vendedor:', error)
       throw error
     }
   },
@@ -432,12 +325,16 @@ export const vendedoresService = {
 
   async delete(id: string): Promise<void> {
     try {
+      console.log('🗑️ Iniciando processo de deleção do vendedor:', id)
+      
       // Buscar dados do vendedor antes de deletar
       const vendedorCompleto = await this.getById(id)
       
       if (!vendedorCompleto) {
         throw new Error('Vendedor não encontrado')
       }
+
+      console.log('📋 Dados do vendedor encontrados:', vendedorCompleto.nome)
 
       // Buscar o vendedor para obter o user_id
       const { data: vendedor } = await supabase
@@ -447,53 +344,94 @@ export const vendedoresService = {
         .single()
 
       const userId = vendedor?.user_id
+      console.log('👤 User ID encontrado:', userId)
 
-      // Step 1: Deletar o vendedor da tabela vendedores
-      const { error: vendedorError } = await supabase
-        .from('vendedores')
-        .delete()
-        .eq('id', id)
-
-      if (vendedorError) {
-        console.error('Erro ao deletar vendedor:', vendedorError)
-        throw new Error(`Erro ao deletar vendedor: ${vendedorError.message}`)
-      }
-
-      // Step 2: Deletar o profile se existir user_id
-      if (userId) {
-        const { error: profileError } = await supabase
-          .from('profiles')
+      if (!userId) {
+        console.log('⚠️ Vendedor sem user_id, deletando apenas da tabela vendedores')
+        
+        // Se não tem user_id, deletar apenas da tabela vendedores
+        const { error: vendedorError } = await supabase
+          .from('vendedores')
           .delete()
+          .eq('id', id)
+
+        if (vendedorError) {
+          console.error('❌ Erro ao deletar vendedor:', vendedorError)
+          throw new Error(`Erro ao deletar vendedor: ${vendedorError.message}`)
+        }
+      } else {
+        console.log('🔄 Usando Edge Function delete-vendedor para deleção completa')
+        
+        // Step 1: Primeiro, remover a referência vendedor_id do profile para evitar constraint
+        console.log('🔗 Removendo referência vendedor_id do profile...')
+        const { error: updateProfileError } = await supabaseAdmin
+          .from('profiles')
+          .update({ vendedor_id: null })
           .eq('id', userId)
 
-        if (profileError) {
-          console.error('Erro ao deletar profile:', profileError)
-          // Não falhar aqui, apenas logar o erro
+        if (updateProfileError) {
+          console.error('⚠️ Erro ao remover referência vendedor_id (continuando):', updateProfileError)
+        } else {
+          console.log('✅ Referência vendedor_id removida do profile')
         }
 
-        // Step 3: Deletar o usuário do Auth usando supabaseAdmin
+        // Step 2: Deletar da tabela vendedores
+        console.log('🗑️ Deletando da tabela vendedores...')
+        const { error: vendedorError } = await supabase
+          .from('vendedores')
+          .delete()
+          .eq('id', id)
+
+        if (vendedorError) {
+          console.error('❌ Erro ao deletar vendedor:', vendedorError)
+          throw new Error(`Erro ao deletar vendedor: ${vendedorError.message}`)
+        }
+        console.log('✅ Vendedor deletado da tabela vendedores')
+
+        // Step 3: Usar Edge Function para deletar profile e auth user
+        console.log('🚀 Chamando Edge Function delete-vendedor...')
         try {
-          const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(userId)
-          if (authError) {
-            console.error('Erro ao deletar usuário do auth:', authError)
-            // Não falhar aqui, apenas logar o erro
+          const response = await fetch(`${supabase.supabaseUrl}/functions/v1/delete-vendedor`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${supabase.supabaseKey}`,
+            },
+            body: JSON.stringify({ userId })
+          })
+
+          if (!response.ok) {
+            const errorData = await response.json()
+            console.error('❌ Erro na Edge Function:', errorData)
+            throw new Error(`Erro na Edge Function: ${errorData.error || 'Erro desconhecido'}`)
           }
-        } catch (authDeleteError) {
-          console.error('Erro ao deletar usuário do auth:', authDeleteError)
-          // Não falhar aqui, apenas logar o erro
+
+          const result = await response.json()
+          console.log('✅ Edge Function executada com sucesso:', result.message)
+        } catch (edgeFunctionError) {
+          console.error('⚠️ Erro na Edge Function (não crítico):', edgeFunctionError)
+          // Não falhar aqui, pois o vendedor já foi deletado da tabela principal
         }
       }
 
       // Registrar atividade
-      await AtividadeService.deletar(
-        'vendedor',
-        id,
-        vendedorCompleto,
-        `Vendedor deletado completamente: ${vendedorCompleto.nome} (${vendedorCompleto.email}) - Removido do sistema, perfil e autenticação`
-      )
+      console.log('📝 Registrando atividade...')
+      try {
+        await AtividadeService.deletar(
+          'vendedor',
+          id,
+          vendedorCompleto,
+          `Vendedor deletado completamente: ${vendedorCompleto.nome} (${vendedorCompleto.email}) - Removido do sistema, perfil e autenticação`
+        )
+        console.log('✅ Atividade registrada com sucesso')
+      } catch (atividadeError) {
+        console.error('⚠️ Erro ao registrar atividade (não crítico):', atividadeError)
+      }
+
+      console.log('🎉 Processo de deleção concluído com sucesso!')
 
     } catch (error) {
-      console.error('Erro ao deletar vendedor completamente:', error)
+      console.error('❌ Erro ao deletar vendedor completamente:', error)
       throw error
     }
   },
@@ -523,10 +461,10 @@ export const vendedoresService = {
       throw new Error(`Erro ao buscar performance: ${error.message}`)
     }
 
-    const totalVendas = propostas?.filter(p => p.status === 'aprovada').reduce((acc, p) => acc + (p.valor_total || 0), 0) || 0
-    const aprovadas = propostas?.filter(p => p.status === 'aprovada').length || 0
-    const pendentes = propostas?.filter(p => ['rascunho', 'revisao', 'enviada', 'em_negociacao'].includes(p.status)).length || 0
-    const rejeitadas = propostas?.filter(p => p.status === 'rejeitada').length || 0
+    const totalVendas = propostas?.filter((p: any) => p.status === 'aprovada').reduce((acc: number, p: any) => acc + (p.valor_total || 0), 0) || 0
+    const aprovadas = propostas?.filter((p: any) => p.status === 'aprovada').length || 0
+    const pendentes = propostas?.filter((p: any) => ['rascunho', 'revisao', 'enviada', 'em_negociacao'].includes(p.status)).length || 0
+    const rejeitadas = propostas?.filter((p: any) => p.status === 'rejeitada').length || 0
 
     return {
       total_vendas: totalVendas,

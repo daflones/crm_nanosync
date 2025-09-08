@@ -194,7 +194,6 @@ export function ArquivosPage() {
     }
 
     if (successCount > 0) {
-      toast.success(`${successCount} arquivo(s) enviado(s) com sucesso!`)
       
       // Criar notificação no banco
       await createDatabaseNotification({
@@ -243,7 +242,6 @@ export function ArquivosPage() {
             .remove([`products/${fileName}`])
           
           if (error) throw error
-          toast.success('Imagem excluída com sucesso!')
           
           // Criar notificação no banco
           await createDatabaseNotification({
@@ -258,7 +256,6 @@ export function ArquivosPage() {
           window.location.reload()
         } else {
           await deleteMutation.mutateAsync(arquivo.id)
-          toast.success('Arquivo excluído com sucesso!')
           
           // Criar notificação no banco
           await createDatabaseNotification({
@@ -317,7 +314,6 @@ export function ArquivosPage() {
           is_public: fileData.is_public
         }
       })
-      toast.success('Arquivo atualizado com sucesso!')
       
       // Criar notificação no banco
       await createDatabaseNotification({
@@ -377,7 +373,6 @@ export function ArquivosPage() {
       link.click()
       document.body.removeChild(link)
       window.URL.revokeObjectURL(url)
-      toast.success('Download iniciado!')
     } catch (error) {
       console.error('Erro ao fazer download:', error)
       toast.error('Erro ao fazer download do arquivo')
