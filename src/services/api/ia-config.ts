@@ -4,8 +4,10 @@ export interface IAConfig {
   id?: string
   user_id: string
   profile: string // Campo para filtro multi-tenant
+  // Nome do agente de IA
+  nome_agente?: string
   // Contexto e personalidade da IA
-  contexto_ia: string
+  contexto_ia: string | null
   tom_fala: 'profissional' | 'casual' | 'formal' | 'amigavel' | 'tecnico'
   // Regras e comportamentos
   regras_especificas: string
@@ -96,7 +98,8 @@ export const getIAConfig = async (userId: string) => {
       const defaultConfig: Partial<IAConfig> = {
         user_id: userId,
         profile: adminId,
-        contexto_ia: 'Você é um assistente inteligente especializado em vendas e atendimento ao cliente para a empresa. Seja sempre prestativo, profissional e focado em ajudar o cliente.',
+        nome_agente: '',
+        contexto_ia: null,
         tom_fala: 'profissional',
         regras_especificas: 'Sempre confirme informações importantes antes de prosseguir. Seja claro e objetivo nas respostas.',
         regras_adicionais: '',

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -24,6 +24,7 @@ import {
   useWhatsAppQRCode,
   useDeleteWhatsAppInstance
 } from '@/hooks/useWhatsApp'
+import { useProfile } from '@/hooks/useConfiguracoes'
 import { QRCodeDisplay } from '@/components/whatsapp/QRCodeDisplay'
 
 export default function WhatsAppPage() {
@@ -32,6 +33,7 @@ export default function WhatsAppPage() {
   const [showCreateForm, setShowCreateForm] = useState(false)
 
   const { data: instance, isLoading: instanceLoading } = useWhatsAppInstance()
+  const { data: profile } = useProfile()
   
   // Determinar se deve fazer polling baseado no status da instância
   const shouldPoll = Boolean(instance?.instanceName && (!instance.status || instance.status !== 'open'))
@@ -41,6 +43,26 @@ export default function WhatsAppPage() {
   
   const createInstance = useCreateWhatsAppInstance()
   const deleteInstance = useDeleteWhatsAppInstance()
+
+  // Função para gerar nome da instância baseado no nome da empresa
+  const generateInstanceName = (companyName: string) => {
+    return companyName
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+      .replace(/[^a-z0-9\s]/g, '') // Remove caracteres especiais
+      .replace(/\s+/g, '-') // Substitui espaços por hífens
+      .replace(/-+/g, '-') // Remove hífens duplicados
+      .replace(/^-|-$/g, '') // Remove hífens no início e fim
+  }
+
+  // Atualizar nome da instância quando o perfil carregar
+  useEffect(() => {
+    if (profile?.full_name && !instanceName) {
+      const generatedName = generateInstanceName(profile.full_name)
+      setInstanceName(generatedName)
+    }
+  }, [profile?.full_name, instanceName])
 
   const handleCreateInstance = async () => {
     if (!instanceName.trim() || !phoneNumber.trim()) return
@@ -148,13 +170,14 @@ export default function WhatsAppPage() {
                   <Label htmlFor="instanceName">Nome da Instância</Label>
                   <Input
                     id="instanceName"
-                    placeholder="Ex: minha-empresa-whatsapp"
+                    placeholder="Nome gerado automaticamente"
                     value={instanceName}
-                    onChange={(e) => setInstanceName(e.target.value)}
-                    className="mt-1"
+                    readOnly
+                    disabled
+                    className="mt-1 bg-muted"
                   />
                   <p className="text-sm text-muted-foreground mt-1">
-                    Use apenas letras, números e hífens. Este nome será usado para identificar sua instância.
+                    Nome gerado automaticamente baseado no nome da empresa configurado no perfil.
                   </p>
                 </div>
                 

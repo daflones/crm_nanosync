@@ -72,8 +72,8 @@ class WhatsAppService {
       integration: 'WHATSAPP-BAILEYS',
       webhook: {
         url: this.webhookUrl,
-        byEvents: true,
-        base64: false,
+        byEvents: false,
+        base64: true,
         events: ['MESSAGES_UPSERT']
       },
       // Configurações padrão
@@ -81,7 +81,7 @@ class WhatsAppService {
       msgCall: 'Chamadas não são aceitas neste número.',
       groupsIgnore: false,
       alwaysOnline: true,
-      readMessages: false,
+      readMessages: true,
       readStatus: false,
       syncFullHistory: false
     }

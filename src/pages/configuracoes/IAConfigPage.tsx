@@ -16,7 +16,8 @@ export function IAConfigPage() {
   const testIAConfig = useTestIAConfig()
 
   const [iaConfig, setIaConfig] = useState<Partial<IAConfig>>({
-    contexto_ia: '',
+    nome_agente: '',
+    contexto_ia: null,
     tom_fala: 'profissional',
     regras_especificas: '',
     regras_adicionais: '',
@@ -117,13 +118,12 @@ export function IAConfigPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid gap-2">
-              <Label htmlFor="contexto-ia">Contexto da IA</Label>
-              <Textarea
-                id="contexto-ia"
-                placeholder="Descreva o contexto e papel da IA..."
-                value={iaConfig.contexto_ia || ''}
-                onChange={(e) => setIaConfig({...iaConfig, contexto_ia: e.target.value})}
-                rows={3}
+              <Label htmlFor="nome-agente">Nome do Agente de IA</Label>
+              <Input
+                id="nome-agente"
+                placeholder="(nomeie seu agente)"
+                value={iaConfig.nome_agente || ''}
+                onChange={(e) => setIaConfig({...iaConfig, nome_agente: e.target.value})}
               />
             </div>
             <div className="grid gap-2">

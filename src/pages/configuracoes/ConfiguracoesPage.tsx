@@ -164,10 +164,10 @@ export function ConfiguracoesPage() {
                   <>
                     <div className="grid gap-4">
                       <div className="grid gap-2">
-                        <Label htmlFor="name">Nome Completo *</Label>
+                        <Label htmlFor="name">Nome da Empresa *</Label>
                         <Input 
                           id="name" 
-                          placeholder="Seu nome completo"
+                          placeholder="Nome da sua empresa"
                           value={profile.full_name}
                           onChange={(e) => setProfile({...profile, full_name: e.target.value})}
                         />
