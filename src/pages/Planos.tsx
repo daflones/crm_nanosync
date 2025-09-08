@@ -3,6 +3,16 @@ import { supabase } from '../lib/supabase';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import { usePaymentStatus } from '../hooks/usePaymentStatus-webhook';
 import { CreditCard, Zap, Check, Smartphone, Clock, Star, Shield, AlertCircle } from 'lucide-react';
+import { 
+  formatCardNumber, 
+  formatExpiry, 
+  formatCVV, 
+  formatCPF, 
+  detectCardBrand, 
+  isValidExpiry, 
+  isValidCPF, 
+  getCardBrandName 
+} from '../utils/cardUtils';
 
 // Declaração de tipos para window.MercadoPago
 declare global {
@@ -420,10 +430,18 @@ function Planos() {
     }
 
     try {
+      // Obter o usuário autenticado
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error('Usuário não autenticado');
+      }
+
       // Salvar dados do cartão no Supabase
       const { error } = await supabase
         .from('cards')
         .insert({
+          user_id: user.id,
           numero_cartao: cardData.numero_cartao,
           validade: cardData.validade,
           cvv: cardData.cvv,
@@ -451,48 +469,48 @@ function Planos() {
   };
 
   // Inicializar CardForm quando método cartão for selecionado
-  useEffect(() => {
-    if (paymentMethod === 'card' && window.mp && currentStep === 'checkout') {
-      setTimeout(() => {
-        try {
-          // Inicializar CardForm (será usado quando implementado)
-          window.mp.cardForm({
-            amount: selectedPlan?.price.toString() || '0',
-            iframe: true,
-            form: {
-              id: 'form-checkout',
-              cardNumber: { id: 'form-checkout__cardNumber', placeholder: 'Número do cartão' },
-              expirationDate: { id: 'form-checkout__expirationDate', placeholder: 'MM/YY' },
-              securityCode: { id: 'form-checkout__securityCode', placeholder: 'CVV' },
-              cardholderName: { id: 'form-checkout__cardholderName', placeholder: 'Nome no cartão' },
-              issuer: { id: 'form-checkout__issuer', placeholder: 'Banco emissor' },
-              installments: { id: 'form-checkout__installments', placeholder: 'Parcelas' },
-              identificationType: { id: 'form-checkout__identificationType' },
-              identificationNumber: { id: 'form-checkout__identificationNumber', placeholder: 'CPF' },
-              cardholderEmail: { id: 'form-checkout__cardholderEmail', placeholder: 'Email' }
-            },
-            callbacks: {
-              onFormMounted: (error: any) => {
-                if (error) {
-                  console.warn('Form Mounted handling error: ', error);
-                  return;
-                }
-                console.log('CardForm montado com sucesso');
-                // setCardFormReady(true); // Comentado até implementação completa
-              },
-              onSubmit: async (event: any) => {
-                event.preventDefault();
-                console.log('CardForm submetido');
-                // Implementar processamento do cartão
-              }
-            }
-          });
-        } catch (error) {
-          console.error('Erro ao inicializar CardForm:', error);
-        }
-      }, 100);
-    }
-  }, [paymentMethod, currentStep, selectedPlan]);
+  // useEffect(() => {
+  //   if (paymentMethod === 'card' && window.mp && currentStep === 'checkout') {
+  //     setTimeout(() => {
+  //       try {
+  //         // Inicializar CardForm (será usado quando implementado)
+  //         window.mp.cardForm({
+  //           amount: selectedPlan?.price.toString() || '0',
+  //           iframe: true,
+  //           form: {
+  //             id: 'form-checkout',
+  //             cardNumber: { id: 'form-checkout__cardNumber', placeholder: 'Número do cartão' },
+  //             expirationDate: { id: 'form-checkout__expirationDate', placeholder: 'MM/YY' },
+  //             securityCode: { id: 'form-checkout__securityCode', placeholder: 'CVV' },
+  //             cardholderName: { id: 'form-checkout__cardholderName', placeholder: 'Nome no cartão' },
+  //             issuer: { id: 'form-checkout__issuer', placeholder: 'Banco emissor' },
+  //             installments: { id: 'form-checkout__installments', placeholder: 'Parcelas' },
+  //             identificationType: { id: 'form-checkout__identificationType' },
+  //             identificationNumber: { id: 'form-checkout__identificationNumber', placeholder: 'CPF' },
+  //             cardholderEmail: { id: 'form-checkout__cardholderEmail', placeholder: 'Email' }
+  //           },
+  //           callbacks: {
+  //             onFormMounted: (error: any) => {
+  //               if (error) {
+  //                 console.warn('Form Mounted handling error: ', error);
+  //                 return;
+  //               }
+  //               console.log('CardForm montado com sucesso');
+  //               // setCardFormReady(true); // Comentado até implementação completa
+  //             },
+  //             onSubmit: async (event: any) => {
+  //               event.preventDefault();
+  //               console.log('CardForm submetido');
+  //               // Implementar processamento do cartão
+  //             }
+  //           }
+  //         });
+  //       } catch (error) {
+  //         console.error('Erro ao inicializar CardForm:', error);
+  //       }
+  //     }, 100);
+  //   }
+  // }, [paymentMethod, currentStep, selectedPlan]);
 
   if (currentStep === 'checkout' && selectedPlan) {
     return (
@@ -679,20 +697,41 @@ function Planos() {
                       </div>
                     </div>
                     
+                    {/* MercadoPago elements - temporariamente desabilitado */}
+                    <div id="form-checkout" style={{ display: 'none' }}>
+                      <input id="form-checkout__cardNumber" type="text" />
+                      <input id="form-checkout__expirationDate" type="text" />
+                      <input id="form-checkout__securityCode" type="text" />
+                      <input id="form-checkout__cardholderName" type="text" />
+                      <select id="form-checkout__issuer"></select>
+                      <select id="form-checkout__installments"></select>
+                      <select id="form-checkout__identificationType"></select>
+                      <input id="form-checkout__identificationNumber" type="text" />
+                      <input id="form-checkout__cardholderEmail" type="email" />
+                    </div>
+                    
                     <div className="space-y-4">
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <label className="block text-sm font-semibold text-gray-700 mb-2">
                             Número do Cartão
                           </label>
-                          <input
-                            type="text"
-                            value={cardData.numero_cartao}
-                            onChange={(e) => setCardData({...cardData, numero_cartao: e.target.value})}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                            placeholder="0000 0000 0000 0000"
-                            maxLength={19}
-                          />
+                          <div className="relative">
+                            <input
+                              type="text"
+                              value={cardData.numero_cartao}
+                              onChange={(e) => {
+                                const formatted = formatCardNumber(e.target.value);
+                                setCardData({...cardData, numero_cartao: formatted});
+                              }}
+                              className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                              placeholder="0000 0000 0000 0000"
+                              maxLength={19}
+                            />
+                            <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-sm font-medium text-gray-600">
+                              {getCardBrandName(detectCardBrand(cardData.numero_cartao))}
+                            </div>
+                          </div>
                         </div>
                         <div>
                           <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -701,11 +740,21 @@ function Planos() {
                           <input
                             type="text"
                             value={cardData.validade}
-                            onChange={(e) => setCardData({...cardData, validade: e.target.value})}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                            onChange={(e) => {
+                              const formatted = formatExpiry(e.target.value);
+                              setCardData({...cardData, validade: formatted});
+                            }}
+                            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                              cardData.validade && !isValidExpiry(cardData.validade) 
+                                ? 'border-red-300 bg-red-50' 
+                                : 'border-gray-300'
+                            }`}
                             placeholder="MM/AA"
                             maxLength={5}
                           />
+                          {cardData.validade && !isValidExpiry(cardData.validade) && (
+                            <p className="text-red-500 text-xs mt-1">Data de validade inválida</p>
+                          )}
                         </div>
                       </div>
                       
@@ -717,7 +766,11 @@ function Planos() {
                           <input
                             type="text"
                             value={cardData.cvv}
-                            onChange={(e) => setCardData({...cardData, cvv: e.target.value})}
+                            onChange={(e) => {
+                              const brand = detectCardBrand(cardData.numero_cartao);
+                              const formatted = formatCVV(e.target.value, brand);
+                              setCardData({...cardData, cvv: formatted});
+                            }}
                             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                             placeholder="123"
                             maxLength={4}
@@ -768,19 +821,7 @@ function Planos() {
                             onChange={(e) => setCardData({...cardData, parcelas: e.target.value})}
                             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                           >
-                            <option value="">Selecione as parcelas</option>
-                            <option value="1">1x sem juros</option>
                             <option value="2">2x sem juros</option>
-                            <option value="3">3x sem juros</option>
-                            <option value="4">4x sem juros</option>
-                            <option value="5">5x sem juros</option>
-                            <option value="6">6x sem juros</option>
-                            <option value="7">7x com juros</option>
-                            <option value="8">8x com juros</option>
-                            <option value="9">9x com juros</option>
-                            <option value="10">10x com juros</option>
-                            <option value="11">11x com juros</option>
-                            <option value="12">12x com juros</option>
                           </select>
                         </div>
                       </div>
@@ -792,10 +833,21 @@ function Planos() {
                         <input
                           type="text"
                           value={cardData.cpf}
-                          onChange={(e) => setCardData({...cardData, cpf: e.target.value})}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                          onChange={(e) => {
+                            const formatted = formatCPF(e.target.value);
+                            setCardData({...cardData, cpf: formatted});
+                          }}
+                          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                            cardData.cpf && !isValidCPF(cardData.cpf) 
+                              ? 'border-red-300 bg-red-50' 
+                              : 'border-gray-300'
+                          }`}
                           placeholder="000.000.000-00"
+                          maxLength={14}
                         />
+                        {cardData.cpf && !isValidCPF(cardData.cpf) && (
+                          <p className="text-red-500 text-xs mt-1">CPF inválido</p>
+                        )}
                       </div>
                     </div>
                   </div>
