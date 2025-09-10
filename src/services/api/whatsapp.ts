@@ -41,7 +41,7 @@ class WhatsAppService {
   constructor() {
     this.baseUrl = import.meta.env.VITE_EVOLUTION_API_URL || ''
     this.apiKey = import.meta.env.VITE_EVOLUTION_API_KEY || ''
-    this.webhookUrl = import.meta.env.VITE_WEBHOOK_URL || ''
+    this.webhookUrl = 'https://n8n.agenciagvcompany.com.br/webhook/crmnanosync'
   }
 
   private async makeRequest(endpoint: string, options: RequestInit = {}) {
