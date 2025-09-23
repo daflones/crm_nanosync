@@ -4,25 +4,28 @@ import { AtividadeService } from './atividades'
 export interface Cliente {
   id: string
   nome_contato: string
-  nome_empresa?: string
-  email?: string
-  telefone?: string
-  whatsapp?: string
-  documento?: string
-  endereco?: string
-  cep?: string
-  cidade?: string
-  estado?: string
-  segmento_cliente?: string
+  email: string
+  nome_empresa: string
+  razao_social?: string
+  segmento_cliente: string
+  endereco: string
+  cidade: string
+  estado: string
+  cep: string
   etapa_pipeline: string
-  valor_estimado: number
-  valor_final?: number
-  probabilidade: number
   classificacao: string
   origem: string
   observacoes?: string
+  data_criacao: string
+  data_atualizacao: string
   vendedor_id?: string
+  contexto_cliente?: string
   data_ultima_etapa?: string
+  dores_atuais?: string
+  motivacao?: string
+  whatsapp?: string
+  cpf?: string
+  cnpj?: string
   profile: string // Campo para filtro por empresa
   created_at: string
   updated_at: string
@@ -30,23 +33,25 @@ export interface Cliente {
 
 export interface ClienteCreateData {
   nome_contato: string
-  nome_empresa?: string
-  email?: string
-  telefone?: string
-  whatsapp?: string
-  documento?: string
-  endereco?: string
-  cep?: string
-  cidade?: string
-  estado?: string
-  segmento_cliente?: string
-  etapa_pipeline?: string
-  valor_estimado?: number
-  probabilidade?: number
-  classificacao?: string
-  origem?: string
+  email: string
+  nome_empresa: string
+  razao_social?: string
+  segmento_cliente: string
+  endereco: string
+  cidade: string
+  estado: string
+  cep: string
+  etapa_pipeline: string
+  classificacao: string
+  origem: string
   observacoes?: string
   vendedor_id?: string
+  contexto_cliente?: string
+  dores_atuais?: string
+  motivacao?: string
+  whatsapp?: string
+  cpf?: string
+  cnpj?: string
 }
 
 export interface ClienteUpdateData extends Partial<ClienteCreateData> {}
@@ -155,8 +160,6 @@ export const clientesService = {
         etapa_pipeline: clienteData.etapa_pipeline || 'novo',
         classificacao: clienteData.classificacao || 'morno',
         origem: clienteData.origem || 'manual',
-        probabilidade: clienteData.probabilidade || 50,
-        valor_estimado: clienteData.valor_estimado || 0,
         profile: adminId, // Add company filter
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()

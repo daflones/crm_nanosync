@@ -16,12 +16,19 @@ import {
 import { toast } from 'sonner'
 import { useNotifications } from '@/contexts/NotificationContext'
 import { PlanoAtivoButton } from '@/components/PlanoAtivoGuard'
-import { cn } from '../../lib/utils'
-import { useArquivosIA, useUploadArquivoIA, useDeleteArquivoIA, useUpdateArquivoIA } from '../../hooks/useArquivosIA'
-import { useClientes } from '../../hooks/useClientes'
+import { useQuery } from '@tanstack/react-query'
+import { 
+  useArquivosIA, 
+  useUploadArquivoIA, 
+  useUpdateArquivoIA, 
+  useDeleteArquivoIA 
+} from '@/hooks/useArquivosIA'
+import { clientesService } from '@/services/api/clientes'
+import { arquivosService, type CategoriaArquivo } from '@/services/api/arquivos'
 import type { ArquivoIA, CategoriaArquivoIA, ArquivoIAFilters, CreateArquivoIAData } from '../../types/arquivos-ia'
 import { CATEGORIA_CONFIG } from '../../types/arquivos-ia'
 import { formatBytes, formatDate } from '../../utils/format'
+import { cn } from '../../lib/utils'
 
 export default function ArquivosIAPage() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
@@ -33,14 +40,50 @@ export default function ArquivosIAPage() {
   const [isViewModalOpen, setIsViewModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
-  const [selectedArquivo, setSelectedArquivo] = useState<ArquivoIA | null>(null)
-  
-  // Upload form state
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [uploadMode, setUploadMode] = useState<'file' | 'existing'>('file')
+  const [selectedCommonFile, setSelectedCommonFile] = useState<string | null>(null)
+
+  // Auto-populate form when common file is selected
+  const handleCommonFileSelection = (fileId: string) => {
+    setSelectedCommonFile(fileId)
+    
+    if (fileId) {
+      const commonFile = commonFiles.find(f => f.id === fileId)
+      if (commonFile) {
+        setUploadData(prev => ({
+          ...prev,
+          nome: commonFile.nome,
+          descricao: commonFile.descricao || prev.descricao,
+          // Keep the IA-specific fields as they were
+          categoria: prev.categoria,
+          subcategoria: prev.subcategoria,
+          instrucoes_ia: prev.instrucoes_ia,
+          contexto_uso: prev.contexto_uso,
+          palavras_chave: prev.palavras_chave,
+          prioridade: prev.prioridade,
+          observacoes: prev.observacoes,
+          cliente_id: prev.cliente_id,
+          visibilidade: prev.visibilidade,
+          disponivel_ia: prev.disponivel_ia
+        }))
+        
+        // Show success message
+        toast.success(`Informações do arquivo "${commonFile.nome}" carregadas automaticamente!`)
+      }
+    }
+  }
+
+  // Handle category change - reset common file selection
+  const handleCategoryChange = (categoria: CategoriaArquivoIA) => {
+    setUploadData(prev => ({ ...prev, categoria }))
+    setSelectedCommonFile(null) // Reset selection when category changes
+  }
   const [uploadData, setUploadData] = useState<Partial<CreateArquivoIAData>>({
     categoria: 'catalogo',
     prioridade: 5,
     disponivel_ia: true,
-    visibilidade: 'publico'
+    visibilidade: 'privado'
   })
   
   // Edit form state
@@ -50,18 +93,75 @@ export default function ArquivosIAPage() {
     disponivel_ia: true,
     visibilidade: 'privado'
   })
-  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [selectedArquivo, setSelectedArquivo] = useState<ArquivoIA | null>(null)
 
-  // Hooks
-  const { data: arquivos = [], isLoading } = useArquivosIA(filters)
-  const { data: clientes = [] } = useClientes()
+  // Hooks with real-time updates
+  const { data: arquivos = [], isLoading, refetch: refetchArquivos } = useArquivosIA(filters)
+  const { data: clientes = [] } = useQuery({
+    queryKey: ['clientes'],
+    queryFn: () => clientesService.getAll(),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: true
+  })
+
+  // Fetch common files filtered by selected category
+  const { data: commonFiles = [] } = useQuery({
+    queryKey: ['common-files', uploadData.categoria],
+    queryFn: () => arquivosService.getAll({ categoria: getCategoriaMapping(uploadData.categoria) }),
+    enabled: uploadMode === 'existing' && !!uploadData.categoria,
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    refetchOnWindowFocus: true
+  })
+
+  // Map IA categories to common file categories
+  const getCategoriaMapping = (iaCategoria?: string): CategoriaArquivo => {
+    const mapping: Record<string, CategoriaArquivo> = {
+      'catalogo': 'produtos',
+      'apresentacao': 'marketing',
+      'promocoes': 'marketing',
+      'marketing': 'marketing',
+      'video': 'marketing',
+      'propostas': 'propostas'
+    }
+    return mapping[iaCategoria || ''] || 'marketing'
+  }
+
+  const resetUploadForm = () => {
+    setSelectedFile(null)
+    setUploadMode('file')
+    setSelectedCommonFile(null)
+    setUploadData({
+      categoria: 'catalogo',
+      prioridade: 5,
+      disponivel_ia: true,
+      visibilidade: 'privado'
+    })
+  }
+
   const uploadMutation = useUploadArquivoIA()
-  const deleteMutation = useDeleteArquivoIA()
   const updateMutation = useUpdateArquivoIA()
+  const deleteMutation = useDeleteArquivoIA()
+
+  // Override success handlers to close modals and reset forms
+  const handleUploadSuccess = () => {
+    setIsUploadModalOpen(false)
+    resetUploadForm()
+    // Force immediate refetch for instant UI update
+    refetchArquivos()
+  }
+
+  const handleUpdateSuccess = () => {
+    setIsEditModalOpen(false)
+    setSelectedArquivo(null)
+    // Force immediate refetch for instant UI update
+    refetchArquivos()
+  }
+
+
   const { createDatabaseNotification } = useNotifications()
 
   // Enhanced Filters
-  const filteredArquivos = arquivos?.filter(arquivo => {
+  const filteredArquivos = arquivos?.filter((arquivo: ArquivoIA) => {
     // Category filter
     if (filters.categoria && arquivo.categoria !== filters.categoria) return false
     
@@ -97,7 +197,6 @@ export default function ArquivosIAPage() {
     return true
   }) || []
 
-
   const handleViewFile = (arquivo: ArquivoIA) => {
     setSelectedArquivo(arquivo)
     setIsViewModalOpen(true)
@@ -129,23 +228,10 @@ export default function ArquivosIAPage() {
     }
 
     try {
-      await updateMutation.mutateAsync({
-        id: selectedArquivo.id,
-        data: {
-          nome: editData.nome,
-          descricao: editData.descricao,
-          categoria: editData.categoria,
-          subcategoria: editData.subcategoria,
-          instrucoes_ia: editData.instrucoes_ia,
-          contexto_uso: editData.contexto_uso,
-          palavras_chave: editData.palavras_chave,
-          prioridade: editData.prioridade,
-          observacoes: editData.observacoes,
-          cliente_id: editData.cliente_id,
-          visibilidade: editData.visibilidade,
-          disponivel_ia: editData.disponivel_ia
-        }
-      })
+      await updateMutation.mutate(
+        { id: selectedArquivo.id, data: editData },
+        { onSuccess: handleUpdateSuccess }
+      )
       
       // Criar notificação no banco
       await createDatabaseNotification({
@@ -154,14 +240,6 @@ export default function ArquivosIAPage() {
         titulo: 'Arquivo IA Atualizado',
         descricao: 'Arquivo IA foi atualizado com sucesso',
         prioridade: 'normal'
-      })
-      setIsEditModalOpen(false)
-      setSelectedArquivo(null)
-      setEditData({
-        categoria: 'catalogo',
-        prioridade: 5,
-        disponivel_ia: true,
-        visibilidade: 'privado'
       })
     } catch (error) {
       console.error('Erro na edição:', error)
@@ -178,7 +256,20 @@ export default function ArquivosIAPage() {
     if (!selectedArquivo) return
     
     try {
-      await deleteMutation.mutateAsync(selectedArquivo.id)
+      // Use the mutation with proper success callback
+      deleteMutation.mutate(selectedArquivo.id, {
+        onSuccess: () => {
+          // Close modal and reset state immediately
+          setIsDeleteModalOpen(false)
+          setSelectedArquivo(null)
+          // Force immediate refetch for instant UI update
+          refetchArquivos()
+        },
+        onError: (error) => {
+          console.error('Erro ao excluir arquivo:', error)
+          toast.error('Erro ao excluir arquivo')
+        }
+      })
       
       // Criar notificação no banco
       await createDatabaseNotification({
@@ -188,9 +279,8 @@ export default function ArquivosIAPage() {
         descricao: 'Arquivo IA foi excluído com sucesso',
         prioridade: 'normal'
       })
-      setIsDeleteModalOpen(false)
-      setSelectedArquivo(null)
     } catch (error) {
+      console.error('Erro ao excluir arquivo:', error)
       toast.error('Erro ao excluir arquivo')
     }
   }
@@ -200,59 +290,124 @@ export default function ArquivosIAPage() {
   }
 
   const handleUpload = async () => {
-    if (!selectedFile || !uploadData.nome || !uploadData.categoria) {
-      toast.error('Preencha todos os campos obrigatórios')
-      return
-    }
+    if (uploadMode === 'file') {
+      if (!selectedFile || !uploadData.nome || !uploadData.categoria) {
+        alert('Por favor, preencha todos os campos obrigatórios')
+        return
+      }
 
-    // Ensure all required fields are present
-    const completeData: CreateArquivoIAData = {
-      nome: uploadData.nome!,
-      nome_original: uploadData.nome_original || selectedFile.name,
-      tamanho: uploadData.tamanho || selectedFile.size,
-      tipo_mime: uploadData.tipo_mime || selectedFile.type,
-      extensao: uploadData.extensao || selectedFile.name.split('.').pop(),
-      categoria: uploadData.categoria!,
-      subcategoria: uploadData.subcategoria,
-      descricao: uploadData.descricao,
-      instrucoes_ia: uploadData.instrucoes_ia,
-      contexto_uso: uploadData.contexto_uso,
-      palavras_chave: uploadData.palavras_chave,
-      prioridade: uploadData.prioridade || 5,
-      observacoes: uploadData.observacoes,
-      cliente_id: uploadData.cliente_id,
-      produto_id: uploadData.produto_id,
-      proposta_id: uploadData.proposta_id,
-      contrato_id: uploadData.contrato_id,
-      visibilidade: uploadData.visibilidade || 'privado',
-      disponivel_ia: uploadData.disponivel_ia !== false
-    }
+      const fileData: CreateArquivoIAData = {
+        nome: uploadData.nome,
+        nome_original: selectedFile.name,
+        descricao: uploadData.descricao,
+        tamanho: selectedFile.size,
+        tipo_mime: selectedFile.type,
+        categoria: uploadData.categoria,
+        subcategoria: uploadData.subcategoria,
+        instrucoes_ia: uploadData.instrucoes_ia,
+        contexto_uso: uploadData.contexto_uso,
+        palavras_chave: uploadData.palavras_chave,
+        prioridade: uploadData.prioridade,
+        observacoes: uploadData.observacoes,
+        cliente_id: uploadData.cliente_id,
+        visibilidade: uploadData.visibilidade,
+        disponivel_ia: uploadData.disponivel_ia
+      }
 
-    try {
-      await uploadMutation.mutateAsync({ file: selectedFile, data: completeData })
-      
-      // Criar notificação no banco
-      await createDatabaseNotification({
-        tipo: 'sistema',
-        categoria: 'sistema',
-        titulo: 'Arquivo IA Adicionado',
-        descricao: 'Novo arquivo IA foi adicionado com sucesso',
-        prioridade: 'normal'
-      })
-      
-      setIsUploadModalOpen(false)
-      setSelectedFile(null)
-      setUploadData({
-        categoria: 'catalogo',
-        prioridade: 5,
-        disponivel_ia: true,
-        visibilidade: 'publico'
-      })
-    } catch (error) {
-      console.error('Erro no upload:', error)
-      toast.error('Erro ao enviar arquivo. Tente novamente.')
+      uploadMutation.mutate(
+        { file: selectedFile, data: fileData },
+        { onSuccess: handleUploadSuccess }
+      )
+    } else {
+      // Handle linking existing common file
+      if (!selectedCommonFile || !uploadData.nome || !uploadData.categoria) {
+        alert('Por favor, selecione um arquivo comum e preencha os campos obrigatórios')
+        return
+      }
+
+      const commonFile = commonFiles.find(f => f.id === selectedCommonFile)
+      if (!commonFile) {
+        alert('Arquivo comum não encontrado')
+        return
+      }
+
+      // Create IA file record that references the common file
+      const fileData: CreateArquivoIAData = {
+        nome: uploadData.nome,
+        nome_original: commonFile.nome,
+        descricao: uploadData.descricao || commonFile.descricao,
+        tamanho: commonFile.tamanho,
+        tipo_mime: commonFile.mime_type || 'application/octet-stream',
+        categoria: uploadData.categoria,
+        subcategoria: uploadData.subcategoria,
+        instrucoes_ia: uploadData.instrucoes_ia,
+        contexto_uso: uploadData.contexto_uso,
+        palavras_chave: uploadData.palavras_chave,
+        prioridade: uploadData.prioridade,
+        observacoes: uploadData.observacoes,
+        cliente_id: uploadData.cliente_id,
+        visibilidade: uploadData.visibilidade,
+        disponivel_ia: uploadData.disponivel_ia
+      }
+
+      // Create a virtual file object from the common file URL
+      try {
+        const response = await fetch(commonFile.url)
+        if (!response.ok) {
+          throw new Error(`Failed to fetch file: ${response.status} ${response.statusText}`)
+        }
+        
+        const blob = await response.blob()
+        
+        // Create a proper File object using the File constructor with proper parameters
+        let fileObject: File
+        
+        try {
+          // Try to use the native File constructor
+          fileObject = new (window as any).File([blob], commonFile.nome, {
+            type: commonFile.mime_type || 'application/octet-stream',
+            lastModified: Date.now()
+          })
+        } catch (fileConstructorError) {
+          // Fallback: Create a Blob with File-like properties
+          const blobWithName = new Blob([blob], { type: commonFile.mime_type || 'application/octet-stream' })
+          
+          // Add File properties to make it compatible
+          Object.defineProperty(blobWithName, 'name', {
+            value: commonFile.nome,
+            writable: false,
+            enumerable: true,
+            configurable: false
+          })
+          
+          Object.defineProperty(blobWithName, 'lastModified', {
+            value: Date.now(),
+            writable: false,
+            enumerable: true,
+            configurable: false
+          })
+          
+          Object.defineProperty(blobWithName, 'webkitRelativePath', {
+            value: '',
+            writable: false,
+            enumerable: true,
+            configurable: false
+          })
+          
+          fileObject = blobWithName as File
+        }
+        
+        uploadMutation.mutate(
+          { file: fileObject, data: fileData },
+          { onSuccess: handleUploadSuccess }
+        )
+      } catch (error) {
+        console.error('Error creating file from common file:', error)
+        toast.error('Erro ao processar arquivo comum. Verifique se o arquivo ainda existe e tente novamente.')
+      }
     }
   }
+
   const getFileIcon = (mimeType: string) => {
     if (mimeType.startsWith('image/')) return Image
     if (mimeType.startsWith('video/')) return Video
@@ -309,9 +464,9 @@ export default function ArquivosIAPage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos</SelectItem>
-            {clientes.map((cliente) => (
+            {(clientes as any[]).map((cliente: any) => (
               <SelectItem key={cliente.id} value={cliente.id}>
-                {(cliente as any).nome_empresa || (cliente as any).nome_contato || 'Cliente'}
+                {cliente.nome_empresa || cliente.nome_contato || 'Cliente'}
               </SelectItem>
             ))}
           </SelectContent>
@@ -377,9 +532,9 @@ export default function ArquivosIAPage() {
             ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6' 
             : 'space-y-4'
         )}>
-          {filteredArquivos.map((arquivo) => {
+          {filteredArquivos.map((arquivo: ArquivoIA) => {
             return (
-              <Card key={arquivo.id} className="group hover:shadow-xl transition-all duration-300 border-0 shadow-md bg-gradient-to-br from-white to-gray-50/50 hover:from-primary-50/30 hover:to-primary-100/30">
+              <Card key={arquivo.id} className="group hover:shadow-xl transition-all duration-300 border-0 shadow-md bg-gradient-to-br from-white to-gray-50/50 hover:from-primary-50/30 hover:to-primary-100/30 relative overflow-hidden">
                 <CardHeader className="pb-4">
                   {/* File Preview */}
                   {arquivo.tipo_mime?.startsWith('image/') && arquivo.url && (
@@ -396,7 +551,7 @@ export default function ArquivosIAPage() {
                   )}
                   
                   <div className="flex items-start justify-between">
-                    <div className="flex items-center space-x-4">
+                    <div className="flex items-center space-x-4 flex-1 min-w-0">
                       <div className="p-3 bg-gradient-to-br from-primary-100 to-primary-200 rounded-xl shadow-sm">
                         {React.createElement(getFileIcon(arquivo.tipo_mime), { className: "h-7 w-7 text-primary-700" })}
                       </div>
@@ -411,17 +566,19 @@ export default function ArquivosIAPage() {
                         )}
                       </div>
                     </div>
-                    <div className="flex space-x-1 opacity-0 group-hover:opacity-100 transition-all duration-200">
-                      <Button size="sm" variant="ghost" className="hover:bg-blue-100 hover:text-blue-700" onClick={() => handleViewFile(arquivo)}>
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button size="sm" variant="ghost" className="hover:bg-green-100 hover:text-green-700" onClick={() => handleEditFile(arquivo)}>
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button size="sm" variant="ghost" className="hover:bg-red-100 hover:text-red-700" onClick={() => handleDeleteFile(arquivo)}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
+                  </div>
+                  
+                  {/* Action buttons positioned at bottom right with proper z-index */}
+                  <div className="absolute top-2 right-2 flex space-x-1 opacity-0 group-hover:opacity-100 transition-all duration-200 z-10">
+                    <Button size="sm" variant="ghost" className="hover:bg-blue-100 hover:text-blue-700 bg-white/90 backdrop-blur-sm shadow-sm" onClick={() => handleViewFile(arquivo)}>
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                    <Button size="sm" variant="ghost" className="hover:bg-green-100 hover:text-green-700 bg-white/90 backdrop-blur-sm shadow-sm" onClick={() => handleEditFile(arquivo)}>
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button size="sm" variant="ghost" className="hover:bg-red-100 hover:text-red-700 bg-white/90 backdrop-blur-sm shadow-sm" onClick={() => handleDeleteFile(arquivo)}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </div>
                 </CardHeader>
                 <CardContent className="pt-0 space-y-3">
@@ -431,7 +588,7 @@ export default function ArquivosIAPage() {
                   </div>
                   <div className="flex flex-wrap gap-1">
                     <Badge variant="outline" className="text-xs">
-                      {CATEGORIA_CONFIG[arquivo.categoria]?.label}
+                      {CATEGORIA_CONFIG[arquivo.categoria as CategoriaArquivoIA]?.label}
                     </Badge>
                     <Badge variant={arquivo.disponivel_ia ? 'default' : 'secondary'} className="text-xs">
                       {arquivo.disponivel_ia ? 'IA Ativo' : 'IA Inativo'}
@@ -483,15 +640,89 @@ export default function ArquivosIAPage() {
           </DialogHeader>
           
           <div className="space-y-4">
-            <div>
-              <Label htmlFor="file">Arquivo *</Label>
-              <Input
-                id="file"
-                type="file"
-                onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
-                accept="*/*"
-              />
+            {/* Upload Mode Selection */}
+            <div className="space-y-3">
+              <Label className="text-base font-semibold">Modo de Adição</Label>
+              <div className="flex gap-4">
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="radio"
+                    id="mode-file"
+                    name="uploadMode"
+                    value="file"
+                    checked={uploadMode === 'file'}
+                    onChange={(e) => setUploadMode(e.target.value as 'file' | 'existing')}
+                  />
+                  <Label htmlFor="mode-file" className="cursor-pointer">Fazer upload de novo arquivo</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="radio"
+                    id="mode-existing"
+                    name="uploadMode"
+                    value="existing"
+                    checked={uploadMode === 'existing'}
+                    onChange={(e) => setUploadMode(e.target.value as 'file' | 'existing')}
+                  />
+                  <Label htmlFor="mode-existing" className="cursor-pointer">Vincular arquivo comum existente</Label>
+                </div>
+              </div>
             </div>
+
+            {/* File Upload Section */}
+            {uploadMode === 'file' && (
+              <div>
+                <Label htmlFor="file">Arquivo *</Label>
+                <Input
+                  id="file"
+                  type="file"
+                  onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                  accept="*/*"
+                />
+              </div>
+            )}
+
+            {/* Common File Selection */}
+            {uploadMode === 'existing' && (
+              <div className="space-y-3">
+                <Label htmlFor="common-file">Selecionar Arquivo Comum *</Label>
+                <div className="text-sm text-gray-600 mb-2">
+                  Primeiro selecione a categoria para filtrar os arquivos disponíveis
+                </div>
+                {uploadData.categoria && commonFiles.length > 0 ? (
+                  <div className="space-y-2">
+                    <Select value={selectedCommonFile || ''} onValueChange={handleCommonFileSelection}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione um arquivo comum" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {commonFiles.map((file) => (
+                          <SelectItem key={file.id} value={file.id}>
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium">{file.nome}</span>
+                              <span className="text-xs text-gray-500">({formatBytes(file.tamanho)})</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {selectedCommonFile && (
+                      <div className="text-xs text-green-600 bg-green-50 p-2 rounded border border-green-200">
+                        ✓ Informações do arquivo carregadas automaticamente nos campos abaixo
+                      </div>
+                    )}
+                  </div>
+                ) : uploadData.categoria ? (
+                  <div className="text-sm text-gray-500 p-3 bg-gray-50 rounded border">
+                    Nenhum arquivo comum encontrado para a categoria selecionada.
+                  </div>
+                ) : (
+                  <div className="text-sm text-gray-500 p-3 bg-gray-50 rounded border">
+                    Selecione uma categoria primeiro para ver os arquivos disponíveis.
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -501,12 +732,18 @@ export default function ArquivosIAPage() {
                   value={uploadData.nome || ''}
                   onChange={(e) => setUploadData({...uploadData, nome: e.target.value})}
                   placeholder="Nome do arquivo"
+                  className={uploadMode === 'existing' && selectedCommonFile ? 'bg-green-50 border-green-200' : ''}
                 />
+                {uploadMode === 'existing' && selectedCommonFile && uploadData.nome && (
+                  <div className="text-xs text-green-600 mt-1">
+                    ✓ Preenchido automaticamente
+                  </div>
+                )}
               </div>
               
               <div>
                 <Label htmlFor="categoria">Categoria *</Label>
-                <Select value={uploadData.categoria} onValueChange={(value) => setUploadData({...uploadData, categoria: value as CategoriaArquivoIA})}>
+                <Select value={uploadData.categoria} onValueChange={(value) => handleCategoryChange(value as CategoriaArquivoIA)}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -528,7 +765,13 @@ export default function ArquivosIAPage() {
                 value={uploadData.descricao || ''}
                 onChange={(e) => setUploadData({...uploadData, descricao: e.target.value})}
                 placeholder="Descrição do arquivo"
+                className={uploadMode === 'existing' && selectedCommonFile && uploadData.descricao ? 'bg-green-50 border-green-200' : ''}
               />
+              {uploadMode === 'existing' && selectedCommonFile && uploadData.descricao && (
+                <div className="text-xs text-green-600 mt-1">
+                  ✓ Preenchido automaticamente
+                </div>
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -586,7 +829,7 @@ export default function ArquivosIAPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">Nenhum cliente</SelectItem>
-                    {clientes.map((cliente: any) => (
+                    {(clientes as any[]).map((cliente: any) => (
                       <SelectItem key={cliente.id} value={cliente.id}>
                         {cliente.nome_contato || cliente.nome_empresa}
                       </SelectItem>

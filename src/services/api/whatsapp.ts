@@ -79,7 +79,7 @@ class WhatsAppService {
       // Configurações padrão
       rejectCall: true,
       msgCall: 'Chamadas não são aceitas neste número.',
-      groupsIgnore: false,
+      groupsIgnore: true,
       alwaysOnline: true,
       readMessages: true,
       readStatus: false,

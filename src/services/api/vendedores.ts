@@ -68,9 +68,14 @@ export interface VendedorUpdateData {
   nome?: string
   email?: string
   telefone?: string
+  cpf?: string
+  whatsapp?: string
   cargo?: string
   meta_mensal?: number
   comissao_percentual?: number
+  salario_base?: number
+  data_contratacao?: string
+  status?: 'ativo' | 'inativo' | 'ferias' | 'afastado' | 'desligado'
   ativo?: boolean
 }
 

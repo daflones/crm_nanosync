@@ -41,8 +41,9 @@ export const getArquivosIA = async (filters?: ArquivoIAFilters): Promise<Arquivo
       .from('arquivos_ia')
       .select('*')
       .eq('profile', adminId)
+      .is('deleted_at', null)  // Only get non-deleted files
       .order('created_at', { ascending: false })
-
+    
     // Apply filters
     if (filters?.categoria) {
       query = query.eq('categoria', filters.categoria)
@@ -84,14 +85,17 @@ export const getArquivosIA = async (filters?: ArquivoIAFilters): Promise<Arquivo
       query = query.overlaps('palavras_chave', filters.palavras_chave)
     }
 
-    const { data, error } = await query
+    const { data: arquivos, error } = await query
 
     if (error) {
       console.error('Erro ao buscar arquivos IA:', error)
       throw error
     }
+    
+    // Double-check: filter out deleted files in case the query didn't work
+    const filteredArquivos = arquivos?.filter((arquivo: any) => !arquivo.deleted_at) || []
 
-    return data || []
+    return filteredArquivos
   } catch (error) {
     console.error('Erro ao buscar arquivos IA:', error)
     throw error

@@ -10,9 +10,12 @@ import {
   TrendingUp, 
   Users, 
   FileText, 
-  DollarSign
+  DollarSign,
+  Building2,
+  Calendar
 } from 'lucide-react'
 import { useVendedorPerformance } from '@/hooks/useVendedores'
+import { useClientesByVendedor } from '@/hooks/useClientes'
 import type { Vendedor } from '@/services/api/vendedores'
 
 interface VendedorDetailedViewProps {
@@ -21,6 +24,7 @@ interface VendedorDetailedViewProps {
 
 export function VendedorDetailedView({ vendedor }: VendedorDetailedViewProps) {
   const { data: performance, isLoading } = useVendedorPerformance(vendedor.id)
+  const { data: clientes, isLoading: isLoadingClientes } = useClientesByVendedor(vendedor.id)
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -29,6 +33,43 @@ export function VendedorDetailedView({ vendedor }: VendedorDetailedViewProps) {
       case 'ferias': return 'bg-yellow-100 text-yellow-800'
       default: return 'bg-gray-100 text-gray-800'
     }
+  }
+
+  const getClienteStatusColor = (etapa: string) => {
+    switch (etapa) {
+      case 'novo': return 'bg-gray-100 text-gray-800'
+      case 'contactado': return 'bg-blue-100 text-blue-800'
+      case 'qualificado': return 'bg-indigo-100 text-indigo-800'
+      case 'proposta': return 'bg-purple-100 text-purple-800'
+      case 'negociacao': return 'bg-orange-100 text-orange-800'
+      case 'fechado': return 'bg-green-100 text-green-800'
+      case 'perdido': return 'bg-red-100 text-red-800'
+      default: return 'bg-gray-100 text-gray-800'
+    }
+  }
+
+  const getClienteStatusName = (etapa: string) => {
+    switch (etapa) {
+      case 'novo': return 'Novo'
+      case 'contactado': return 'Contactado'
+      case 'qualificado': return 'Qualificado'
+      case 'proposta': return 'Proposta'
+      case 'negociacao': return 'Negociação'
+      case 'fechado': return 'Fechado'
+      case 'perdido': return 'Perdido'
+      default: return etapa
+    }
+  }
+
+  const clienteStats = {
+    total: clientes?.length || 0,
+    novo: clientes?.filter(c => c.etapa_pipeline === 'novo').length || 0,
+    contactado: clientes?.filter(c => c.etapa_pipeline === 'contactado').length || 0,
+    qualificado: clientes?.filter(c => c.etapa_pipeline === 'qualificado').length || 0,
+    proposta: clientes?.filter(c => c.etapa_pipeline === 'proposta').length || 0,
+    negociacao: clientes?.filter(c => c.etapa_pipeline === 'negociacao').length || 0,
+    fechado: clientes?.filter(c => c.etapa_pipeline === 'fechado').length || 0,
+    perdido: clientes?.filter(c => c.etapa_pipeline === 'perdido').length || 0,
   }
 
   const progressPercentage = vendedor.meta_mensal && performance?.total_vendas 
@@ -259,6 +300,78 @@ export function VendedorDetailedView({ vendedor }: VendedorDetailedViewProps) {
           </CardContent>
         </Card>
       )}
+
+      {/* Clientes Associados */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            Clientes Associados ({clienteStats.total})
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Estatísticas dos Clientes */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="text-center p-3 bg-blue-50 rounded-lg">
+              <div className="text-lg font-bold text-blue-600">{clienteStats.novo}</div>
+              <div className="text-xs text-blue-600">Novos</div>
+            </div>
+            <div className="text-center p-3 bg-blue-50 rounded-lg">
+              <div className="text-lg font-bold text-blue-600">{clienteStats.contactado}</div>
+              <div className="text-xs text-blue-600">Contactado</div>
+            </div>
+            <div className="text-center p-3 bg-orange-50 rounded-lg">
+              <div className="text-lg font-bold text-orange-600">{clienteStats.proposta}</div>
+              <div className="text-xs text-orange-600">Proposta</div>
+            </div>
+            <div className="text-center p-3 bg-green-50 rounded-lg">
+              <div className="text-lg font-bold text-green-600">{clienteStats.fechado}</div>
+              <div className="text-xs text-green-600">Fechados</div>
+            </div>
+          </div>
+
+          {/* Lista de Clientes */}
+          {isLoadingClientes ? (
+            <div className="text-center py-4 text-muted-foreground">
+              Carregando clientes...
+            </div>
+          ) : clientes && clientes.length > 0 ? (
+            <div className="space-y-2 max-h-60 overflow-y-auto">
+              {clientes.map((cliente) => (
+                <div key={cliente.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <Building2 className="h-4 w-4 text-muted-foreground" />
+                      <span className="font-medium">{cliente.nome_contato}</span>
+                    </div>
+                    <div className="text-sm text-muted-foreground mt-1">
+                      {cliente.nome_empresa}
+                    </div>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Mail className="h-3 w-3 text-muted-foreground" />
+                      <span className="text-xs text-muted-foreground">{cliente.email}</span>
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-end gap-1">
+                    <Badge className={getClienteStatusColor(cliente.etapa_pipeline)}>
+                      {getClienteStatusName(cliente.etapa_pipeline)}
+                    </Badge>
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <Calendar className="h-3 w-3" />
+                      {new Date(cliente.created_at).toLocaleDateString('pt-BR')}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              <Users className="h-12 w-12 mx-auto mb-2 opacity-50" />
+              <p>Nenhum cliente associado a este vendedor</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   )
 }

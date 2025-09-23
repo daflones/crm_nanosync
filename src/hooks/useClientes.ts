@@ -124,3 +124,14 @@ export function useUpdatePipelineStage() {
     }
   })
 }
+
+export function useClientesByVendedor(vendedorId: string) {
+  return useQuery({
+    queryKey: ['clientes', 'vendedor', vendedorId],
+    queryFn: () => clientesService.getAll({ vendedorId }),
+    enabled: !!vendedorId,
+    staleTime: 1000 * 30, // 30 seconds for real-time updates
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+  })
+}

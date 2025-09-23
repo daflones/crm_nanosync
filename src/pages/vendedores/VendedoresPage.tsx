@@ -22,6 +22,8 @@ interface VendedorFormData {
   whatsapp: string
   meta_mensal: number
   comissao_percentual: number
+  salario_base: number
+  data_contratacao: string
 }
 
 export default function VendedoresPage() {
@@ -40,7 +42,9 @@ export default function VendedoresPage() {
     cpf: '',
     whatsapp: '',
     meta_mensal: 0,
-    comissao_percentual: 5
+    comissao_percentual: 5,
+    salario_base: 0,
+    data_contratacao: ''
   })
 
   const { data: vendedores = [], isLoading, error } = useVendedores()
@@ -66,7 +70,9 @@ export default function VendedoresPage() {
       cpf: '',
       whatsapp: '',
       meta_mensal: 0,
-      comissao_percentual: 5
+      comissao_percentual: 5,
+      salario_base: 0,
+      data_contratacao: ''
     })
   }
 
@@ -75,7 +81,9 @@ export default function VendedoresPage() {
       const vendedorData = {
         ...formData,
         meta_mensal: Number(formData.meta_mensal),
-        comissao_percentual: Number(formData.comissao_percentual)
+        comissao_percentual: Number(formData.comissao_percentual),
+        salario_base: Number(formData.salario_base),
+        data_contratacao: formData.data_contratacao
       }
 
       const newVendedor = await createVendedor.mutateAsync(vendedorData)
@@ -114,7 +122,9 @@ export default function VendedoresPage() {
       cpf: vendedor.cpf || '',
       whatsapp: vendedor.whatsapp || '',
       meta_mensal: vendedor.meta_mensal || 0,
-      comissao_percentual: vendedor.comissao_percentual || 5
+      comissao_percentual: vendedor.comissao_percentual || 5,
+      salario_base: vendedor.salario_base || 0,
+      data_contratacao: vendedor.data_contratacao ? vendedor.data_contratacao.split('T')[0] : ''
     })
     setIsEditModalOpen(true)
   }
@@ -130,7 +140,9 @@ export default function VendedoresPage() {
         cpf: formData.cpf,
         whatsapp: formData.whatsapp,
         meta_mensal: Number(formData.meta_mensal),
-        comissao_percentual: Number(formData.comissao_percentual)
+        comissao_percentual: Number(formData.comissao_percentual),
+        salario_base: Number(formData.salario_base),
+        data_contratacao: formData.data_contratacao
       }
 
       await updateVendedor.mutateAsync({
@@ -419,6 +431,31 @@ export default function VendedoresPage() {
                 className="col-span-3"
               />
             </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="salario_base" className="text-right">
+                Salário Base
+              </Label>
+              <Input
+                id="salario_base"
+                type="number"
+                step="0.01"
+                value={formData.salario_base}
+                onChange={(e) => setFormData({ ...formData, salario_base: Number(e.target.value) })}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="data_contratacao" className="text-right">
+                Data de Contratação
+              </Label>
+              <Input
+                id="data_contratacao"
+                type="date"
+                value={formData.data_contratacao}
+                onChange={(e) => setFormData({ ...formData, data_contratacao: e.target.value })}
+                className="col-span-3"
+              />
+            </div>
           </div>
           <DialogFooter>
             <Button
@@ -533,6 +570,31 @@ export default function VendedoresPage() {
                 step="0.1"
                 value={formData.comissao_percentual}
                 onChange={(e) => setFormData({ ...formData, comissao_percentual: Number(e.target.value) })}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-salario_base" className="text-right">
+                Salário Base
+              </Label>
+              <Input
+                id="edit-salario_base"
+                type="number"
+                step="0.01"
+                value={formData.salario_base}
+                onChange={(e) => setFormData({ ...formData, salario_base: Number(e.target.value) })}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-data_contratacao" className="text-right">
+                Data de Contratação
+              </Label>
+              <Input
+                id="edit-data_contratacao"
+                type="date"
+                value={formData.data_contratacao}
+                onChange={(e) => setFormData({ ...formData, data_contratacao: e.target.value })}
                 className="col-span-3"
               />
             </div>

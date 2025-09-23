@@ -1,27 +1,27 @@
 import { useState } from 'react'
-import { 
+import {
   Plus,
-  Search, 
-  Phone, 
-  Mail, 
-  TrendingUp, 
-  User, 
+  Search,
+  Filter,
+  Mail,
+  Building,
+  User,
   Users,
   Loader2, 
   MapPin,
-  DollarSign,
   Edit,
   LayoutGrid,
   List,
   Eye,
-  Trash2
+  Trash2,
+  Phone
 } from 'lucide-react'
 import { useClientes, useCreateCliente, useUpdateCliente, useDeleteCliente, useUpdatePipelineStage } from '@/hooks/useClientes'
 import { useVendedores } from '@/hooks/useVendedores'
 import { useIsAdmin, useCurrentVendedorId } from '@/hooks/useAuth'
 import { VendedorSelector } from '@/components/VendedorSelector'
 import { PlanoAtivoButton } from '@/components/PlanoAtivoGuard'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
@@ -60,27 +60,26 @@ import { KanbanBoard } from '@/components/kanban/KanbanBoard'
 // Validation schema - aligned with database structure
 const clienteSchema = z.object({
   nome_contato: z.string().min(1, 'Nome é obrigatório'),
-  cargo: z.string().optional().or(z.literal('')),
   nome_empresa: z.string().optional().or(z.literal('')),
   razao_social: z.string().optional().or(z.literal('')),
-  cnpj: z.string().optional().or(z.literal('')),
+  documento_tipo: z.enum(['cpf', 'cnpj']).optional(),
+  documento_numero: z.string().optional().or(z.literal('')),
   email: z.string().email('Email inválido').optional().or(z.literal('')),
+  ddd: z.string().optional().or(z.literal('')),
   telefone: z.string().optional().or(z.literal('')),
-  whatsapp: z.string().optional().or(z.literal('')),
   endereco: z.string().optional().or(z.literal('')),
   numero: z.string().optional().or(z.literal('')),
-  complemento: z.string().optional().or(z.literal('')),
-  bairro: z.string().optional().or(z.literal('')),
   cidade: z.string().optional().or(z.literal('')),
   estado: z.string().optional().or(z.literal('')),
   cep: z.string().optional().or(z.literal('')),
   segmento_cliente: z.string().optional().or(z.literal('')),
   etapa_pipeline: z.string().default('novo'),
-  valor_estimado: z.coerce.number().min(0).default(0),
-  probabilidade: z.coerce.number().min(0).max(100).default(50),
   classificacao: z.string().default('frio'),
   origem: z.string().default('manual'),
   observacoes: z.string().optional().or(z.literal('')),
+  contexto_cliente: z.string().optional().or(z.literal('')),
+  dores_atuais: z.string().optional().or(z.literal('')),
+  motivacao: z.string().optional().or(z.literal('')),
   vendedor_id: z.string().optional().or(z.literal('')),
 })
 
@@ -111,8 +110,13 @@ export function ClientesPage() {
   // React Hook Form
   const form = useForm<ClienteFormData>({
     resolver: zodResolver(clienteSchema),
+    defaultValues: {
+      etapa_pipeline: 'novo',
+      classificacao: 'frio',
+      origem: 'manual'
+    }
   })
-  const { register, handleSubmit, reset, setValue, formState: { errors } } = form
+  const { register, handleSubmit, formState: { errors }, reset, setValue, watch } = form
 
   const pipelineStages = [
     { id: 'novo', name: 'Novo', color: 'bg-gray-500' },
@@ -159,12 +163,34 @@ export function ClientesPage() {
 
   const handleCreateCliente = async (data: ClienteFormData) => {
     try {
+      // Combine DDD and telefone into whatsapp field
+      const whatsapp = data.ddd && data.telefone ? `${data.ddd}${data.telefone}` : ''
+      
+      // Handle documento fields - map to cpf or cnpj based on tipo
+      const documentoData: any = {}
+      if (data.documento_tipo === 'cpf' && data.documento_numero) {
+        documentoData.cpf = data.documento_numero
+        documentoData.cnpj = null
+      } else if (data.documento_tipo === 'cnpj' && data.documento_numero) {
+        documentoData.cnpj = data.documento_numero
+        documentoData.cpf = null
+      }
+      
       // Clean up empty string fields that should be null for UUID fields
       const cleanedData = {
         ...data,
+        ...documentoData,
+        whatsapp,
         vendedor_id: data.vendedor_id && data.vendedor_id.trim() !== '' ? data.vendedor_id : null,
         segmento_cliente: data.segmento_cliente && data.segmento_cliente.trim() !== '' ? data.segmento_cliente : null,
       }
+      
+      // Remove form-only fields that don't exist in database
+      delete cleanedData.ddd
+      delete cleanedData.telefone
+      delete cleanedData.documento_tipo
+      delete cleanedData.documento_numero
+      
       const result = await createCliente.mutateAsync(cleanedData as any)
       setIsCreateModalOpen(false)
       reset()
@@ -189,12 +215,34 @@ export function ClientesPage() {
     if (!selectedCliente) return
     
     try {
+      // Combine DDD and telefone into whatsapp field
+      const whatsapp = data.ddd && data.telefone ? `${data.ddd}${data.telefone}` : ''
+      
+      // Handle documento fields - map to cpf or cnpj based on tipo
+      const documentoData: any = {}
+      if (data.documento_tipo === 'cpf' && data.documento_numero) {
+        documentoData.cpf = data.documento_numero
+        documentoData.cnpj = null
+      } else if (data.documento_tipo === 'cnpj' && data.documento_numero) {
+        documentoData.cnpj = data.documento_numero
+        documentoData.cpf = null
+      }
+      
       // Clean up empty string fields that should be null for UUID fields
       const cleanedData = {
         ...data,
+        ...documentoData,
+        whatsapp,
         vendedor_id: data.vendedor_id && data.vendedor_id.trim() !== '' ? data.vendedor_id : null,
         segmento_cliente: data.segmento_cliente && data.segmento_cliente.trim() !== '' ? data.segmento_cliente : null,
       }
+      
+      // Remove form-only fields that don't exist in database
+      delete cleanedData.ddd
+      delete cleanedData.telefone
+      delete cleanedData.documento_tipo
+      delete cleanedData.documento_numero
+      
       await updateCliente.mutateAsync({
         id: selectedCliente.id,
         data: cleanedData
@@ -259,35 +307,45 @@ export function ClientesPage() {
     
     // Set form values with proper type conversion - aligned with database schema
     setValue('nome_contato', cliente.nome_contato || '')
-    setValue('cargo', cliente.cargo || '')
     setValue('nome_empresa', cliente.nome_empresa || '')
     setValue('razao_social', cliente.razao_social || '')
-    setValue('cnpj', cliente.cnpj || '')
     setValue('email', cliente.email || '')
-    setValue('telefone', cliente.telefone || '')
-    setValue('whatsapp', cliente.whatsapp || '')
+    
+    // Set documento fields based on existing data
+    if (cliente.cpf) {
+      setValue('documento_tipo', 'cpf')
+      setValue('documento_numero', cliente.cpf)
+    } else if (cliente.cnpj) {
+      setValue('documento_tipo', 'cnpj')
+      setValue('documento_numero', cliente.cnpj)
+    }
+    
+    // Parse WhatsApp to DDD and telefone
+    const whatsapp = cliente.whatsapp || ''
+    if (whatsapp) {
+      // Extract DDD and phone from whatsapp format like "(11) 99999-9999" or "11999999999"
+      const cleanPhone = whatsapp.replace(/\D/g, '')
+      if (cleanPhone.length >= 10) {
+        setValue('ddd', cleanPhone.substring(0, 2))
+        setValue('telefone', cleanPhone.substring(2))
+      }
+    }
     setValue('endereco', cliente.endereco || '')
     setValue('numero', cliente.numero || '')
-    setValue('complemento', cliente.complemento || '')
-    setValue('bairro', cliente.bairro || '')
     setValue('cidade', cliente.cidade || '')
     setValue('estado', cliente.estado || '')
     setValue('cep', cliente.cep || '')
     setValue('segmento_cliente', cliente.segmento_cliente || '')
     setValue('etapa_pipeline', cliente.etapa_pipeline || 'novo')
-    setValue('valor_estimado', Number(cliente.valor_estimado) || 0)
-    setValue('probabilidade', Number(cliente.probabilidade) || 50)
     setValue('classificacao', cliente.classificacao || 'frio')
     setValue('origem', cliente.origem || 'manual')
     setValue('observacoes', cliente.observacoes || '')
+    setValue('contexto_cliente', cliente.contexto_cliente || '')
+    setValue('dores_atuais', cliente.dores_atuais || '')
+    setValue('motivacao', cliente.motivacao || '')
     setValue('vendedor_id', cliente.vendedor_id || '')
     
     setIsEditModalOpen(true)
-  }
-
-  const openDeleteDialog = (cliente: any) => {
-    setSelectedCliente(cliente)
-    setIsDeleteDialogOpen(true)
   }
 
   const handleDeleteCliente = async () => {
@@ -470,7 +528,7 @@ export function ClientesPage() {
             <p className="text-sm text-gray-600 dark:text-gray-400">Gerencie seus leads através do funil de vendas</p>
           </div>
           <KanbanBoard
-            clientes={clientes}
+            clientes={clientes as any[]}
             onEdit={openEditModal}
             onDelete={openDeleteDialog}
             onView={handleViewCliente}
@@ -497,16 +555,35 @@ export function ClientesPage() {
           ) : (
             <div className="divide-y divide-gray-200 dark:divide-gray-700">
               {filteredClientes.map((cliente: any) => (
-                <div key={cliente.id} className="p-6 hover:bg-gray-50 dark:hover:bg-gray-700">
+                <div key={cliente.id} className="p-6 hover:bg-gray-50 dark:hover:bg-gray-700 border-l-4 border-l-transparent hover:border-l-primary-500 transition-all duration-200">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
-                          <User className="w-5 h-5 text-primary-600" />
+                      <div className="flex items-center gap-4">
+                        <div className="relative">
+                          <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl flex items-center justify-center shadow-md">
+                            <User className="w-6 h-6 text-white" />
+                          </div>
+                          <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white ${
+                            cliente.etapa_pipeline === 'fechado' ? 'bg-green-500' :
+                            cliente.etapa_pipeline === 'perdido' ? 'bg-red-500' :
+                            cliente.etapa_pipeline === 'negociacao' ? 'bg-orange-500' :
+                            'bg-blue-500'
+                          }`}></div>
                         </div>
-                        <div>
-                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{cliente.nome_contato}</h3>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">{cliente.nome_empresa}</p>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{cliente.nome_contato}</h3>
+                            {cliente.classificacao && (
+                              <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                                cliente.classificacao === 'quente' ? 'bg-red-100 text-red-700' :
+                                cliente.classificacao === 'morno' ? 'bg-yellow-100 text-yellow-700' :
+                                'bg-blue-100 text-blue-700'
+                              }`}>
+                                {cliente.classificacao}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">{cliente.nome_empresa || 'Empresa não informada'}</p>
                         </div>
                       </div>
                       
@@ -517,7 +594,7 @@ export function ClientesPage() {
                         </div>
                         <div className="flex items-center gap-2">
                           <Phone className="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" />
-                          <span className="text-sm text-gray-600 dark:text-gray-300 truncate">{cliente.telefone || 'N/A'}</span>
+                          <span className="text-sm text-gray-600 dark:text-gray-300 truncate">{cliente.whatsapp || 'N/A'}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <MapPin className="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" />
@@ -544,17 +621,19 @@ export function ClientesPage() {
                           )}
                         </div>
 
-                        {/* Value and Probability */}
+                        {/* Segmento e Origem */}
                         <div className="flex flex-wrap items-center gap-4">
-                          <div className="flex items-center gap-1">
-                            <DollarSign className="w-4 h-4 text-green-600" />
-                            <span className="text-sm font-medium text-gray-900 dark:text-white">
-                              R$ {(cliente.valor_estimado || 0).toLocaleString('pt-BR')}
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                            <span className="text-sm text-gray-700 dark:text-gray-300">
+                              <span className="font-medium">Segmento:</span> {cliente.segmento_cliente || 'N/A'}
                             </span>
                           </div>
-                          <div className="flex items-center gap-1">
-                            <TrendingUp className="w-4 h-4 text-blue-600" />
-                            <span className="text-sm text-gray-600 dark:text-gray-300">{cliente.probabilidade || 0}%</span>
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                            <span className="text-sm text-gray-700 dark:text-gray-300">
+                              <span className="font-medium">Origem:</span> {cliente.origem || 'N/A'}
+                            </span>
                           </div>
                         </div>
 
@@ -615,69 +694,173 @@ export function ClientesPage() {
 
       {/* Create Modal */}
       <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
-        <DialogContent className="w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Novo Cliente</DialogTitle>
-            <DialogDescription>
-              Adicione um novo cliente ao seu pipeline de vendas
+        <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader className="space-y-3 pb-6 border-b">
+            <DialogTitle className="text-2xl font-bold text-gray-900">Adicionar Novo Cliente</DialogTitle>
+            <DialogDescription className="text-base text-gray-600">
+              Preencha as informações do cliente para adicioná-lo ao sistema. Campos marcados com <span className="text-red-500 font-semibold">*</span> são obrigatórios.
             </DialogDescription>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <div className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <span className="text-white text-xs font-bold">i</span>
+                </div>
+                <div className="text-sm text-blue-800">
+                  <p className="font-medium mb-1">Dica:</p>
+                  <p>Quanto mais informações você fornecer, melhor será o acompanhamento e relacionamento com o cliente.</p>
+                </div>
+              </div>
+            </div>
           </DialogHeader>
           <form onSubmit={handleSubmit(handleCreateCliente)}>
             <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="nome_contato">Nome do Contato *</Label>
-                  <Input
-                    id="nome_contato"
-                    {...register('nome_contato')}
-                    className={errors.nome_contato ? 'border-red-500' : ''}
-                  />
-                  {errors.nome_contato && (
-                    <p className="text-xs text-red-500 mt-1">{errors.nome_contato.message}</p>
-                  )}
+              {/* Seção: Informações Básicas */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 pb-2 border-b border-gray-200">
+                  <User className="h-5 w-5 text-blue-600" />
+                  <h3 className="text-lg font-semibold text-gray-900">Informações Básicas</h3>
                 </div>
-                <div>
-                  <Label htmlFor="nome_empresa">Empresa</Label>
-                  <Input id="nome_empresa" {...register('nome_empresa')} />
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="nome_contato" className="text-sm font-medium text-gray-700">
+                      Nome do Contato <span className="text-red-500">*</span>
+                    </Label>
+                    <Input
+                      id="nome_contato"
+                      {...register('nome_contato')}
+                      placeholder="Ex: João Silva"
+                      className={errors.nome_contato ? 'border-red-500' : ''}
+                    />
+                    <p className="text-xs text-gray-500">Nome da pessoa responsável pelo contato</p>
+                    {errors.nome_contato && (
+                      <p className="text-xs text-red-500 mt-1">{errors.nome_contato.message}</p>
+                    )}
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="nome_empresa" className="text-sm font-medium text-gray-700">
+                      Nome da Empresa <span className="text-gray-400">(Opcional)</span>
+                    </Label>
+                    <Input 
+                      id="nome_empresa" 
+                      {...register('nome_empresa')} 
+                      placeholder="Ex: Empresa ABC Ltda"
+                    />
+                    <p className="text-xs text-gray-500">Empresa onde o contato trabalha</p>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="razao_social" className="text-sm font-medium text-gray-700">
+                    Razão Social <span className="text-gray-400">(Opcional)</span>
+                  </Label>
+                  <Input 
+                    id="razao_social" 
+                    {...register('razao_social')} 
+                    placeholder="Ex: Empresa ABC Sociedade Limitada"
+                  />
+                  <p className="text-xs text-gray-500">Razão social oficial da empresa</p>
+                </div>
+
+                <div className="space-y-4">
+                  <Label className="text-sm font-medium text-gray-700">
+                    Documento <span className="text-gray-400">(Opcional)</span>
+                  </Label>
+                  
+                  <div className="space-y-3">
+                    <div className="flex gap-4">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          value="cpf"
+                          {...register('documento_tipo')}
+                          className="text-primary-600"
+                        />
+                        <span className="text-sm text-gray-700">CPF</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          value="cnpj"
+                          {...register('documento_tipo')}
+                          className="text-primary-600"
+                        />
+                        <span className="text-sm text-gray-700">CNPJ</span>
+                      </label>
+                    </div>
+                    
+                    {watch('documento_tipo') && (
+                      <Input
+                        {...register('documento_numero')}
+                        placeholder={
+                          watch('documento_tipo') === 'cpf' 
+                            ? "Ex: 123.456.789-00" 
+                            : "Ex: 12.345.678/0001-90"
+                        }
+                      />
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    Selecione o tipo de documento e preencha o número
+                  </p>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    {...register('email')}
-                    className={errors.email ? 'border-red-500' : ''}
-                  />
-                  {errors.email && (
-                    <p className="text-xs text-red-500 mt-1">{errors.email.message}</p>
-                  )}
+              {/* Seção: Contato */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 pb-2 border-b border-gray-200">
+                  <Mail className="h-5 w-5 text-green-600" />
+                  <h3 className="text-lg font-semibold text-gray-900">Informações de Contato</h3>
                 </div>
-                <div>
-                  <Label htmlFor="telefone">Telefone</Label>
-                  <Input id="telefone" {...register('telefone')} />
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="email" className="text-sm font-medium text-gray-700">
+                      Email <span className="text-gray-400">(Opcional)</span>
+                    </Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      {...register('email')}
+                      placeholder="Ex: joao@empresa.com"
+                      className={errors.email ? 'border-red-500' : ''}
+                    />
+                    <p className="text-xs text-gray-500">Email principal para comunicação</p>
+                    {errors.email && (
+                      <p className="text-xs text-red-500 mt-1">{errors.email.message}</p>
+                    )}
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-gray-700">
+                      Telefone/WhatsApp <span className="text-gray-400">(Opcional)</span>
+                    </Label>
+                    <div className="grid grid-cols-3 gap-2">
+                      <Input 
+                        id="ddd" 
+                        {...register('ddd')} 
+                        placeholder="11"
+                        maxLength={2}
+                        className="text-center"
+                      />
+                      <Input 
+                        id="telefone" 
+                        {...register('telefone')} 
+                        placeholder="99999-9999"
+                        maxLength={9}
+                        className="col-span-2"
+                      />
+                    </div>
+                    <p className="text-xs text-gray-500">DDD + número do telefone (9 dígitos)</p>
+                  </div>
                 </div>
-              </div>
-
-              <div>
-                <Label htmlFor="endereco">Endereço</Label>
-                <Input id="endereco" {...register('endereco')} />
               </div>
 
               <div className="grid grid-cols-3 gap-4">
                 <div>
                   <Label htmlFor="numero">Número</Label>
                   <Input id="numero" {...register('numero')} />
-                </div>
-                <div>
-                  <Label htmlFor="complemento">Complemento</Label>
-                  <Input id="complemento" {...register('complemento')} />
-                </div>
-                <div>
-                  <Label htmlFor="bairro">Bairro</Label>
-                  <Input id="bairro" {...register('bairro')} />
                 </div>
               </div>
 
@@ -766,32 +949,42 @@ export function ClientesPage() {
                 required={true}
               />
 
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <Label htmlFor="valor_estimado">Valor Estimado (R$)</Label>
-                  <Input
-                    id="valor_estimado"
-                    type="number"
-                    {...register('valor_estimado', { valueAsNumber: true })}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="probabilidade">Probabilidade (%)</Label>
-                  <Input
-                    id="probabilidade"
-                    type="number"
-                    min="0"
-                    max="100"
-                    {...register('probabilidade', { valueAsNumber: true })}
-                  />
-                </div>
-              </div>
 
               <div>
                 <Label htmlFor="observacoes">Observações</Label>
                 <Textarea
                   id="observacoes"
                   {...register('observacoes')}
+                  rows={3}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="contexto_cliente">Contexto do Cliente</Label>
+                <Textarea
+                  id="contexto_cliente"
+                  {...register('contexto_cliente')}
+                  placeholder="Resumo completo do cliente, histórico, preferências, etc..."
+                  rows={4}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="dores_atuais">Dores Atuais</Label>
+                <Textarea
+                  id="dores_atuais"
+                  {...register('dores_atuais')}
+                  placeholder="Principais problemas e dificuldades que o cliente enfrenta..."
+                  rows={3}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="motivacao">Motivação</Label>
+                <Textarea
+                  id="motivacao"
+                  {...register('motivacao')}
+                  placeholder="O que motiva o cliente a buscar uma solução..."
                   rows={3}
                 />
               </div>
@@ -838,11 +1031,50 @@ export function ClientesPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="edit-razao_social">Razão Social</Label>
-                  <Input id="edit-razao_social" {...register('razao_social')} />
+              <div>
+                <Label htmlFor="edit-razao_social">Razão Social</Label>
+                <Input id="edit-razao_social" {...register('razao_social')} placeholder="Ex: Empresa ABC Sociedade Limitada" />
+              </div>
+
+              <div className="space-y-4">
+                <Label className="text-sm font-medium text-gray-700">Documento</Label>
+                
+                <div className="space-y-3">
+                  <div className="flex gap-4">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        value="cpf"
+                        {...register('documento_tipo')}
+                        className="text-primary-600"
+                      />
+                      <span className="text-sm text-gray-700">CPF</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        value="cnpj"
+                        {...register('documento_tipo')}
+                        className="text-primary-600"
+                      />
+                      <span className="text-sm text-gray-700">CNPJ</span>
+                    </label>
+                  </div>
+                  
+                  {watch('documento_tipo') && (
+                    <Input
+                      {...register('documento_numero')}
+                      placeholder={
+                        watch('documento_tipo') === 'cpf' 
+                          ? "Ex: 123.456.789-00" 
+                          : "Ex: 12.345.678/0001-90"
+                      }
+                    />
+                  )}
                 </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="edit-email">Email</Label>
                   <Input
@@ -855,18 +1087,27 @@ export function ClientesPage() {
                     <p className="text-xs text-red-500 mt-1">{errors.email.message}</p>
                   )}
                 </div>
+                <div>
+                  <Label>Telefone/WhatsApp</Label>
+                  <div className="grid grid-cols-3 gap-2">
+                    <Input 
+                      id="edit-ddd" 
+                      {...register('ddd')} 
+                      placeholder="11"
+                      maxLength={2}
+                      className="text-center"
+                    />
+                    <Input 
+                      id="edit-telefone" 
+                      {...register('telefone')} 
+                      placeholder="99999-9999"
+                      maxLength={9}
+                      className="col-span-2"
+                    />
+                  </div>
+                </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="edit-cargo">Cargo</Label>
-                  <Input id="edit-cargo" {...register('cargo')} />
-                </div>
-                <div>
-                  <Label htmlFor="edit-telefone">Telefone</Label>
-                  <Input id="edit-telefone" {...register('telefone')} />
-                </div>
-              </div>
 
               <div>
                 <Label htmlFor="edit-endereco">Endereço</Label>
@@ -877,14 +1118,6 @@ export function ClientesPage() {
                 <div>
                   <Label htmlFor="edit-numero">Número</Label>
                   <Input id="edit-numero" {...register('numero')} />
-                </div>
-                <div>
-                  <Label htmlFor="edit-complemento">Complemento</Label>
-                  <Input id="edit-complemento" {...register('complemento')} />
-                </div>
-                <div>
-                  <Label htmlFor="edit-bairro">Bairro</Label>
-                  <Input id="edit-bairro" {...register('bairro')} />
                 </div>
               </div>
 
@@ -907,7 +1140,7 @@ export function ClientesPage() {
                 <div>
                   <Label htmlFor="edit-etapa_pipeline">Etapa do Pipeline</Label>
                   <Select
-                    value={selectedCliente?.etapa_pipeline}
+                    value={form.watch('etapa_pipeline')}
                     onValueChange={(value: string) => setValue('etapa_pipeline', value)}
                   >
                     <SelectTrigger>
@@ -925,7 +1158,7 @@ export function ClientesPage() {
                 <div>
                   <Label htmlFor="edit-classificacao">Classificação</Label>
                   <Select
-                    value={selectedCliente?.classificacao}
+                    value={form.watch('classificacao')}
                     onValueChange={(value: string) => setValue('classificacao', value)}
                   >
                     <SelectTrigger>
@@ -946,7 +1179,7 @@ export function ClientesPage() {
                 <div>
                   <Label htmlFor="edit-origem">Origem</Label>
                   <Select
-                    value={selectedCliente?.origem}
+                    value={form.watch('origem')}
                     onValueChange={(value: string) => setValue('origem', value)}
                   >
                     <SelectTrigger>
@@ -973,32 +1206,42 @@ export function ClientesPage() {
                 required={true}
               />
 
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <Label htmlFor="edit-valor_estimado">Valor Estimado (R$)</Label>
-                  <Input
-                    id="edit-valor_estimado"
-                    type="number"
-                    {...register('valor_estimado', { valueAsNumber: true })}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="edit-probabilidade">Probabilidade (%)</Label>
-                  <Input
-                    id="edit-probabilidade"
-                    type="number"
-                    min="0"
-                    max="100"
-                    {...register('probabilidade', { valueAsNumber: true })}
-                  />
-                </div>
-              </div>
 
               <div>
                 <Label htmlFor="edit-observacoes">Observações</Label>
                 <Textarea
                   id="edit-observacoes"
                   {...register('observacoes')}
+                  rows={3}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="edit-contexto_cliente">Contexto do Cliente</Label>
+                <Textarea
+                  id="edit-contexto_cliente"
+                  {...register('contexto_cliente')}
+                  placeholder="Resumo completo do cliente, histórico, preferências, etc..."
+                  rows={4}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="edit-dores_atuais">Dores Atuais</Label>
+                <Textarea
+                  id="edit-dores_atuais"
+                  {...register('dores_atuais')}
+                  placeholder="Principais problemas e dificuldades que o cliente enfrenta..."
+                  rows={3}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="edit-motivacao">Motivação</Label>
+                <Textarea
+                  id="edit-motivacao"
+                  {...register('motivacao')}
+                  placeholder="O que motiva o cliente a buscar uma solução..."
                   rows={3}
                 />
               </div>
@@ -1036,12 +1279,10 @@ export function ClientesPage() {
                     const requiredFields = [
                       { key: 'nome_contato', label: 'Nome do Contato', value: cliente.nome_contato },
                       { key: 'email', label: 'Email', value: cliente.email },
-                      { key: 'telefone', label: 'Telefone', value: cliente.telefone },
                       { key: 'nome_empresa', label: 'Nome da Empresa', value: cliente.nome_empresa },
                       { key: 'segmento_cliente', label: 'Segmento', value: cliente.segmento_cliente },
                       { key: 'endereco', label: 'Endereço', value: cliente.endereco },
                       { key: 'cidade', label: 'Cidade', value: cliente.cidade },
-                      { key: 'valor_estimado', label: 'Valor Estimado', value: cliente.valor_estimado },
                     ]
                     
                     const completed = requiredFields.filter(field => field.value && field.value !== '' && field.value !== 0)
@@ -1108,6 +1349,26 @@ export function ClientesPage() {
                       </div>
                     </div>
                     
+                    {selectedCliente.nome_empresa && (
+                      <div className="flex items-center gap-3">
+                        <Building className="h-5 w-5 text-gray-400" />
+                        <div>
+                          <p className="text-sm text-gray-500">Nome da Empresa</p>
+                          <p className="font-medium">{selectedCliente.nome_empresa}</p>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {selectedCliente.razao_social && (
+                      <div className="flex items-center gap-3">
+                        <Building className="h-5 w-5 text-gray-400" />
+                        <div>
+                          <p className="text-sm text-gray-500">Razão Social</p>
+                          <p className="font-medium">{selectedCliente.razao_social}</p>
+                        </div>
+                      </div>
+                    )}
+                    
                     <div className="flex items-center gap-3">
                       <Mail className="h-5 w-5 text-gray-400" />
                       <div>
@@ -1119,10 +1380,40 @@ export function ClientesPage() {
                     <div className="flex items-center gap-3">
                       <Phone className="h-5 w-5 text-gray-400" />
                       <div>
-                        <p className="text-sm text-gray-500">Telefone</p>
-                        <p className="font-medium">{selectedCliente.telefone || 'N/A'}</p>
+                        <p className="text-sm text-gray-500">WhatsApp</p>
+                        <p className="font-medium">{selectedCliente.whatsapp || 'N/A'}</p>
                       </div>
                     </div>
+                    
+                    {selectedCliente.razao_social && (
+                      <div className="flex items-center gap-3">
+                        <Building className="h-5 w-5 text-gray-400" />
+                        <div>
+                          <p className="text-sm text-gray-500">Razão Social</p>
+                          <p className="font-medium">{selectedCliente.razao_social}</p>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {selectedCliente.cpf && (
+                      <div className="flex items-center gap-3">
+                        <User className="h-5 w-5 text-gray-400" />
+                        <div>
+                          <p className="text-sm text-gray-500">CPF</p>
+                          <p className="font-medium">{selectedCliente.cpf}</p>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {selectedCliente.cnpj && (
+                      <div className="flex items-center gap-3">
+                        <Building className="h-5 w-5 text-gray-400" />
+                        <div>
+                          <p className="text-sm text-gray-500">CNPJ</p>
+                          <p className="font-medium">{selectedCliente.cnpj}</p>
+                        </div>
+                      </div>
+                    )}
                     
                     <div className="flex items-center gap-3">
                       <MapPin className="h-5 w-5 text-gray-400" />
@@ -1133,6 +1424,21 @@ export function ClientesPage() {
                         </p>
                       </div>
                     </div>
+                    
+                    {/* Vendedor Responsável */}
+                    <div className="flex items-center gap-3">
+                      <User className="h-5 w-5 text-gray-400" />
+                      <div>
+                        <p className="text-sm text-gray-500">Vendedor Responsável</p>
+                        <p className="font-medium">
+                          {(() => {
+                            if (!selectedCliente.vendedor_id) return 'Não atribuído'
+                            const vendedor = _vendedores.find(v => v.id === selectedCliente.vendedor_id)
+                            return vendedor?.nome || 'Vendedor não encontrado'
+                          })()} 
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -1140,26 +1446,7 @@ export function ClientesPage() {
                   <h3 className="text-lg font-semibold">Informações Comerciais</h3>
                   
                   <div className="space-y-3">
-                    <div className="flex items-center gap-3">
-                      <DollarSign className="h-5 w-5 text-gray-400" />
-                      <div>
-                        <p className="text-sm text-gray-500">Valor Estimado</p>
-                        <p className="font-medium">
-                          {new Intl.NumberFormat('pt-BR', {
-                            style: 'currency',
-                            currency: 'BRL'
-                          }).format(selectedCliente.valor_estimado || 0)}
-                        </p>
-                      </div>
-                    </div>
                     
-                    <div className="flex items-center gap-3">
-                      <TrendingUp className="h-5 w-5 text-gray-400" />
-                      <div>
-                        <p className="text-sm text-gray-500">Probabilidade</p>
-                        <p className="font-medium">{selectedCliente.probabilidade || 0}%</p>
-                      </div>
-                    </div>
                     
                     <div className="flex items-center gap-3">
                       <div className="h-5 w-5 flex items-center justify-center">
@@ -1189,6 +1476,36 @@ export function ClientesPage() {
                   </div>
                 </div>
               </div>
+
+              {/* Contexto do Cliente */}
+              {selectedCliente.contexto_cliente && (
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold">Contexto do Cliente</h3>
+                  <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <p className="text-sm text-blue-900 dark:text-blue-100 whitespace-pre-wrap">{selectedCliente.contexto_cliente}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Dores Atuais */}
+              {selectedCliente.dores_atuais && (
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold">Dores Atuais</h3>
+                  <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg border border-red-200 dark:border-red-800">
+                    <p className="text-sm text-red-900 dark:text-red-100 whitespace-pre-wrap">{selectedCliente.dores_atuais}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Motivação */}
+              {selectedCliente.motivacao && (
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold">Motivação</h3>
+                  <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border border-green-200 dark:border-green-800">
+                    <p className="text-sm text-green-900 dark:text-green-100 whitespace-pre-wrap">{selectedCliente.motivacao}</p>
+                  </div>
+                </div>
+              )}
 
               {/* Additional Information */}
               {(selectedCliente.nome_empresa || selectedCliente.segmento_cliente || selectedCliente.observacoes) && (
