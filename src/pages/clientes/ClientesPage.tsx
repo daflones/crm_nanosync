@@ -326,7 +326,6 @@ export function ClientesPage() {
     setValue('nome_contato', cliente.nome_contato || '')
     setValue('nome_empresa', cliente.nome_empresa || '')
     setValue('razao_social', cliente.razao_social || '')
-    setValue('cargo', cliente.cargo || '')
     setValue('email', cliente.email || '')
     
     // Set documento fields based on existing data
@@ -337,7 +336,6 @@ export function ClientesPage() {
       setValue('documento_tipo', 'cnpj')
       setValue('documento_numero', cliente.cnpj)
     }
-    setValue('inscricao_estadual', cliente.inscricao_estadual || '')
     
     // Parse WhatsApp to DDD and telefone
     const whatsapp = cliente.whatsapp || ''
@@ -349,7 +347,6 @@ export function ClientesPage() {
         setValue('telefone', cleanPhone.substring(2))
       }
     }
-    setValue('telefone_empresa', cliente.telefone_empresa || '')
     setValue('endereco', cliente.endereco || '')
     setValue('numero', cliente.numero || '')
     setValue('cidade', cliente.cidade || '')
@@ -360,11 +357,9 @@ export function ClientesPage() {
     setValue('classificacao', cliente.classificacao || 'frio')
     setValue('origem', cliente.origem || 'manual')
     setValue('observacoes', cliente.observacoes || '')
-    setValue('produtos_interesse', cliente.produtos_interesse ? cliente.produtos_interesse.join(', ') : '')
     setValue('contexto_cliente', cliente.contexto_cliente || '')
     setValue('dores_atuais', cliente.dores_atuais || '')
     setValue('motivacao', cliente.motivacao || '')
-    setValue('expectativa', cliente.expectativa || '')
     setValue('vendedor_id', cliente.vendedor_id || '')
     
     setIsEditModalOpen(true)
@@ -773,30 +768,16 @@ export function ClientesPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="razao_social" className="text-sm font-medium text-gray-700">
-                      Razão Social <span className="text-gray-400">(Opcional)</span>
-                    </Label>
-                    <Input 
-                      id="razao_social" 
-                      {...register('razao_social')} 
-                      placeholder="Ex: Empresa ABC Sociedade Limitada"
-                    />
-                    <p className="text-xs text-gray-500">Razão social oficial da empresa</p>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="cargo" className="text-sm font-medium text-gray-700">
-                      Cargo <span className="text-gray-400">(Opcional)</span>
-                    </Label>
-                    <Input 
-                      id="cargo" 
-                      {...register('cargo')} 
-                      placeholder="Ex: Gerente de Vendas"
-                    />
-                    <p className="text-xs text-gray-500">Cargo do contato na empresa</p>
-                  </div>
+                <div className="space-y-2">
+                  <Label htmlFor="razao_social" className="text-sm font-medium text-gray-700">
+                    Razão Social <span className="text-gray-400">(Opcional)</span>
+                  </Label>
+                  <Input 
+                    id="razao_social" 
+                    {...register('razao_social')} 
+                    placeholder="Ex: Empresa ABC Sociedade Limitada"
+                  />
+                  <p className="text-xs text-gray-500">Razão social oficial da empresa</p>
                 </div>
 
                 <div className="space-y-4">
@@ -840,18 +821,6 @@ export function ClientesPage() {
                   <p className="text-xs text-gray-500">
                     Selecione o tipo de documento e preencha o número
                   </p>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="inscricao_estadual" className="text-sm font-medium text-gray-700">
-                    Inscrição Estadual <span className="text-gray-400">(Opcional)</span>
-                  </Label>
-                  <Input 
-                    id="inscricao_estadual" 
-                    {...register('inscricao_estadual')} 
-                    placeholder="Ex: 123.456.789.123"
-                  />
-                  <p className="text-xs text-gray-500">Inscrição estadual da empresa</p>
                 </div>
               </div>
 
@@ -903,38 +872,7 @@ export function ClientesPage() {
                     <p className="text-xs text-gray-500">DDD + número do telefone (9 dígitos)</p>
                   </div>
                 </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="telefone_empresa" className="text-sm font-medium text-gray-700">
-                    Telefone da Empresa <span className="text-gray-400">(Opcional)</span>
-                  </Label>
-                  <Input 
-                    id="telefone_empresa" 
-                    {...register('telefone_empresa')} 
-                    placeholder="Ex: (11) 3333-4444"
-                  />
-                  <p className="text-xs text-gray-500">Telefone fixo da empresa</p>
-                </div>
               </div>
-
-              {/* Seção: Endereço */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 pb-2 border-b border-gray-200">
-                  <MapPin className="h-5 w-5 text-blue-600" />
-                  <h3 className="text-lg font-semibold text-gray-900">Informações de Endereço</h3>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="endereco" className="text-sm font-medium text-gray-700">
-                    Endereço <span className="text-gray-400">(Opcional)</span>
-                  </Label>
-                  <Input 
-                    id="endereco" 
-                    {...register('endereco')} 
-                    placeholder="Ex: Rua das Flores, 123"
-                  />
-                  <p className="text-xs text-gray-500">Endereço completo</p>
-                </div>
 
               <div className="grid grid-cols-3 gap-4">
                 <div>
@@ -1039,16 +977,6 @@ export function ClientesPage() {
               </div>
 
               <div>
-                <Label htmlFor="produtos_interesse">Produto de Interesse</Label>
-                <Input
-                  id="produtos_interesse"
-                  {...register('produtos_interesse')}
-                  placeholder="Ex: Software de gestão, Consultoria, Sistema de vendas"
-                />
-                <p className="text-xs text-gray-500 mt-1">Separe múltiplos produtos por vírgula</p>
-              </div>
-
-              <div>
                 <Label htmlFor="contexto_cliente">Contexto do Cliente</Label>
                 <Textarea
                   id="contexto_cliente"
@@ -1074,16 +1002,6 @@ export function ClientesPage() {
                   id="motivacao"
                   {...register('motivacao')}
                   placeholder="O que motiva o cliente a buscar uma solução..."
-                  rows={3}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="expectativa">Expectativa</Label>
-                <Textarea
-                  id="expectativa"
-                  {...register('expectativa')}
-                  placeholder="Expectativas e resultados esperados pelo cliente..."
                   rows={3}
                 />
               </div>
@@ -1130,15 +1048,9 @@ export function ClientesPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="edit-razao_social">Razão Social</Label>
-                  <Input id="edit-razao_social" {...register('razao_social')} placeholder="Ex: Empresa ABC Sociedade Limitada" />
-                </div>
-                <div>
-                  <Label htmlFor="edit-cargo">Cargo</Label>
-                  <Input id="edit-cargo" {...register('cargo')} placeholder="Ex: Gerente de Vendas" />
-                </div>
+              <div>
+                <Label htmlFor="edit-razao_social">Razão Social</Label>
+                <Input id="edit-razao_social" {...register('razao_social')} placeholder="Ex: Empresa ABC Sociedade Limitada" />
               </div>
 
               <div className="space-y-4">
@@ -1179,11 +1091,6 @@ export function ClientesPage() {
                 </div>
               </div>
 
-              <div>
-                <Label htmlFor="edit-inscricao_estadual">Inscrição Estadual</Label>
-                <Input id="edit-inscricao_estadual" {...register('inscricao_estadual')} placeholder="Ex: 123.456.789.123" />
-              </div>
-
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="edit-email">Email</Label>
@@ -1218,66 +1125,16 @@ export function ClientesPage() {
                 </div>
               </div>
 
-              <div>
-                <Label htmlFor="edit-telefone_empresa">Telefone da Empresa</Label>
-                <Input id="edit-telefone_empresa" {...register('telefone_empresa')} placeholder="Ex: (11) 3333-4444" />
-              </div>
 
               <div>
                 <Label htmlFor="edit-endereco">Endereço</Label>
-                <Input id="edit-endereco" {...register('endereco')} placeholder="Ex: Rua das Flores, 123" />
+                <Input id="edit-endereco" {...register('endereco')} />
               </div>
 
               <div className="grid grid-cols-3 gap-4">
                 <div>
                   <Label htmlFor="edit-numero">Número</Label>
                   <Input id="edit-numero" {...register('numero')} />
-                </div>
-                <div>
-                  <Label htmlFor="edit-cidade">Cidade</Label>
-                  <Input id="edit-cidade" {...register('cidade')} />
-                </div>
-                <div>
-                  <Label htmlFor="edit-estado">Estado</Label>
-                  <Input id="edit-estado" {...register('estado')} />
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="edit-cep">CEP</Label>
-                <Input id="edit-cep" {...register('cep')} />
-              </div>
-
-              <div>
-                <Label htmlFor="edit-observacoes">Observações</Label>
-                <Textarea id="edit-observacoes" {...register('observacoes')} rows={3} />
-              </div>
-
-              <div>
-                <Label htmlFor="edit-produtos_interesse">Produto de Interesse</Label>
-                <Input id="edit-produtos_interesse" {...register('produtos_interesse')} placeholder="Ex: Software de gestão, Consultoria" />
-              </div>
-
-              <div>
-                <Label htmlFor="edit-contexto_cliente">Contexto do Cliente</Label>
-                <Textarea id="edit-contexto_cliente" {...register('contexto_cliente')} rows={4} />
-              </div>
-
-              <div>
-                <Label htmlFor="edit-dores_atuais">Dores Atuais</Label>
-                <Textarea id="edit-dores_atuais" {...register('dores_atuais')} rows={3} />
-              </div>
-
-              <div>
-                <Label htmlFor="edit-motivacao">Motivação</Label>
-                <Textarea id="edit-motivacao" {...register('motivacao')} rows={3} />
-              </div>
-
-              <div>
-                <Label htmlFor="edit-expectativa">Expectativa</Label>
-                <Textarea id="edit-expectativa" {...register('expectativa')} rows={3} />
-              </div>
-
                 </div>
               </div>
 
