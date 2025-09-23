@@ -7,6 +7,7 @@ export interface Cliente {
   email: string
   nome_empresa: string
   razao_social?: string
+  cargo?: string
   segmento_cliente: string
   endereco: string
   cidade: string
@@ -16,6 +17,8 @@ export interface Cliente {
   classificacao: string
   origem: string
   observacoes?: string
+  produtos_interesse?: string[]
+  expectativa?: string
   data_criacao: string
   data_atualizacao: string
   vendedor_id?: string
@@ -24,8 +27,10 @@ export interface Cliente {
   dores_atuais?: string
   motivacao?: string
   whatsapp?: string
+  telefone_empresa?: string
   cpf?: string
   cnpj?: string
+  inscricao_estadual?: string
   profile: string // Campo para filtro por empresa
   created_at: string
   updated_at: string
@@ -36,6 +41,7 @@ export interface ClienteCreateData {
   email: string
   nome_empresa: string
   razao_social?: string
+  cargo?: string
   segmento_cliente: string
   endereco: string
   cidade: string
@@ -45,13 +51,17 @@ export interface ClienteCreateData {
   classificacao: string
   origem: string
   observacoes?: string
+  produtos_interesse?: string[]
+  expectativa?: string
   vendedor_id?: string
   contexto_cliente?: string
   dores_atuais?: string
   motivacao?: string
   whatsapp?: string
+  telefone_empresa?: string
   cpf?: string
   cnpj?: string
+  inscricao_estadual?: string
 }
 
 export interface ClienteUpdateData extends Partial<ClienteCreateData> {}
