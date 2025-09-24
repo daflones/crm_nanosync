@@ -44,6 +44,7 @@ export interface ClienteCreateData {
   cargo?: string
   segmento_cliente: string
   endereco: string
+  numero?: string
   cidade: string
   estado: string
   cep: string
@@ -163,17 +164,59 @@ export const clientesService = {
 
     const adminId = currentProfile.admin_profile_id || currentProfile.id
 
+    // Preparar dados para inserção no banco - APENAS campos que existem na tabela
+    const insertData = {
+      // Campos básicos
+      nome_contato: clienteData.nome_contato,
+      email: clienteData.email,
+      nome_empresa: clienteData.nome_empresa,
+      razao_social: clienteData.razao_social,
+      cargo: clienteData.cargo,
+      inscricao_estadual: clienteData.inscricao_estadual,
+      
+      // Telefones (whatsapp já processado, telefone_empresa direto)
+      whatsapp: clienteData.whatsapp,
+      telefone_empresa: clienteData.telefone_empresa,
+      
+      // Endereço
+      endereco: clienteData.endereco,
+      numero: clienteData.numero,
+      cidade: clienteData.cidade,
+      estado: clienteData.estado,
+      cep: clienteData.cep,
+      
+      // Documentos
+      cpf: clienteData.cpf,
+      cnpj: clienteData.cnpj,
+      
+      // Pipeline
+      etapa_pipeline: clienteData.etapa_pipeline,
+      classificacao: clienteData.classificacao,
+      origem: clienteData.origem,
+      
+      // Negócio
+      segmento_cliente: clienteData.segmento_cliente,
+      vendedor_id: clienteData.vendedor_id,
+      
+      // Contexto
+      observacoes: clienteData.observacoes,
+      produtos_interesse: clienteData.produtos_interesse,
+      contexto_cliente: clienteData.contexto_cliente,
+      dores_atuais: clienteData.dores_atuais,
+      motivacao: clienteData.motivacao,
+      expectativa: clienteData.expectativa,
+      
+      // Sistema
+      profile: adminId,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    }
+
+    console.log('🔄 Inserindo cliente no banco:', insertData)
+
     const { data, error } = await supabase
       .from('clientes')
-      .insert({
-        ...clienteData,
-        etapa_pipeline: clienteData.etapa_pipeline || 'novo',
-        classificacao: clienteData.classificacao || 'morno',
-        origem: clienteData.origem || 'manual',
-        profile: adminId, // Add company filter
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      })
+      .insert(insertData)
       .select()
       .single()
 

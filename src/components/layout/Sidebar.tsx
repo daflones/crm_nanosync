@@ -1,4 +1,4 @@
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import {
   LayoutDashboard,
@@ -127,19 +127,33 @@ const menuItems = [
 
 export function Sidebar() {
   const location = useLocation()
+  const navigate = useNavigate()
   const { user, signOut } = useAuthStore()
-  const { planoAtivo, isLoading: planoLoading } = usePlanoAtivo()
+  const { planoAtivo } = usePlanoAtivo()
+
+  const handleDashboardClick = (e: React.MouseEvent) => {
+    e.preventDefault()
+    
+    if (location.pathname === '/app/dashboard') {
+      window.location.reload()
+    } else {
+      navigate('/app/dashboard')
+      setTimeout(() => {
+        window.location.reload()
+      }, 100)
+    }
+  }
+
   const isAdmin = user?.role === 'admin'
 
   const filteredMenuItems = menuItems.filter(item => {
-    // Filtrar por permissão de admin
     if (item.adminOnly && !isAdmin) return false
     
     // Ocultar página Planos para vendedores (só admins podem ver)
     if (item.href === '/planos' && user?.role === 'vendedor') return false
     
-    // Ocultar página Planos se o usuário já tem plano ativo OU ainda está carregando
-    if (item.href === '/planos' && (planoAtivo || planoLoading)) return false
+    // Ocultar página Planos se o usuário já tem plano ativo
+    if (item.href === '/planos' && planoAtivo) return false
     
     return true
   })
@@ -148,13 +162,17 @@ export function Sidebar() {
     <div className="flex h-full w-64 flex-col bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 shadow-lg">
       {/* Logo */}
       <div className="flex h-20 items-center justify-center border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-indigo-600 to-purple-600">
-        <Link to="/app/dashboard" className="flex items-center justify-center px-4 w-full h-full">
+        <a 
+          href="/app/dashboard" 
+          onClick={handleDashboardClick}
+          className="flex items-center justify-center px-4 w-full h-full cursor-pointer"
+        >
           <img 
             src="/LogoNanoSyncBranca.png" 
             alt="NanoSync CRM Logo" 
             className="h-[65%] w-auto object-contain"
           />
-        </Link>
+        </a>
       </div>
 
       {/* Navigation */}
@@ -163,6 +181,29 @@ export function Sidebar() {
           const Icon = item.icon
           const isActive = location.pathname === `/app${item.href}` || location.pathname.startsWith(`/app${item.href}/`)
           
+          // Se for o dashboard, usar o handler especial
+          if (item.href === '/dashboard') {
+            return (
+              <a
+                key={item.href}
+                href={`/app${item.href}`}
+                onClick={handleDashboardClick}
+                className={cn(
+                  'flex items-center space-x-3 rounded-xl px-4 py-2.5 text-sm font-medium transition-all duration-200 group cursor-pointer',
+                  isActive
+                    ? 'bg-primary-600 text-white shadow-lg shadow-primary-600/25'
+                    : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700 hover:shadow-md'
+                )}
+              >
+                <Icon className={cn(
+                  'h-5 w-5 transition-transform group-hover:scale-110', 
+                  isActive ? 'text-white' : item.color
+                )} />
+                <span className="font-medium">{item.label}</span>
+              </a>
+            )
+          }
+
           return (
             <Link
               key={item.href}

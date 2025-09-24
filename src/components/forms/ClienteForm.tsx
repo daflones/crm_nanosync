@@ -14,7 +14,6 @@ const clienteSchema = z.object({
   tipo: z.enum(['pessoa_fisica', 'pessoa_juridica']),
   documento: z.string().min(11, 'Documento inválido'),
   email: z.string().email('Email inválido'),
-  telefone: z.string().min(10, 'Telefone inválido'),
   whatsapp: z.string().optional(),
   empresa: z.string().optional(),
   cargo: z.string().optional(),
@@ -120,19 +119,6 @@ export function ClienteForm({ cliente, onSubmit, onCancel, isLoading }: ClienteF
           />
           {errors.email && (
             <p className="text-sm text-red-500">{errors.email.message}</p>
-          )}
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="telefone">Telefone *</Label>
-          <Input
-            id="telefone"
-            {...register('telefone')}
-            placeholder="(00) 0000-0000"
-            className={errors.telefone ? 'border-red-500' : ''}
-          />
-          {errors.telefone && (
-            <p className="text-sm text-red-500">{errors.telefone.message}</p>
           )}
         </div>
 

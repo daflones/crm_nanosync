@@ -1,6 +1,6 @@
 import { Fragment } from 'react'
 import { Dialog, Transition } from '@headlessui/react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -44,8 +44,24 @@ const menuItems = [
 
 export function MobileNav({ open, onClose }: MobileNavProps) {
   const location = useLocation()
+  const navigate = useNavigate()
   const { user, signOut } = useAuthStore()
   const isAdmin = user?.role === 'admin'
+
+  // Handler para navegar para o dashboard com refresh
+  const handleDashboardClick = (e: React.MouseEvent) => {
+    e.preventDefault()
+    onClose() // Fechar o menu mobile
+    
+    if (location.pathname === '/app/dashboard') {
+      window.location.reload()
+    } else {
+      navigate('/app/dashboard')
+      setTimeout(() => {
+        window.location.reload()
+      }, 100)
+    }
+  }
 
   const filteredMenuItems = menuItems.filter(item => 
     (!item.adminOnly || (item.adminOnly && isAdmin)) && !item.hideOnMobile
@@ -109,6 +125,27 @@ export function MobileNav({ open, onClose }: MobileNavProps) {
                         {filteredMenuItems.map((item) => {
                           const Icon = item.icon
                           const isActive = location.pathname === item.href
+                          
+                          // Se for o dashboard, usar o handler especial
+                          if (item.href === '/app/dashboard') {
+                            return (
+                              <li key={item.href}>
+                                <a
+                                  href={item.href}
+                                  onClick={handleDashboardClick}
+                                  className={cn(
+                                    'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold cursor-pointer',
+                                    isActive
+                                      ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/20 dark:text-primary-400'
+                                      : 'text-gray-700 hover:bg-gray-100 hover:text-primary-600 dark:text-gray-300 dark:hover:bg-gray-700'
+                                  )}
+                                >
+                                  <Icon className={cn('h-6 w-6 shrink-0', isActive ? 'text-primary-600' : item.color)} />
+                                  {item.label}
+                                </a>
+                              </li>
+                            )
+                          }
                           
                           return (
                             <li key={item.href}>
