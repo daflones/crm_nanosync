@@ -1,4 +1,4 @@
-import { useState } from 'react'
+ï»¿import { useState } from 'react'
 import {
   Plus,
   Search,
@@ -1787,12 +1787,12 @@ export function ClientesPage() {
                 </div>
               )}
 
-              {/* Observações */}
+              {/* Observaï¿½ï¿½es */}
               {selectedCliente.observacoes && (
                 <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900/20 dark:to-gray-800/20 p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
                     <User className="h-5 w-5" />
-                    Observações
+                    Observaï¿½ï¿½es
                   </h3>
                   <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">
                     {selectedCliente.observacoes}
@@ -1820,7 +1820,7 @@ export function ClientesPage() {
                 </div>
               )}
 
-              {/* Contexto, Dores e Motivação */}
+              {/* Contexto, Dores e Motivaï¿½ï¿½o */}
               {(selectedCliente.contexto_cliente || selectedCliente.dores_atuais || selectedCliente.motivacao || selectedCliente.expectativa) && (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   
@@ -1848,10 +1848,10 @@ export function ClientesPage() {
                     </div>
                   )}
 
-                  {/* Motivação */}
+                  {/* Motivaï¿½ï¿½o */}
                   {selectedCliente.motivacao && (
                     <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 p-6 rounded-xl border border-green-200 dark:border-green-700 shadow-sm">
-                      <h3 className="text-lg font-semibold text-green-900 dark:text-green-100 mb-4">Motivação</h3>
+                      <h3 className="text-lg font-semibold text-green-900 dark:text-green-100 mb-4">Motivaï¿½ï¿½o</h3>
                       <div className="bg-white dark:bg-green-900/30 p-4 rounded-lg border border-green-200 dark:border-green-600">
                         <p className="text-green-800 dark:text-green-200 text-sm whitespace-pre-wrap leading-relaxed">
                           {selectedCliente.motivacao}
@@ -1902,10 +1902,10 @@ export function ClientesPage() {
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+            <AlertDialogTitle>Confirmar Exclusï¿½o</AlertDialogTitle>
             <AlertDialogDescription>
               Tem certeza que deseja excluir o cliente <strong>{selectedCliente?.nome_contato}</strong>?
-              Esta ação não pode ser desfeita.
+              Esta aï¿½ï¿½o nï¿½o pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
