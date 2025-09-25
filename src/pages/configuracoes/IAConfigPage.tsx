@@ -8,10 +8,12 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Bot, Check, Loader2, TestTube } from 'lucide-react'
 import { useIAConfig, useUpdateIAConfig, useTestIAConfig } from '@/hooks/useIAConfig'
+import { useVendedores } from '@/hooks/useVendedores'
 import type { IAConfig } from '@/services/api/ia-config'
 
 export function IAConfigPage() {
   const { data: iaConfigData, isLoading } = useIAConfig()
+  const { data: vendedores = [] } = useVendedores()
   const updateIAConfig = useUpdateIAConfig()
   const testIAConfig = useTestIAConfig()
 
@@ -31,6 +33,17 @@ export function IAConfigPage() {
       quarta: { ativo: true, inicio: '08:00', fim: '18:00' },
       quinta: { ativo: true, inicio: '08:00', fim: '18:00' },
       sexta: { ativo: true, inicio: '08:00', fim: '18:00' },
+      sabado: { ativo: false, inicio: '08:00', fim: '12:00' },
+      domingo: { ativo: false, inicio: '08:00', fim: '12:00' }
+    },
+    agendamento_ia: false,
+    regras_agendamento: '',
+    horarios_agendamento: {
+      segunda: { ativo: false, inicio: '08:00', fim: '18:00' },
+      terca: { ativo: false, inicio: '08:00', fim: '18:00' },
+      quarta: { ativo: false, inicio: '08:00', fim: '18:00' },
+      quinta: { ativo: false, inicio: '08:00', fim: '18:00' },
+      sexta: { ativo: false, inicio: '08:00', fim: '18:00' },
       sabado: { ativo: false, inicio: '08:00', fim: '12:00' },
       domingo: { ativo: false, inicio: '08:00', fim: '12:00' }
     },
@@ -217,6 +230,92 @@ export function IAConfigPage() {
                 onCheckedChange={(checked) => setIaConfig({...iaConfig, usar_emojis: checked})}
               />
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Configurações de Agendamento */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Configurações de Agendamento</CardTitle>
+            <CardDescription>
+              Configure como a IA deve se comportar com agendamentos e os horários disponíveis.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label>Agendamentos com IA?</Label>
+                <p className="text-sm text-gray-500">
+                  Permitir que a IA realize agendamentos automaticamente.
+                </p>
+              </div>
+              <Switch 
+                checked={iaConfig.agendamento_ia || false}
+                onCheckedChange={(checked) => setIaConfig({...iaConfig, agendamento_ia: checked})}
+              />
+            </div>
+            
+            {iaConfig.agendamento_ia && (
+              <>
+                <div className="grid gap-2">
+                  <Label htmlFor="regras-agendamento">Regras de Agendamento</Label>
+                  <Textarea
+                    id="regras-agendamento"
+                    placeholder="Descreva como a IA deve se comportar ao realizar agendamentos...\nEx: Sempre confirmar disponibilidade, perguntar preferência de horário, etc."
+                    value={iaConfig.regras_agendamento || ''}
+                    onChange={(e) => setIaConfig({...iaConfig, regras_agendamento: e.target.value})}
+                    rows={4}
+                  />
+                </div>
+                
+                <div className="space-y-3">
+                  <Label>Vendedores e Horários Disponíveis</Label>
+                  <p className="text-sm text-gray-500">
+                    Horários dos vendedores que a IA pode usar para agendamentos.
+                  </p>
+                  {vendedores.length === 0 ? (
+                    <div className="text-center py-4 text-gray-500">
+                      <p>Nenhum vendedor cadastrado</p>
+                    </div>
+                  ) : (
+                    vendedores.map((vendedor) => {
+                      const horariosAtivos = vendedor.horarios_vendedor ? 
+                        Object.entries(vendedor.horarios_vendedor)
+                          .filter(([_, config]: [string, any]) => config?.ativo === true)
+                          .map(([dia, config]: [string, any]) => `${dia.charAt(0).toUpperCase() + dia.slice(1)}: ${config.inicio}-${config.fim}`)
+                        : [];
+                      
+                      return (
+                        <div key={vendedor.id} className="p-4 border rounded-lg bg-gray-50 dark:bg-gray-800">
+                          <div className="flex items-center justify-between mb-2">
+                            <div>
+                              <h4 className="font-medium text-gray-900 dark:text-white">
+                                {vendedor.nome || vendedor.full_name || 'Nome não informado'}
+                              </h4>
+                            </div>
+                          </div>
+                          
+                          {horariosAtivos.length > 0 ? (
+                            <div className="mt-2">
+                              <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Horários disponíveis:</p>
+                              <div className="flex flex-wrap gap-2">
+                                {horariosAtivos.map((horario, index) => (
+                                  <span key={index} className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-md">
+                                    {horario}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          ) : (
+                            <p className="text-sm text-gray-400 mt-2">Nenhum horário disponível configurado</p>
+                          )}
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
 

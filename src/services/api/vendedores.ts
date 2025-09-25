@@ -26,6 +26,13 @@ export interface Vendedor {
   salario_base?: number
   status?: 'ativo' | 'inativo' | 'ferias' | 'afastado' | 'desligado'
   observacoes?: string
+  horarios_vendedor?: {
+    [key: string]: {
+      inicio: string
+      fim: string
+      ativo: boolean
+    }
+  }
   profile: string // Campo para filtro por empresa
   created_at: string
   updated_at: string
@@ -128,6 +135,7 @@ export const vendedoresService = {
         salario_base,
         status,
         observacoes,
+        horarios_vendedor,
         profile,
         created_at,
         updated_at,

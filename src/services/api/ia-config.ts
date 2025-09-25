@@ -23,6 +23,16 @@ export interface IAConfig {
       ativo: boolean
     }
   }
+  // Configurações de agendamento
+  agendamento_ia?: boolean
+  regras_agendamento?: string
+  horarios_agendamento?: {
+    [key: string]: {
+      inicio: string
+      fim: string
+      ativo: boolean
+    }
+  }
   // Detalhes da empresa
   detalhes_empresa: {
     // Informações básicas da empresa
@@ -137,6 +147,17 @@ export const getIAConfig = async (userId: string) => {
             linkedin: '',
             facebook: ''
           }
+        },
+        agendamento_ia: false,
+        regras_agendamento: '',
+        horarios_agendamento: {
+          segunda: { inicio: '08:00', fim: '18:00', ativo: false },
+          terca: { inicio: '08:00', fim: '18:00', ativo: false },
+          quarta: { inicio: '08:00', fim: '18:00', ativo: false },
+          quinta: { inicio: '08:00', fim: '18:00', ativo: false },
+          sexta: { inicio: '08:00', fim: '18:00', ativo: false },
+          sabado: { inicio: '08:00', fim: '12:00', ativo: false },
+          domingo: { inicio: '08:00', fim: '12:00', ativo: false }
         },
         tempo_resposta_ms: 2000,
         mensagem_ausencia: 'No momento estou fora do horário de atendimento. Deixe sua mensagem que retornarei assim que possível.'

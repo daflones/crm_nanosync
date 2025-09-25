@@ -367,29 +367,10 @@ export function AgendamentosPage() {
           
           {/* Mobile: New Appointment Button */}
           <div className="sm:hidden">
-            <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
-              <DialogTrigger asChild>
-                <PlanoAtivoButton className="w-full" variant="primary">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Novo Agendamento
-                </PlanoAtivoButton>
-              </DialogTrigger>
-              <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>Criar Novo Agendamento</DialogTitle>
-                </DialogHeader>
-                <AgendamentoForm
-                  clientes={clientes}
-                  vendedores={vendedores}
-                  onSubmit={handleCreateAgendamento}
-                  onCancel={() => {
-                    setIsCreateModalOpen(false)
-                    setPrefilledData(null)
-                  }}
-                  prefilledData={prefilledData || undefined}
-                />
-              </DialogContent>
-            </Dialog>
+            <PlanoAtivoButton className="w-full" variant="primary" onClick={() => setIsCreateModalOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Novo Agendamento
+            </PlanoAtivoButton>
           </div>
         </div>
 
@@ -411,12 +392,14 @@ export function AgendamentosPage() {
               </TabsList>
             </Tabs>
             
-            {/* New Appointment Button */}
+            {/* Desktop: New Appointment Button */}
             <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
               <DialogTrigger asChild>
-                <PlanoAtivoButton variant="primary">
-                  <Plus className="mr-2 h-4 w-4" />
-                  <span className="hidden lg:inline">Novo Agendamento</span>
+                <PlanoAtivoButton>
+                  <Button className="flex items-center gap-2">
+                    <Plus className="h-4 w-4" />
+                    Novo Agendamento
+                  </Button>
                 </PlanoAtivoButton>
               </DialogTrigger>
               <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -435,22 +418,6 @@ export function AgendamentosPage() {
                 />
               </DialogContent>
             </Dialog>
-          </div>
-
-          {/* Mobile View Toggle */}
-          <div className="sm:hidden flex items-center border border-gray-300 rounded-md">
-            <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as 'list' | 'calendar')} className="w-full">
-              <TabsList className="w-full">
-                <TabsTrigger value="list" className="flex-1 flex items-center justify-center gap-2">
-                  <List className="h-4 w-4" />
-                  Lista
-                </TabsTrigger>
-                <TabsTrigger value="calendar" className="flex-1 flex items-center justify-center gap-2">
-                  <CalendarDays className="h-4 w-4" />
-                  Calendário
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
           </div>
         </div>
       </div>

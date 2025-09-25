@@ -43,7 +43,7 @@ const initialPropostaState: PropostaCreateData = {
   percentual_desconto: 0,
   valor_frete: 0,
   valor_impostos: 0,
-  status: 'rascunho',
+  status: 'enviada',
   forma_pagamento: '',
   condicoes_pagamento: '',
   prazo_entrega: '',
@@ -126,12 +126,7 @@ export function PropostasPage() {
 
   const statusOptions = [
     { value: 'todos', label: 'Todos', count: propostas.length },
-    { value: 'rascunho', label: 'Rascunho', count: propostas.filter(p => p.status === 'rascunho').length, color: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300' },
-    { value: 'revisao', label: 'Em Revisão', count: propostas.filter(p => p.status === 'revisao').length, color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/20 dark:text-orange-400' },
-    { value: 'aprovada_interna', label: 'Aprovada Internamente', count: propostas.filter(p => p.status === 'aprovada_interna').length, color: 'bg-teal-100 text-teal-700 dark:bg-teal-900/20 dark:text-teal-400' },
     { value: 'enviada', label: 'Enviada', count: propostas.filter(p => p.status === 'enviada').length, color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400' },
-    { value: 'visualizada', label: 'Visualizada', count: propostas.filter(p => p.status === 'visualizada').length, color: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-400' },
-    { value: 'em_negociacao', label: 'Em Negociação', count: propostas.filter(p => p.status === 'em_negociacao').length, color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400' },
     { value: 'aprovada', label: 'Aprovada', count: propostas.filter(p => p.status === 'aprovada').length, color: 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400' },
     { value: 'rejeitada', label: 'Rejeitada', count: propostas.filter(p => p.status === 'rejeitada').length, color: 'bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400' },
     { value: 'vencida', label: 'Vencida', count: propostas.filter(p => p.status === 'vencida').length, color: 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-500' },
@@ -190,18 +185,8 @@ export function PropostasPage() {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'rascunho':
-        return <FileText className="h-4 w-4 text-gray-600" />
-      case 'revisao':
-        return <AlertCircle className="h-4 w-4 text-orange-600" />
-      case 'aprovada_interna':
-        return <CheckCircle className="h-4 w-4 text-teal-600" />
       case 'enviada':
         return <Send className="h-4 w-4 text-blue-600" />
-      case 'visualizada':
-        return <Eye className="h-4 w-4 text-indigo-600" />
-      case 'em_negociacao':
-        return <Clock className="h-4 w-4 text-amber-600" />
       case 'aprovada':
         return <CheckCircle className="h-4 w-4 text-green-600" />
       case 'rejeitada':
@@ -859,12 +844,7 @@ export function PropostasPage() {
                   <SelectValue placeholder="Selecione o status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="rascunho">Rascunho</SelectItem>
-                  <SelectItem value="revisao">Revisão</SelectItem>
-                  <SelectItem value="aprovada_interna">Aprovada Interna</SelectItem>
                   <SelectItem value="enviada">Enviada</SelectItem>
-                  <SelectItem value="visualizada">Visualizada</SelectItem>
-                  <SelectItem value="em_negociacao">Em Negociação</SelectItem>
                   <SelectItem value="aprovada">Aprovada</SelectItem>
                   <SelectItem value="rejeitada">Rejeitada</SelectItem>
                   <SelectItem value="vencida">Vencida</SelectItem>
@@ -1771,12 +1751,7 @@ export function PropostasPage() {
                     <SelectValue placeholder="Selecione o status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="rascunho">Rascunho</SelectItem>
-                    <SelectItem value="revisao">Revisão</SelectItem>
-                    <SelectItem value="aprovada_interna">Aprovada Interna</SelectItem>
                     <SelectItem value="enviada">Enviada</SelectItem>
-                    <SelectItem value="visualizada">Visualizada</SelectItem>
-                    <SelectItem value="em_negociacao">Em Negociação</SelectItem>
                     <SelectItem value="aprovada">Aprovada</SelectItem>
                     <SelectItem value="rejeitada">Rejeitada</SelectItem>
                     <SelectItem value="vencida">Vencida</SelectItem>

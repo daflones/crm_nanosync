@@ -79,6 +79,7 @@ export function AgendamentoForm({ agendamento, clientes, vendedores, onSubmit, o
   const [formData, setFormData] = useState<AgendamentoCreateData>(defaultFormData)
   const [newParticipanteExterno, setNewParticipanteExterno] = useState('')
   const [newParticipanteInterno, setNewParticipanteInterno] = useState({ nome: '', email: '', funcao: '' })
+  const [selectedVendedor, setSelectedVendedor] = useState('')
   const [newMaterial, setNewMaterial] = useState('')
   const [newDocumento, setNewDocumento] = useState('')
   const [newProduto, setNewProduto] = useState('')
@@ -290,6 +291,25 @@ export function AgendamentoForm({ agendamento, clientes, vendedores, onSubmit, o
     const participantesAtuais = formData.participantes || []
     const novosParticipantes = participantesAtuais.filter((_, i) => i !== index)
     updateField('participantes', novosParticipantes)
+  }
+
+  const addVendedorAsParticipante = () => {
+    if (selectedVendedor) {
+      const vendedor = filteredVendedores.find(v => v.id === selectedVendedor)
+      if (vendedor) {
+        const participantesAtuais = formData.participantes || []
+        // Verificar se já não foi adicionado
+        const jaAdicionado = participantesAtuais.some(p => p.email === vendedor.email)
+        if (!jaAdicionado) {
+          updateField('participantes', [...participantesAtuais, {
+            nome: vendedor.nome || vendedor.full_name || 'Nome não informado',
+            email: vendedor.email,
+            funcao: 'Vendedor'
+          }])
+        }
+        setSelectedVendedor('')
+      }
+    }
   }
 
   return (
@@ -681,28 +701,6 @@ export function AgendamentoForm({ agendamento, clientes, vendedores, onSubmit, o
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                Agenda
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <Label htmlFor="agenda">Agenda da Reunião</Label>
-                <Textarea
-                  id="agenda"
-                  value={formData.agenda}
-                  onChange={(e) => updateField('agenda', e.target.value)}
-                  placeholder="Descreva a agenda da reunião...&#10;Ex:&#10;1. Apresentação da empresa&#10;2. Demonstração do produto&#10;3. Discussão de necessidades&#10;4. Próximos passos"
-                  rows={6}
-                  className="resize-none"
-                />
-              </div>
-            </CardContent>
-          </Card>
-
           {/* Participantes Internos */}
           <Card>
             <CardHeader>
@@ -712,6 +710,45 @@ export function AgendamentoForm({ agendamento, clientes, vendedores, onSubmit, o
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* Seleção de Vendedores Existentes */}
+              <div className="space-y-2">
+                <Label>Selecionar Vendedor da Empresa</Label>
+                <div className="flex gap-2">
+                  <Select value={selectedVendedor} onValueChange={setSelectedVendedor}>
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder="Selecione um vendedor..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {filteredVendedores.map((vendedor) => (
+                        <SelectItem key={vendedor.id} value={vendedor.id}>
+                          <div className="flex flex-col">
+                            <span className="font-medium">{vendedor.nome || vendedor.full_name || 'Nome não informado'}</span>
+                            <span className="text-sm text-gray-500">{vendedor.email} • Vendedor</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    type="button"
+                    onClick={addVendedorAsParticipante}
+                    disabled={!selectedVendedor}
+                    size="sm"
+                    className="px-3"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+
+              {/* Divisor */}
+              <div className="flex items-center gap-4">
+                <div className="flex-1 border-t border-gray-200"></div>
+                <span className="text-sm text-gray-500">ou adicionar manualmente</span>
+                <div className="flex-1 border-t border-gray-200"></div>
+              </div>
+
+              {/* Adicionar Participante Manual */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                 <Input
                   value={newParticipanteInterno.nome}
@@ -821,45 +858,6 @@ export function AgendamentoForm({ agendamento, clientes, vendedores, onSubmit, o
             </div>
           </div>
 
-          {/* Documentos Anexos */}
-          <div className="space-y-4">
-            <Label>Documentos Anexos</Label>
-            <div className="flex gap-2">
-              <Input
-                value={newDocumento}
-                onChange={(e) => setNewDocumento(e.target.value)}
-                placeholder="Ex: Proposta comercial, catálogo..."
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault()
-                    addToArray('documentos_anexos', newDocumento)
-                    setNewDocumento('')
-                  }
-                }}
-              />
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  addToArray('documentos_anexos', newDocumento)
-                  setNewDocumento('')
-                }}
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {formData.documentos_anexos?.map((documento, index) => (
-                <Badge key={index} variant="secondary" className="flex items-center gap-1">
-                  {documento}
-                  <X
-                    className="h-3 w-3 cursor-pointer"
-                    onClick={() => removeFromArray('documentos_anexos', index)}
-                  />
-                </Badge>
-              ))}
-            </div>
-          </div>
             </CardContent>
           </Card>
 
@@ -950,165 +948,6 @@ export function AgendamentoForm({ agendamento, clientes, vendedores, onSubmit, o
             </CardContent>
           </Card>
 
-          {/* Resultados e Follow-up */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Resultados e Follow-up</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="resultado">Resultado da Reunião</Label>
-                <Textarea
-                  id="resultado"
-                  value={formData.resultado}
-                  onChange={(e) => updateField('resultado', e.target.value)}
-                  placeholder="Descreva o resultado da reunião..."
-                  rows={3}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="ata_reuniao">Ata da Reunião</Label>
-                <Textarea
-                  id="ata_reuniao"
-                  value={formData.ata_reuniao}
-                  onChange={(e) => updateField('ata_reuniao', e.target.value)}
-                  placeholder="Ata detalhada da reunião..."
-                  rows={4}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="proximos_passos">Próximos Passos</Label>
-                <Textarea
-                  id="proximos_passos"
-                  value={formData.proximos_passos}
-                  onChange={(e) => updateField('proximos_passos', e.target.value)}
-                  placeholder="Defina os próximos passos..."
-                  rows={3}
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="data_proximo_contato">Data Próximo Contato</Label>
-                  <Input
-                    id="data_proximo_contato"
-                    type="datetime-local"
-                    value={formData.data_proximo_contato}
-                    onChange={(e) => updateField('data_proximo_contato', e.target.value)}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="valor_discutido">Valor Discutido (R$)</Label>
-                  <Input
-                    id="valor_discutido"
-                    type="number"
-                    step="0.01"
-                    value={formData.valor_discutido}
-                    onChange={(e) => updateField('valor_discutido', parseFloat(e.target.value))}
-                    placeholder="0.00"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="interesse_demonstrado">Interesse (1-10)</Label>
-                  <Input
-                    id="interesse_demonstrado"
-                    type="number"
-                    min="1"
-                    max="10"
-                    value={formData.interesse_demonstrado}
-                    onChange={(e) => updateField('interesse_demonstrado', parseInt(e.target.value))}
-                  />
-                </div>
-              </div>
-
-              {/* Reagendamento */}
-              {formData.status === 'reagendado' && (
-                <div className="space-y-4 border-t pt-4">
-                  <h4 className="font-medium">Informações de Reagendamento</h4>
-                  <div className="space-y-2">
-                    <Label htmlFor="motivo_reagendamento">Motivo do Reagendamento</Label>
-                    <Textarea
-                      id="motivo_reagendamento"
-                      value={formData.motivo_reagendamento}
-                      onChange={(e) => updateField('motivo_reagendamento', e.target.value)}
-                      placeholder="Explique o motivo do reagendamento..."
-                      rows={2}
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* Confirmações e Lembretes */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t pt-4">
-                <div className="space-y-2">
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id="lembrete_enviado"
-                      checked={formData.lembrete_enviado}
-                      onChange={(e) => updateField('lembrete_enviado', e.target.checked)}
-                    />
-                    <Label htmlFor="lembrete_enviado">Lembrete Enviado</Label>
-                  </div>
-                  {formData.lembrete_enviado && (
-                    <Input
-                      type="datetime-local"
-                      value={formData.lembrete_enviado_em}
-                      onChange={(e) => updateField('lembrete_enviado_em', e.target.value)}
-                      placeholder="Data/hora do envio"
-                    />
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id="confirmacao_cliente"
-                      checked={formData.confirmacao_cliente}
-                      onChange={(e) => updateField('confirmacao_cliente', e.target.checked)}
-                    />
-                    <Label htmlFor="confirmacao_cliente">Cliente Confirmou</Label>
-                  </div>
-                  {formData.confirmacao_cliente && (
-                    <Input
-                      type="datetime-local"
-                      value={formData.confirmacao_em}
-                      onChange={(e) => updateField('confirmacao_em', e.target.value)}
-                      placeholder="Data/hora da confirmação"
-                    />
-                  )}
-                </div>
-              </div>
-
-              {/* IDs de Integração */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t pt-4">
-                <div className="space-y-2">
-                  <Label htmlFor="google_event_id">Google Event ID</Label>
-                  <Input
-                    id="google_event_id"
-                    value={formData.google_event_id}
-                    onChange={(e) => updateField('google_event_id', e.target.value)}
-                    placeholder="ID do evento no Google Calendar"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="outlook_event_id">Outlook Event ID</Label>
-                  <Input
-                    id="outlook_event_id"
-                    value={formData.outlook_event_id}
-                    onChange={(e) => updateField('outlook_event_id', e.target.value)}
-                    placeholder="ID do evento no Outlook"
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
         </TabsContent>
       </Tabs>
 

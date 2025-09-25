@@ -19,6 +19,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Switch } from '@/components/ui/switch'
 import { useVendedores, useCreateVendedor, useUpdateVendedor, useDeleteVendedor } from '@/hooks/useVendedores'
 import { useSegmentos } from '@/hooks/useSegmentos'
 import { useNotifications } from '@/contexts/NotificationContext'
@@ -40,6 +41,13 @@ interface VendedorFormData {
   segmentos_principais: string[]
   segmentos_secundarios: string[]
   regioes_atendimento: string[]
+  horarios_vendedor?: {
+    [key: string]: {
+      inicio: string
+      fim: string
+      ativo: boolean
+    }
+  }
 }
 
 // Estados do Brasil + opções especiais
@@ -221,7 +229,16 @@ export default function VendedoresPage() {
     data_contratacao: '',
     segmentos_principais: [],
     segmentos_secundarios: [],
-    regioes_atendimento: []
+    regioes_atendimento: [],
+    horarios_vendedor: {
+      segunda: { inicio: '08:00', fim: '18:00', ativo: false },
+      terca: { inicio: '08:00', fim: '18:00', ativo: false },
+      quarta: { inicio: '08:00', fim: '18:00', ativo: false },
+      quinta: { inicio: '08:00', fim: '18:00', ativo: false },
+      sexta: { inicio: '08:00', fim: '18:00', ativo: false },
+      sabado: { inicio: '08:00', fim: '12:00', ativo: false },
+      domingo: { inicio: '08:00', fim: '12:00', ativo: false }
+    }
   })
 
   const { data: vendedores = [], isLoading, error } = useVendedores()
@@ -253,7 +270,16 @@ export default function VendedoresPage() {
       data_contratacao: '',
       segmentos_principais: [],
       segmentos_secundarios: [],
-      regioes_atendimento: []
+      regioes_atendimento: [],
+      horarios_vendedor: {
+        segunda: { inicio: '08:00', fim: '18:00', ativo: true },
+        terca: { inicio: '08:00', fim: '18:00', ativo: true },
+        quarta: { inicio: '08:00', fim: '18:00', ativo: true },
+        quinta: { inicio: '08:00', fim: '18:00', ativo: true },
+        sexta: { inicio: '08:00', fim: '18:00', ativo: true },
+        sabado: { inicio: '08:00', fim: '12:00', ativo: false },
+        domingo: { inicio: '08:00', fim: '12:00', ativo: false }
+      }
     })
   }
 
@@ -338,7 +364,8 @@ export default function VendedoresPage() {
         data_contratacao: formData.data_contratacao || new Date().toISOString().split('T')[0],
         segmentos_principais: formData.segmentos_principais,
         segmentos_secundarios: formData.segmentos_secundarios,
-        regioes_atendimento: formData.regioes_atendimento
+        regioes_atendimento: formData.regioes_atendimento,
+        horarios_vendedor: formData.horarios_vendedor
       }
 
       console.log('Dados sendo enviados:', vendedorData)
@@ -399,6 +426,9 @@ export default function VendedoresPage() {
   }
 
   const handleEditVendedor = (vendedor: Vendedor) => {
+    console.log('=== DEBUG EDIT VENDEDOR ===');
+    console.log('Vendedor completo:', vendedor);
+    console.log('horarios_vendedor:', vendedor.horarios_vendedor);
     setSelectedVendedor(vendedor)
     setFormData({
       nome: vendedor.nome || '',
@@ -413,7 +443,16 @@ export default function VendedoresPage() {
       data_contratacao: vendedor.data_contratacao ? vendedor.data_contratacao.split('T')[0] : '',
       segmentos_principais: vendedor.segmentos_principais || [],
       segmentos_secundarios: vendedor.segmentos_secundarios || [],
-      regioes_atendimento: vendedor.regioes_atendimento || []
+      regioes_atendimento: vendedor.regioes_atendimento || [],
+      horarios_vendedor: vendedor.horarios_vendedor || {
+        segunda: { inicio: '08:00', fim: '18:00', ativo: false },
+        terca: { inicio: '08:00', fim: '18:00', ativo: false },
+        quarta: { inicio: '08:00', fim: '18:00', ativo: false },
+        quinta: { inicio: '08:00', fim: '18:00', ativo: false },
+        sexta: { inicio: '08:00', fim: '18:00', ativo: false },
+        sabado: { inicio: '08:00', fim: '12:00', ativo: false },
+        domingo: { inicio: '08:00', fim: '12:00', ativo: false }
+      }
     })
     setIsEditModalOpen(true)
   }
@@ -434,7 +473,8 @@ export default function VendedoresPage() {
         data_contratacao: formData.data_contratacao,
         segmentos_principais: formData.segmentos_principais,
         segmentos_secundarios: formData.segmentos_secundarios,
-        regioes_atendimento: formData.regioes_atendimento
+        regioes_atendimento: formData.regioes_atendimento,
+        horarios_vendedor: formData.horarios_vendedor
       }
 
       await updateVendedor.mutateAsync({
@@ -936,6 +976,58 @@ export default function VendedoresPage() {
                 </div>
               </div>
             </div>
+
+            {/* Horários Disponíveis para Agendamento */}
+            <div className="space-y-4">
+              <h4 className="text-sm font-medium text-gray-900 dark:text-white border-b pb-2">Horários Disponíveis para Agendamento</h4>
+              <div className="space-y-3">
+                {Object.entries(formData.horarios_vendedor || {}).map(([dia, config]: [string, any]) => (
+                  <div key={dia} className="flex items-center gap-4 p-3 border rounded-lg">
+                    <div className="w-20">
+                      <Label className="capitalize">{dia}</Label>
+                    </div>
+                    <Switch
+                      checked={config?.ativo || false}
+                      onCheckedChange={(checked) => {
+                        const newHorarios = { ...formData.horarios_vendedor }
+                        newHorarios[dia] = { ...config, ativo: checked }
+                        setFormData({ ...formData, horarios_vendedor: newHorarios })
+                      }}
+                    />
+                    {config?.ativo && (
+                      <>
+                        <div className="flex items-center gap-2">
+                          <Input
+                            type="time"
+                            value={config?.inicio || '08:00'}
+                            onChange={(e) => {
+                              const newHorarios = { ...formData.horarios_vendedor }
+                              newHorarios[dia] = { ...config, inicio: e.target.value }
+                              setFormData({ ...formData, horarios_vendedor: newHorarios })
+                            }}
+                            className="w-24"
+                          />
+                          <span className="text-sm text-gray-500">às</span>
+                          <Input
+                            type="time"
+                            value={config?.fim || '18:00'}
+                            onChange={(e) => {
+                              const newHorarios = { ...formData.horarios_vendedor }
+                              newHorarios[dia] = { ...config, fim: e.target.value }
+                              setFormData({ ...formData, horarios_vendedor: newHorarios })
+                            }}
+                            className="w-24"
+                          />
+                        </div>
+                      </>
+                    )}
+                    {!config?.ativo && (
+                      <span className="text-sm text-gray-400">Indisponível</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
           <DialogFooter className="flex flex-col gap-2">
             <p className="text-xs text-gray-500 text-left">
@@ -1296,6 +1388,58 @@ export default function VendedoresPage() {
                     required
                   />
                 </div>
+              </div>
+            </div>
+
+            {/* Horários Disponíveis para Agendamento */}
+            <div className="space-y-4">
+              <h4 className="text-sm font-medium text-gray-900 dark:text-white border-b pb-2">Horários Disponíveis para Agendamento</h4>
+              <div className="space-y-3">
+                {Object.entries(formData.horarios_vendedor || {}).map(([dia, config]: [string, any]) => (
+                  <div key={dia} className="flex items-center gap-4 p-3 border rounded-lg">
+                    <div className="w-20">
+                      <Label className="capitalize">{dia}</Label>
+                    </div>
+                    <Switch
+                      checked={config?.ativo || false}
+                      onCheckedChange={(checked) => {
+                        const newHorarios = { ...formData.horarios_vendedor }
+                        newHorarios[dia] = { ...config, ativo: checked }
+                        setFormData({ ...formData, horarios_vendedor: newHorarios })
+                      }}
+                    />
+                    {config?.ativo && (
+                      <>
+                        <div className="flex items-center gap-2">
+                          <Input
+                            type="time"
+                            value={config?.inicio || '08:00'}
+                            onChange={(e) => {
+                              const newHorarios = { ...formData.horarios_vendedor }
+                              newHorarios[dia] = { ...config, inicio: e.target.value }
+                              setFormData({ ...formData, horarios_vendedor: newHorarios })
+                            }}
+                            className="w-24"
+                          />
+                          <span className="text-sm text-gray-500">às</span>
+                          <Input
+                            type="time"
+                            value={config?.fim || '18:00'}
+                            onChange={(e) => {
+                              const newHorarios = { ...formData.horarios_vendedor }
+                              newHorarios[dia] = { ...config, fim: e.target.value }
+                              setFormData({ ...formData, horarios_vendedor: newHorarios })
+                            }}
+                            className="w-24"
+                          />
+                        </div>
+                      </>
+                    )}
+                    {!config?.ativo && (
+                      <span className="text-sm text-gray-400">Indisponível</span>
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
           </div>
