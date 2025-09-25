@@ -503,7 +503,7 @@ export function PropostasPage() {
             <div className="grid gap-4 py-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="cliente_id">Cliente *</Label>
+                  <Label htmlFor="cliente_id">Cliente <span className="text-red-500">*</span></Label>
                   <Select
                     value={newProposta.cliente_id}
                     onValueChange={(value) => setNewProposta(prev => ({ ...prev, cliente_id: value }))}
@@ -521,7 +521,7 @@ export function PropostasPage() {
                   </Select>
                 </div>
                 <div>
-                  <Label htmlFor="vendedor_id">Vendedor *</Label>
+                  <Label htmlFor="vendedor_id">Vendedor <span className="text-red-500">*</span></Label>
                   <Select
                     value={newProposta.vendedor_id}
                     onValueChange={(value) => setNewProposta(prev => ({ ...prev, vendedor_id: value }))}
@@ -540,7 +540,7 @@ export function PropostasPage() {
                 </div>
               </div>
               <div>
-                <Label htmlFor="titulo">Título da Proposta *</Label>
+                <Label htmlFor="titulo">Título da Proposta <span className="text-red-500">*</span></Label>
                 <Input
                   id="titulo"
                   value={newProposta.titulo}
@@ -590,7 +590,7 @@ export function PropostasPage() {
             </div>
             <div className="grid grid-cols-3 gap-4">
               <div>
-                <Label htmlFor="valor_produtos">Valor Produtos</Label>
+                <Label htmlFor="valor_produtos">Valor Produtos <span className="text-red-500">*</span></Label>
                 <div className="flex gap-2">
                   <Input
                     id="valor_produtos"
@@ -850,7 +850,7 @@ export function PropostasPage() {
               />
             </div>
             <div>
-              <Label htmlFor="status">Status *</Label>
+              <Label htmlFor="status">Status <span className="text-red-500">*</span></Label>
               <Select
                 value={newProposta.status}
                 onValueChange={(value) => setNewProposta(prev => ({ ...prev, status: value as any }))}
@@ -1181,7 +1181,8 @@ export function PropostasPage() {
                 !newProposta.cliente_id || 
                 !newProposta.vendedor_id || 
                 !newProposta.titulo || 
-                !newProposta.valor_total ||
+                !newProposta.valor_produtos ||
+                !newProposta.status ||
                 createProposta.isPending
               }
             >
@@ -1369,7 +1370,7 @@ export function PropostasPage() {
             <div className="grid gap-4 py-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="edit_cliente_id">Cliente *</Label>
+                  <Label htmlFor="edit_cliente_id">Cliente <span className="text-red-500">*</span></Label>
                   <Select
                     value={editProposta.cliente_id}
                     onValueChange={(value) => setEditProposta(prev => ({ ...prev, cliente_id: value }))}
@@ -1387,7 +1388,7 @@ export function PropostasPage() {
                   </Select>
                 </div>
                 <div>
-                  <Label htmlFor="edit_vendedor_id">Vendedor *</Label>
+                  <Label htmlFor="edit_vendedor_id">Vendedor <span className="text-red-500">*</span></Label>
                   <Select
                     value={editProposta.vendedor_id}
                     onValueChange={(value) => setEditProposta(prev => ({ ...prev, vendedor_id: value }))}
@@ -1406,7 +1407,7 @@ export function PropostasPage() {
                 </div>
               </div>
               <div>
-                <Label htmlFor="edit_titulo">Título da Proposta *</Label>
+                <Label htmlFor="edit_titulo">Título da Proposta <span className="text-red-500">*</span></Label>
                 <Input
                   id="edit_titulo"
                   value={editProposta.titulo}
@@ -1456,7 +1457,7 @@ export function PropostasPage() {
               </div>
               <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <Label htmlFor="edit_valor_produtos">Valor Produtos</Label>
+                  <Label htmlFor="edit_valor_produtos">Valor Produtos <span className="text-red-500">*</span></Label>
                   <div className="flex gap-2">
                     <Input
                       id="edit_valor_produtos"
@@ -1761,7 +1762,7 @@ export function PropostasPage() {
                 />
               </div>
               <div>
-                <Label htmlFor="edit_status">Status *</Label>
+                <Label htmlFor="edit_status">Status <span className="text-red-500">*</span></Label>
                 <Select
                   value={editProposta.status}
                   onValueChange={(value) => setEditProposta(prev => ({ ...prev, status: value as any }))}
@@ -2000,8 +2001,8 @@ export function PropostasPage() {
             </Button>
             <Button
               onClick={() => {
-                if (!editProposta.cliente_id || !editProposta.vendedor_id || !editProposta.titulo || !editProposta.status) {
-                  alert('Preencha todos os campos obrigatórios')
+                if (!editProposta.cliente_id || !editProposta.vendedor_id || !editProposta.titulo || !editProposta.valor_produtos || !editProposta.status) {
+                  toast.error('Preencha todos os campos obrigatórios')
                   return
                 }
                 

@@ -1,4 +1,5 @@
 import React from 'react';
+import { toast } from 'sonner';
 import { usePlanoAtivo } from '../hooks/usePlanoAtivo';
 import { Lock, CreditCard } from 'lucide-react';
 
@@ -134,7 +135,7 @@ export const PlanoAtivoButton = React.forwardRef<HTMLButtonElement, PlanoAtivoBu
 
   const handleClick = () => {
     // Mostrar toast ou modal informando sobre o plano
-    alert('Esta funcionalidade requer um plano ativo. Clique em "Planos" para ativar.');
+    toast.error('Esta funcionalidade requer um plano ativo. Clique em "Planos" para ativar.');
   };
 
   return (
@@ -159,7 +160,7 @@ export function usePlanoAtivoAction() {
   const executeAction = (action: () => void, showAlert = true) => {
     if (!planoAtivo) {
       if (showAlert) {
-        alert('Esta funcionalidade requer um plano ativo. Acesse a página "Planos" para ativar seu plano.');
+        toast.error('Esta funcionalidade requer um plano ativo. Acesse a página "Planos" para ativar seu plano.');
       }
       return false;
     }

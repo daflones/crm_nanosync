@@ -28,7 +28,8 @@ export const useCreateVendedor = () => {
       toast.success('Vendedor criado com sucesso!')
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Erro ao criar vendedor')
+      // Não mostrar toast aqui, deixar o componente tratar
+      console.error('Erro no hook useCreateVendedor:', error)
     },
   })
 }

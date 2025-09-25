@@ -231,7 +231,22 @@ export function ArquivosPage() {
 
   // Handle file delete
   const handleDeleteFile = async (arquivo: Arquivo) => {
-    if (confirm(`Tem certeza que deseja excluir o arquivo "${arquivo.nome}"?`)) {
+    // Show confirmation toast
+    toast.error(`Deseja excluir "${arquivo.nome}"?`, {
+      action: {
+        label: 'Excluir',
+        onClick: async () => {
+          await performDelete(arquivo)
+        }
+      },
+      cancel: {
+        label: 'Cancelar',
+        onClick: () => {}
+      }
+    })
+  }
+
+  const performDelete = async (arquivo: Arquivo) => {
       try {
         // For product images, we need to handle deletion differently
         if (arquivo.id.startsWith('product-image-')) {
@@ -270,7 +285,6 @@ export function ArquivosPage() {
         console.error('Erro ao excluir:', error)
         toast.error('Erro ao excluir arquivo')
       }
-    }
   }
 
   // Handle file edit

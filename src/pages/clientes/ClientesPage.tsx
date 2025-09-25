@@ -1,4 +1,4 @@
-﻿import { useState } from 'react'
+import { useState } from 'react'
 import {
   Plus,
   Search,
@@ -558,55 +558,79 @@ export function ClientesPage() {
         </div>
       </div>
 
-      <div className="w-full grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 2xl:grid-cols-8">
-        <div 
-          className={`p-4 rounded-lg border cursor-pointer transition-colors ${
-            selectedStage === 'todos' ? 'bg-primary-50 border-primary-200 dark:bg-primary-900/20 dark:border-primary-700' : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
-          }`}
-          onClick={() => setSelectedStage('todos')}
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Todos</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{clientes.length}</p>
-            </div>
-            <Users className="h-8 w-8 text-gray-400 dark:text-gray-500" />
-          </div>
-        </div>
-
-        {pipelineStages.map((stage) => (
-          <div
-            key={stage.id}
-            className={`p-4 rounded-lg border cursor-pointer transition-colors ${
-              selectedStage === stage.id ? 'bg-primary-50 border-primary-200 dark:bg-primary-900/20 dark:border-primary-700' : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
+      {/* Statistics Cards - Horizontal Layout like List View */}
+      <div className="w-full overflow-x-auto">
+        <div className="flex gap-4 pb-2" style={{ minWidth: 'max-content' }}>
+          <div 
+            className={`flex-shrink-0 p-4 rounded-lg border cursor-pointer transition-colors ${
+              selectedStage === 'todos' ? 'bg-primary-50 border-primary-200 dark:bg-primary-900/20 dark:border-primary-700' : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
             }`}
-            onClick={() => setSelectedStage(stage.id)}
+            onClick={() => setSelectedStage('todos')}
+            style={{ minWidth: '120px' }}
           >
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-300">{stage.name}</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{getStageCount(stage.id)}</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Todos</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{clientes.length}</p>
               </div>
-              <div className={`w-3 h-3 rounded-full ${stage.color}`} />
+              <Users className="h-8 w-8 text-gray-400 dark:text-gray-500" />
             </div>
           </div>
-        ))}
+
+          {pipelineStages.map((stage) => (
+            <div
+              key={stage.id}
+              className={`flex-shrink-0 p-4 rounded-lg border cursor-pointer transition-colors ${
+                selectedStage === stage.id ? 'bg-primary-50 border-primary-200 dark:bg-primary-900/20 dark:border-primary-700' : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
+              }`}
+              onClick={() => setSelectedStage(stage.id)}
+              style={{ minWidth: '120px' }}
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-300">{stage.name}</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{getStageCount(stage.id)}</p>
+                </div>
+                <div className={`w-3 h-3 rounded-full ${stage.color}`} />
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Conditional View Rendering */}
       {viewMode === 'kanban' ? (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-          <div className="mb-6">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Pipeline de Vendas</h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Gerencie seus leads através do funil de vendas</p>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
+          <div className="p-3 sm:p-6 pb-0">
+            <div className="mb-4 sm:mb-6">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Pipeline de Vendas</h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Gerencie seus leads através do funil de vendas</p>
+            </div>
           </div>
-          <KanbanBoard
-            clientes={clientes as any[]}
-            onEdit={openEditModal}
-            onDelete={openDeleteDialog}
-            onView={handleViewCliente}
-            onUpdateStage={handleUpdateStage}
-          />
+          <div className="w-full">
+            <KanbanBoard
+              clientes={clientes as any[]}
+              onEdit={openEditModal}
+              onDelete={openDeleteDialog}
+              onView={handleViewCliente}
+              onUpdateStage={handleUpdateStage}
+            />
+          </div>
+          
+          {/* Floating Add Button for Kanban */}
+          <PlanoAtivoButton
+            onClick={() => {
+              reset()
+              if (!isAdmin && currentVendedorId) {
+                setValue('vendedor_id', currentVendedorId)
+              }
+              setIsCreateModalOpen(true)
+            }}
+            className="fixed bottom-6 right-6 z-50 w-12 h-12 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center"
+            variant="primary"
+          >
+            <Plus className="h-5 w-5" />
+          </PlanoAtivoButton>
         </div>
       ) : (
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
@@ -626,7 +650,7 @@ export function ClientesPage() {
               </p>
             </div>
           ) : (
-            <div className="divide-y divide-gray-200 dark:divide-gray-700">
+            <div className="divide-y divide-gray-200 dark:divide-gray-700 discrete-scroll max-h-[600px] overflow-y-auto">
               {filteredClientes.map((cliente: any) => (
                 <div key={cliente.id} className="p-6 hover:bg-gray-50 dark:hover:bg-gray-700 border-l-4 border-l-transparent hover:border-l-primary-500 transition-all duration-200">
                   <div className="flex items-start justify-between">
@@ -1902,10 +1926,10 @@ export function ClientesPage() {
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirmar Exclus�o</AlertDialogTitle>
+            <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
             <AlertDialogDescription>
               Tem certeza que deseja excluir o cliente <strong>{selectedCliente?.nome_contato}</strong>?
-              Esta a��o n�o pode ser desfeita.
+              Esta ação não pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

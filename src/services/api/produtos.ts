@@ -233,7 +233,7 @@ export const produtosService = {
         categoria_id: cleanData.categoria_id || null,
         segmento_id: cleanData.segmento_id || null,
         unidade: cleanData.unidade || 'un',
-        especificacoes: cleanData.especificacoes || {},
+        especificacoes: cleanData.especificacoes || null,
         dimensoes: cleanData.dimensoes || null,
         peso: cleanData.peso || null,
         material: cleanData.material || null,

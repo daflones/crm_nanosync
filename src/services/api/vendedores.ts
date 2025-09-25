@@ -75,6 +75,9 @@ export interface VendedorUpdateData {
   comissao_percentual?: number
   salario_base?: number
   data_contratacao?: string
+  segmentos_principais?: string[]
+  segmentos_secundarios?: string[]
+  regioes_atendimento?: string[]
   status?: 'ativo' | 'inativo' | 'ferias' | 'afastado' | 'desligado'
   ativo?: boolean
 }

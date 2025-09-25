@@ -1,4 +1,6 @@
+import { SimpleDateTime } from '@/components/ui/simple-datetime'
 import React, { useState, useEffect, useMemo } from 'react'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -159,6 +161,27 @@ export function AgendamentoForm({ agendamento, clientes, vendedores, onSubmit, o
     setFormData(prev => ({ ...prev, [field]: value }))
   }
 
+  // Função para calcular data fim baseada na data início e duração
+  const calcularDataFim = (dataInicio: string, duracaoMinutos: number): string => {
+    if (!dataInicio || !duracaoMinutos) return ''
+    
+    const inicio = new Date(dataInicio)
+    const fim = new Date(inicio.getTime() + duracaoMinutos * 60000)
+    
+    return fim.toISOString().slice(0, 16)
+  }
+
+  // Função para calcular duração baseada nas datas
+  const calcularDuracao = (dataInicio: string, dataFim: string): number => {
+    if (!dataInicio || !dataFim) return 0
+    
+    const inicio = new Date(dataInicio)
+    const fim = new Date(dataFim)
+    
+    const diffMs = fim.getTime() - inicio.getTime()
+    return Math.round(diffMs / (1000 * 60))
+  }
+    
   const addToArray = (field: keyof AgendamentoCreateData, value: string) => {
     if (!value.trim()) return
     
@@ -189,14 +212,14 @@ export function AgendamentoForm({ agendamento, clientes, vendedores, onSubmit, o
     // Validações básicas
     if (!formData.cliente_id || !formData.vendedor_id || !formData.titulo || !formData.data_inicio || !formData.data_fim) {
       console.log('Validation failed - missing required fields')
-      alert('Preencha todos os campos obrigatórios')
+      toast.error('Preencha todos os campos obrigatórios')
       return
     }
 
     // Validar se data_fim é posterior a data_inicio
     if (new Date(formData.data_fim) <= new Date(formData.data_inicio)) {
       console.log('Validation failed - end date before start date')
-      alert('A data/hora de fim deve ser posterior à data/hora de início')
+      toast.error('A data/hora de fim deve ser posterior à data/hora de início')
       return
     }
 
@@ -421,43 +444,86 @@ export function AgendamentoForm({ agendamento, clientes, vendedores, onSubmit, o
               <div className="border-t pt-4 mt-4">
                 <h3 className="text-lg font-medium mb-4">Data e Hora</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* Data/Hora Início */}
+                  <SimpleDateTime
+                    value={formData.data_inicio}
+                    onChange={(value) => {
+                      updateField('data_inicio', value)
+                      const duracao = formData.duracao_minutos || 0
+                      if (duracao > 0) {
+                        const novaDataFim = calcularDataFim(value, duracao)
+                        updateField('data_fim', novaDataFim)
+                      }
+                    }}
+                    label="Data/Hora Início"
+                    required
+                    popoverDirection="left"
+                  />
+
+                  {/* Duração */}
                   <div className="space-y-2">
-                    <Label htmlFor="data_inicio">Data/Hora Início *</Label>
-                    <Input
-                      id="data_inicio"
-                      type="datetime-local"
-                      value={formatDateTimeForInput(formData.data_inicio)}
-                      onChange={(e) => updateField('data_inicio', formatInputToDateTime(e.target.value))}
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="data_fim">Data/Hora Fim</Label>
-                    <Input
-                      id="data_fim"
-                      type="datetime-local"
-                      value={formatDateTimeForInput(formData.data_fim)}
-                      onChange={(e) => updateField('data_fim', formatInputToDateTime(e.target.value))}
-                    />
+                    <Label htmlFor="duracao_minutos">Duração (min) <span className="text-red-500">*</span></Label>
+                    <div className="space-y-2">
+                      <Input
+                        id="duracao_minutos"
+                        type="number"
+                        value={formData.duracao_minutos || ''}
+                        onChange={(e) => {
+                          const duracao = parseInt(e.target.value) || 0
+                          updateField('duracao_minutos', duracao)
+                          if (formData.data_inicio && duracao > 0) {
+                            const novaDataFim = calcularDataFim(formData.data_inicio, duracao)
+                            updateField('data_fim', novaDataFim)
+                          }
+                        }}
+                        min="1"
+                        placeholder="Ex: 30, 60, 90..."
+                        required
+                      />
+                      <div className="flex gap-1 flex-wrap">
+                        {[15, 30, 45, 60, 90, 120].map((minutos) => (
+                          <Button
+                            key={minutos}
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="text-xs h-6 px-2"
+                            onClick={() => {
+                              updateField('duracao_minutos', minutos)
+                              if (formData.data_inicio) {
+                                const novaDataFim = calcularDataFim(formData.data_inicio, minutos)
+                                updateField('data_fim', novaDataFim)
+                              }
+                            }}
+                          >
+                            {minutos}min
+                          </Button>
+                        ))}
+                      </div>
+                      {(formData.duracao_minutos || 0) > 0 && (
+                        <p className="text-sm text-muted-foreground">
+                          ✓ Duração: {formData.duracao_minutos} minutos
+                        </p>
+                      )}
+                    </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="duracao_minutos">Duração (min)</Label>
-                    <Input
-                      id="duracao_minutos"
-                      type="number"
-                      value={formData.duracao_minutos || ''}
-                      onChange={(e) => updateField('duracao_minutos', parseInt(e.target.value) || 0)}
-                      min="1"
-                      placeholder="Calculado automaticamente"
-                      className="bg-gray-50"
-                    />
-                    {formData.data_inicio && formData.data_fim && (
-                      <p className="text-sm text-muted-foreground">
-                        ✓ Duração: {formData.duracao_minutos} minutos
-                      </p>
-                    )}
-                  </div>
+                  {/* Data/Hora Fim */}
+                  <SimpleDateTime
+                    value={formData.data_fim}
+                    onChange={(value) => {
+                      updateField('data_fim', value)
+                      if (formData.data_inicio) {
+                        const novaDuracao = calcularDuracao(formData.data_inicio, value)
+                        if (novaDuracao > 0) {
+                          updateField('duracao_minutos', novaDuracao)
+                        }
+                      }
+                    }}
+                    label="Data/Hora Fim"
+                    required
+                    popoverDirection="right"
+                  />
                 </div>
               </div>
             </CardContent>

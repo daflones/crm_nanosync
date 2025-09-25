@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { Plus, Pencil, Trash, Eye, Package, X, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Plus, Pencil, Trash, Eye, Package, X, ChevronLeft, ChevronRight, Upload, Image } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -635,7 +635,7 @@ export function ProdutosPage() {
           <div className="space-y-4">
             {/* Basic Info */}
             <div className="space-y-2">
-              <Label htmlFor="nome">Nome do Produto *</Label>
+              <Label htmlFor="nome">Nome do Produto <span className="text-red-500">*</span></Label>
               <Input
                 id="nome"
                 value={newProduct.nome}
@@ -646,11 +646,12 @@ export function ProdutosPage() {
             
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="codigo">Código</Label>
+                <Label htmlFor="codigo">Código <span className="text-red-500">*</span></Label>
                 <Input
                   id="codigo"
                   value={newProduct.codigo}
                   onChange={(e) => setNewProduct({...newProduct, codigo: e.target.value})}
+                  required
                 />
               </div>
               <div className="space-y-2">
@@ -808,19 +809,37 @@ export function ProdutosPage() {
             </div>
 
             {/* Image Upload */}
-            <div className="space-y-2">
-              <Label htmlFor="image">Imagem Principal</Label>
-              <Input
-                id="image"
-                type="file"
-                accept="image/*"
-                onChange={handleImageSelect}
-              />
-              {selectedImageName && (
-                <p className="text-sm text-gray-600 mt-1">
-                  Arquivo selecionado: <span className="font-medium">{selectedImageName}</span>
-                </p>
-              )}
+            <div className="space-y-3">
+              <Label>Imagem Principal do Produto</Label>
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
+                <div className="flex flex-col items-center space-y-2">
+                  <div className="p-3 bg-gray-100 rounded-full">
+                    <Upload className="h-6 w-6 text-gray-600" />
+                  </div>
+                  <div>
+                    <label
+                      htmlFor="image"
+                      className="cursor-pointer text-sm font-medium text-blue-600 hover:text-blue-500"
+                    >
+                      Clique para selecionar uma imagem
+                    </label>
+                    <p className="text-xs text-gray-500 mt-1">PNG, JPG, GIF até 10MB</p>
+                  </div>
+                  <Input
+                    id="image"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageSelect}
+                    className="hidden"
+                  />
+                </div>
+                {selectedImageName && (
+                  <div className="mt-3 p-2 bg-green-50 border border-green-200 rounded flex items-center justify-center space-x-2">
+                    <Image className="h-4 w-4 text-green-600" />
+                    <span className="text-sm text-green-700 font-medium">{selectedImageName}</span>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Highlights */}
@@ -1007,7 +1026,7 @@ export function ProdutosPage() {
           <div className="space-y-4">
             {/* Basic Info */}
             <div className="space-y-2">
-              <Label htmlFor="edit-nome">Nome do Produto *</Label>
+              <Label htmlFor="edit-nome">Nome do Produto <span className="text-red-500">*</span></Label>
               <Input
                 id="edit-nome"
                 value={editProduct.nome}
@@ -1018,11 +1037,12 @@ export function ProdutosPage() {
             
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="edit-codigo">Código</Label>
+                <Label htmlFor="edit-codigo">Código <span className="text-red-500">*</span></Label>
                 <Input
                   id="edit-codigo"
                   value={editProduct.codigo}
                   onChange={(e) => setEditProduct({...editProduct, codigo: e.target.value})}
+                  required
                 />
               </div>
               <div className="space-y-2">
@@ -1167,28 +1187,53 @@ export function ProdutosPage() {
             </div>
 
             {/* Image Upload */}
-            <div className="space-y-2">
-              <Label htmlFor="edit-image">Nova Imagem Principal</Label>
-              <Input
-                id="edit-image"
-                type="file"
-                accept="image/*"
-                onChange={handleImageSelect}
-              />
-              {selectedImageName && (
-                <p className="text-sm text-gray-600 mt-1">
-                  Arquivo selecionado: <span className="font-medium">{selectedImageName}</span>
-                </p>
-              )}
+            <div className="space-y-3">
+              <Label>Atualizar Imagem do Produto</Label>
+              
+              {/* Current Image Preview */}
               {selectedProduto?.imagem_principal && (
-                <div className="mt-2">
-                  <img
-                    src={selectedProduto.imagem_principal}
-                    alt="Imagem atual"
-                    className="w-20 h-20 rounded object-cover"
-                  />
+                <div className="mb-4">
+                  <p className="text-sm text-gray-600 mb-2">Imagem atual:</p>
+                  <div className="relative inline-block">
+                    <img
+                      src={selectedProduto.imagem_principal}
+                      alt="Imagem atual"
+                      className="w-20 h-20 rounded object-cover"
+                    />
+                  </div>
                 </div>
               )}
+              
+              {/* New Image Upload */}
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
+                <div className="flex flex-col items-center space-y-2">
+                  <div className="p-3 bg-gray-100 rounded-full">
+                    <Upload className="h-6 w-6 text-gray-600" />
+                  </div>
+                  <div>
+                    <label
+                      htmlFor="edit-image"
+                      className="cursor-pointer text-sm font-medium text-blue-600 hover:text-blue-500"
+                    >
+                      Clique para selecionar nova imagem
+                    </label>
+                    <p className="text-xs text-gray-500 mt-1">PNG, JPG, GIF até 10MB</p>
+                  </div>
+                  <Input
+                    id="edit-image"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageSelect}
+                    className="hidden"
+                  />
+                </div>
+                {selectedImageName && (
+                  <div className="mt-3 p-2 bg-green-50 border border-green-200 rounded flex items-center justify-center space-x-2">
+                    <Image className="h-4 w-4 text-green-600" />
+                    <span className="text-sm text-green-700 font-medium">{selectedImageName}</span>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Highlights */}

@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react'
+import { toast } from 'sonner';
 import { supabase } from '../lib/supabase';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import { usePaymentStatus } from '../hooks/usePaymentStatus-webhook';
@@ -231,7 +232,7 @@ function Planos() {
       }
     } catch (error) {
       console.error('Erro no pagamento:', error);
-      alert('Erro ao processar pagamento. Tente novamente.');
+      toast.error('Erro ao processar pagamento. Tente novamente.');
     } finally {
       setIsProcessing(false);
     }
@@ -457,7 +458,7 @@ function Planos() {
       }
 
       // Mostrar mensagem de indisponibilidade
-      alert('Função Cartão de Crédito indisponível no momento. Por favor, use a forma de pagamento PIX ou tente novamente mais tarde!');
+      toast.error('Função Cartão de Crédito indisponível no momento. Por favor, use a forma de pagamento PIX ou tente novamente mais tarde!');
       
       // Resetar para método PIX
       setPaymentMethod('pix');

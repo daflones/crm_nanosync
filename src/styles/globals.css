@@ -160,3 +160,103 @@
     @apply bg-secondary-500 text-white hover:bg-secondary-600 transition-colors;
   }
 }
+
+/* Custom Scrollbar Styles - Discrete and Elegant */
+@layer base {
+  /* Webkit browsers (Chrome, Safari, Edge) */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: rgba(156, 163, 175, 0.2);
+    border-radius: 3px;
+    transition: background-color 0.2s ease;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(156, 163, 175, 0.4);
+  }
+
+  ::-webkit-scrollbar-thumb:active {
+    background: rgba(156, 163, 175, 0.6);
+  }
+
+  /* Firefox */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(156, 163, 175, 0.2) transparent;
+  }
+
+  /* Hide scrollbar on mobile devices */
+  @media (max-width: 768px) {
+    ::-webkit-scrollbar {
+      width: 3px;
+      height: 3px;
+    }
+    
+    ::-webkit-scrollbar-thumb {
+      background: rgba(156, 163, 175, 0.15);
+    }
+  }
+}
+
+@layer components {
+  /* Specific styles for Kanban board */
+  .kanban-scroll-container::-webkit-scrollbar {
+    height: 4px;
+  }
+
+  .kanban-scroll-container::-webkit-scrollbar-track {
+    background: rgba(241, 245, 249, 0.3);
+    border-radius: 2px;
+  }
+
+  .kanban-scroll-container::-webkit-scrollbar-thumb {
+    background: rgba(156, 163, 175, 0.3);
+    border-radius: 2px;
+  }
+
+  .kanban-scroll-container::-webkit-scrollbar-thumb:hover {
+    background: rgba(156, 163, 175, 0.5);
+  }
+
+  /* Ultra-discrete scrollbar for tables and lists */
+  .discrete-scroll::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+
+  .discrete-scroll::-webkit-scrollbar-thumb {
+    background: rgba(156, 163, 175, 0.15);
+  }
+
+  .discrete-scroll::-webkit-scrollbar-thumb:hover {
+    background: rgba(156, 163, 175, 0.3);
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  ::-webkit-scrollbar-thumb {
+    background: rgba(75, 85, 99, 0.3) !important;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(75, 85, 99, 0.5) !important;
+  }
+  
+  .kanban-scroll-container::-webkit-scrollbar-track {
+    background: rgba(31, 41, 55, 0.2) !important;
+  }
+  
+  .kanban-scroll-container::-webkit-scrollbar-thumb {
+    background: rgba(75, 85, 99, 0.4) !important;
+  }
+}

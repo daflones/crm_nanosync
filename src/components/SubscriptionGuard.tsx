@@ -1,4 +1,5 @@
 import { type ReactNode } from 'react';
+import { toast } from 'sonner';
 import { useSubscriptionStatus } from '../hooks/useSubscriptionStatus';
 import { AlertTriangle, Lock, CreditCard } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -120,7 +121,7 @@ export function ProtectedButton({
   const handleClick = () => {
     if (!canPerform && !subscription.isLoading) {
       // Mostrar modal ou toast explicando o bloqueio
-      alert(getBlockMessage(subscription.status, action));
+      toast.error(getBlockMessage(subscription.status, action));
       return;
     }
     onClick?.();

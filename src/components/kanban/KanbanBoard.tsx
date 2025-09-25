@@ -1,10 +1,7 @@
 import { useState } from 'react'
 import { 
   Phone, 
-  Mail, 
-  MapPin, 
   DollarSign, 
-  TrendingUp,
   User,
   AlertCircle,
   CheckCircle2,
@@ -119,22 +116,7 @@ const pipelineStages = [
   }
 ]
 
-const classificacaoColors = {
-  'quente': 'bg-red-100 text-red-800 border-red-200',
-  'morno': 'bg-yellow-100 text-yellow-800 border-yellow-200',
-  'frio': 'bg-blue-100 text-blue-800 border-blue-200',
-}
 
-const origemLabels = {
-  'manual': 'Manual',
-  'whatsapp': 'WhatsApp',
-  'site': 'Site',
-  'indicacao': 'Indicação',
-  'feira': 'Feira',
-  'cold_call': 'Cold Call',
-  'email': 'Email',
-  'redes_sociais': 'Redes Sociais',
-}
 
 // Lead qualification validation - 8 required fields aligned with database
 const getQualificationScore = (cliente: Cliente): { score: number; total: number; missingFields: string[] } => {
@@ -214,101 +196,66 @@ const ClientCard = ({ cliente, onEdit, onDelete, onView }: {
 
   return (
     <Card 
-      className={`mb-3 cursor-move transition-all duration-200 hover:shadow-md ${
-        isDragging ? 'opacity-50 rotate-2' : ''
+      className={`mb-1 cursor-move transition-all duration-200 hover:shadow-sm ${
+        isDragging ? 'opacity-50 rotate-1' : ''
       }`}
       draggable
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <CardHeader className="pb-1 px-3 pt-2">
+      <CardHeader className="pb-0 px-1.5 pt-1">
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0">
             <h4 className="font-medium text-xs truncate">{cliente.nome_contato}</h4>
             {cliente.nome_empresa && (
-              <p className="text-xs text-gray-500 truncate">{cliente.nome_empresa}</p>
+              <p className="text-xs text-gray-400 truncate">{cliente.nome_empresa}</p>
             )}
           </div>
           <QualificationIndicator cliente={cliente} />
         </div>
       </CardHeader>
       
-      <CardContent className="pt-0 px-3 pb-2">
-        <div className="space-y-1">
-          {/* Contact Info */}
-          <div className="flex flex-col gap-0.5">
-            {cliente.email && (
-              <div className="flex items-center gap-1 text-xs text-gray-600">
-                <Mail className="h-2.5 w-2.5" />
-                <span className="truncate text-xs">{cliente.email}</span>
-              </div>
-            )}
-            {cliente.telefone && (
-              <div className="flex items-center gap-1 text-xs text-gray-600">
-                <Phone className="h-2.5 w-2.5" />
-                <span className="text-xs">{cliente.telefone}</span>
-              </div>
-            )}
-            {(cliente.cidade || cliente.estado) && (
-              <div className="flex items-center gap-1 text-xs text-gray-600">
-                <MapPin className="h-2.5 w-2.5" />
-                <span className="truncate text-xs">
-                  {[cliente.cidade, cliente.estado].filter(Boolean).join(', ')}
-                </span>
-              </div>
-            )}
+      <CardContent className="pt-0.5 px-1.5 pb-1">
+        <div className="space-y-0.5">
+          {/* Value */}
+          <div className="flex items-center gap-1 text-green-600">
+            <DollarSign className="h-2 w-2" />
+            <span className="text-xs font-medium">{formatCurrency(cliente.valor_estimado)}</span>
           </div>
 
-          {/* Value and Probability */}
-          <div className="flex items-center justify-between text-xs">
-            <div className="flex items-center gap-1 text-green-600">
-              <DollarSign className="h-2.5 w-2.5" />
-              <span className="text-xs font-medium">{formatCurrency(cliente.valor_estimado)}</span>
+          {/* WhatsApp - Only if exists */}
+          {cliente.whatsapp && (
+            <div className="flex items-center gap-1 text-xs text-gray-600">
+              <Phone className="h-2 w-2 text-green-600" />
+              <span className="truncate text-xs">{cliente.whatsapp}</span>
             </div>
-            <div className="flex items-center gap-1 text-blue-600">
-              <TrendingUp className="h-2.5 w-2.5" />
-              <span className="text-xs">{cliente.probabilidade}%</span>
-            </div>
-          </div>
-
-          {/* Tags */}
-          <div className="flex flex-wrap gap-0.5">
-            <Badge 
-              variant="outline" 
-              className={`text-[10px] px-1 py-0 h-4 ${classificacaoColors[cliente.classificacao as keyof typeof classificacaoColors]}`}
-            >
-              {cliente.classificacao}
-            </Badge>
-            <Badge variant="outline" className="text-[10px] px-1 py-0 h-4">
-              {origemLabels[cliente.origem as keyof typeof origemLabels]}
-            </Badge>
-          </div>
+          )}
 
           {/* Quick Actions */}
-          <div className="flex justify-end gap-0.5 pt-1">
+          <div className="flex justify-end gap-0.5">
             <Button
               size="sm"
               variant="ghost"
-              className="h-5 w-5 p-0"
+              className="h-3 w-3 p-0"
               onClick={() => onView(cliente)}
             >
-              <Eye className="h-2.5 w-2.5" />
+              <Eye className="h-1.5 w-1.5" />
             </Button>
             <Button
               size="sm"
               variant="ghost"
-              className="h-5 w-5 p-0"
+              className="h-3 w-3 p-0"
               onClick={() => onEdit(cliente)}
             >
-              <Edit className="h-2.5 w-2.5" />
+              <Edit className="h-1.5 w-1.5" />
             </Button>
             <Button
               size="sm"
               variant="ghost"
-              className="h-5 w-5 p-0 text-red-600 hover:text-red-700"
+              className="h-3 w-3 p-0 text-red-600 hover:text-red-700"
               onClick={() => onDelete(cliente)}
             >
-              <Trash2 className="h-2.5 w-2.5" />
+              <Trash2 className="h-1.5 w-1.5" />
             </Button>
           </div>
         </div>
@@ -361,29 +308,30 @@ const KanbanColumn = ({
 
   return (
     <div 
-      className={`flex-shrink-0 w-52 ${stage.color} border-2 rounded-lg transition-all duration-200 ${
+      className={`flex-shrink-0 ${stage.color} border-2 rounded-lg transition-all duration-200 ${
         isDragOver ? 'border-blue-400 bg-blue-50' : ''
       }`}
+      style={{ minWidth: '150px', maxWidth: '160px', width: '160px' }}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
-      <div className="p-3">
+      <div className="p-1.5">
         {/* Column Header */}
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <Badge className={`${stage.badgeColor} text-white`}>
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-1">
+            <Badge className={`${stage.badgeColor} text-white text-xs`}>
               {clientes.length}
             </Badge>
-            <h3 className={`text-xs font-medium ${stage.textColor}`}>{stage.name}</h3>
+            <h3 className={`text-xs font-medium ${stage.textColor} truncate`}>{stage.name}</h3>
           </div>
-          <div className="text-xs text-gray-600">
+          <div className="text-xs text-gray-600 truncate">
             {formatCurrency(totalValue)}
           </div>
         </div>
 
         {/* Cards Container */}
-        <div className="space-y-2 max-h-[500px] overflow-y-auto">
+        <div className="space-y-1 max-h-[400px] overflow-y-auto">
           {clientes.map((cliente) => (
             <ClientCard
               key={cliente.id}
@@ -417,19 +365,29 @@ export function KanbanBoard({
   }
 
   return (
-    <div className="w-full overflow-hidden">
-      <div className="flex gap-2 overflow-x-auto pb-4">
-        {pipelineStages.map((stage) => (
-          <KanbanColumn
-            key={stage.id}
-            stage={stage}
-            clientes={getClientesByStage(stage.id)}
-            onEditCliente={onEdit}
-            onDeleteCliente={onDelete}
-            onViewCliente={onView}
-            onUpdateStage={onUpdateStage}
-          />
-        ))}
+    <div className="w-full">
+      <div 
+        className="kanban-scroll-container overflow-x-auto overflow-y-hidden pb-4"
+      >
+        <div 
+          className="flex gap-2 px-3"
+          style={{ 
+            width: `${pipelineStages.length * 150 + (pipelineStages.length + 1) * 12}px`,
+            minWidth: 'max-content'
+          }}
+        >
+          {pipelineStages.map((stage) => (
+            <KanbanColumn
+              key={stage.id}
+              stage={stage}
+              clientes={getClientesByStage(stage.id)}
+              onEditCliente={onEdit}
+              onDeleteCliente={onDelete}
+              onViewCliente={onView}
+              onUpdateStage={onUpdateStage}
+            />
+          ))}
+        </div>
       </div>
     </div>
   )

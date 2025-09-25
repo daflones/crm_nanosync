@@ -1,11 +1,11 @@
 import React, { useState } from 'react'
-import { Button } from '../../components/ui/button'
+import { Card, CardContent, CardHeader } from '../../components/ui/card'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../../components/ui/dialog'
 import { Input } from '../../components/ui/input'
+import { Button } from '../../components/ui/button'
 import { Label } from '../../components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select'
 import { Badge } from '../../components/ui/badge'
-import { Card, CardContent, CardHeader } from '../../components/ui/card'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../../components/ui/dialog'
 import { Textarea } from '../../components/ui/textarea'
 // import { Checkbox } from '../../components/ui/checkbox'
 import { 
@@ -292,7 +292,7 @@ export default function ArquivosIAPage() {
   const handleUpload = async () => {
     if (uploadMode === 'file') {
       if (!selectedFile || !uploadData.nome || !uploadData.categoria) {
-        alert('Por favor, preencha todos os campos obrigatórios')
+        toast.error('Por favor, preencha todos os campos obrigatórios')
         return
       }
 
@@ -321,13 +321,13 @@ export default function ArquivosIAPage() {
     } else {
       // Handle linking existing common file
       if (!selectedCommonFile || !uploadData.nome || !uploadData.categoria) {
-        alert('Por favor, selecione um arquivo comum e preencha os campos obrigatórios')
+        toast.error('Por favor, selecione um arquivo comum e preencha os campos obrigatórios')
         return
       }
 
       const commonFile = commonFiles.find(f => f.id === selectedCommonFile)
       if (!commonFile) {
-        alert('Arquivo comum não encontrado')
+        toast.error('Arquivo comum não encontrado')
         return
       }
 
