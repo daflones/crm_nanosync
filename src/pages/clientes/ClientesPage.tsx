@@ -1811,12 +1811,12 @@ export function ClientesPage() {
                 </div>
               )}
 
-              {/* Observa��es */}
+              {/* Observações */}
               {selectedCliente.observacoes && (
                 <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900/20 dark:to-gray-800/20 p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
                     <User className="h-5 w-5" />
-                    Observa��es
+                    Observações
                   </h3>
                   <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">
                     {selectedCliente.observacoes}
@@ -1844,7 +1844,7 @@ export function ClientesPage() {
                 </div>
               )}
 
-              {/* Contexto, Dores e Motiva��o */}
+              {/* Contexto, Dores e Motivação */}
               {(selectedCliente.contexto_cliente || selectedCliente.dores_atuais || selectedCliente.motivacao || selectedCliente.expectativa) && (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   
@@ -1872,10 +1872,10 @@ export function ClientesPage() {
                     </div>
                   )}
 
-                  {/* Motiva��o */}
+                  {/* Motivação */}
                   {selectedCliente.motivacao && (
                     <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 p-6 rounded-xl border border-green-200 dark:border-green-700 shadow-sm">
-                      <h3 className="text-lg font-semibold text-green-900 dark:text-green-100 mb-4">Motiva��o</h3>
+                      <h3 className="text-lg font-semibold text-green-900 dark:text-green-100 mb-4">Motivação</h3>
                       <div className="bg-white dark:bg-green-900/30 p-4 rounded-lg border border-green-200 dark:border-green-600">
                         <p className="text-green-800 dark:text-green-200 text-sm whitespace-pre-wrap leading-relaxed">
                           {selectedCliente.motivacao}
