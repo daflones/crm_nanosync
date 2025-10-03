@@ -192,7 +192,18 @@ export function AtividadesPage() {
       return 'Não informado'
     }
     
-    return value
+    // Objetos (clientes, vendedores, etc)
+    if (typeof value === 'object' && value !== null) {
+      // Tentar extrair nome do objeto
+      if (value.nome) return value.nome
+      if (value.nome_contato) return value.nome_contato
+      if (value.titulo) return value.titulo
+      if (value.email) return value.email
+      // Se for objeto complexo, converter para JSON
+      return JSON.stringify(value)
+    }
+    
+    return String(value)
   }
 
   const formatFieldName = (key: string) => {

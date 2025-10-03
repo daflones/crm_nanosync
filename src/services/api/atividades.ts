@@ -334,14 +334,32 @@ export class AtividadeService {
       // Buscar nomes de usuários
       const usuariosMap = new Map<string, string>()
       if (usuarioIds.length > 0) {
-        const { data: usuarios } = await supabase
+        // Primeiro tentar buscar em profiles
+        const { data: profiles } = await supabase
           .from('profiles')
           .select('id, nome, email')
           .in('id', usuarioIds)
         
-        usuarios?.forEach((user: any) => {
-          usuariosMap.set(user.id, user.nome || user.email || 'Usuário')
+        profiles?.forEach((profile: any) => {
+          const nome = profile.nome || profile.email || 'Usuário'
+          usuariosMap.set(profile.id, nome)
         })
+        
+        // Para IDs não encontrados, tentar buscar em vendedores
+        const idsNaoEncontrados = usuarioIds.filter(id => !usuariosMap.has(id))
+        if (idsNaoEncontrados.length > 0) {
+          const { data: vendedores } = await supabase
+            .from('vendedores')
+            .select('user_id, nome, email')
+            .in('user_id', idsNaoEncontrados)
+          
+          vendedores?.forEach((vendedor: any) => {
+            if (vendedor.user_id) {
+              const nome = vendedor.nome || vendedor.email || 'Vendedor'
+              usuariosMap.set(vendedor.user_id, nome)
+            }
+          })
+        }
       }
 
       // Buscar nomes de entidades organizando por tipo primeiro
