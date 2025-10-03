@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
+import { toast } from 'sonner'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -11,15 +12,15 @@ import { agendamentosService, type Agendamento, type AgendamentoCreateData } fro
 import { clientesService, type Cliente } from '@/services/api/clientes'
 import { vendedoresService, type Vendedor } from '@/services/api/vendedores'
 import { AgendamentoForm } from '@/components/agendamentos/AgendamentoForm'
-import { toast } from 'sonner'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
-import { PlanoAtivoButton } from '@/components/PlanoAtivoGuard'
+import { usePlanoAtivoAction } from '@/components/PlanoAtivoGuard'
 import { validateAgendamentoDelete } from '@/middleware/agendamentosValidation'
 import { filterAgendamentosByUser, canUserModifyAgendamento } from '@/utils/agendamentosFilters'
 
 export function AgendamentosPage() {
   // Use current user hook for better user data management
   const { data: currentUser } = useCurrentUser()
+  const { executeAction: executePlanoAtivoAction } = usePlanoAtivoAction()
   const [agendamentos, setAgendamentos] = useState<Agendamento[]>([])
   const [clientes, setClientes] = useState<Cliente[]>([])
   const [vendedores, setVendedores] = useState<Vendedor[]>([])
@@ -367,10 +368,13 @@ export function AgendamentosPage() {
           
           {/* Mobile: New Appointment Button */}
           <div className="sm:hidden">
-            <PlanoAtivoButton className="w-full" variant="primary" onClick={() => setIsCreateModalOpen(true)}>
+            <Button 
+              className="w-full" 
+              onClick={() => executePlanoAtivoAction(() => setIsCreateModalOpen(true))}
+            >
               <Plus className="mr-2 h-4 w-4" />
               Novo Agendamento
-            </PlanoAtivoButton>
+            </Button>
           </div>
         </div>
 
@@ -395,12 +399,13 @@ export function AgendamentosPage() {
             {/* Desktop: New Appointment Button */}
             <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
               <DialogTrigger asChild>
-                <PlanoAtivoButton>
-                  <Button className="flex items-center gap-2">
-                    <Plus className="h-4 w-4" />
-                    Novo Agendamento
-                  </Button>
-                </PlanoAtivoButton>
+                <Button 
+                  className="flex items-center gap-2"
+                  onClick={() => executePlanoAtivoAction(() => setIsCreateModalOpen(true))}
+                >
+                  <Plus className="h-4 w-4" />
+                  Novo Agendamento
+                </Button>
               </DialogTrigger>
               <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
