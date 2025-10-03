@@ -8,7 +8,8 @@ import {
   Clock,
   Edit,
   Trash2,
-  Eye
+  Eye,
+  Bot
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
@@ -206,7 +207,15 @@ const ClientCard = ({ cliente, onEdit, onDelete, onView }: {
       <CardHeader className="pb-0 px-1.5 pt-1">
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0">
-            <h4 className="font-medium text-xs truncate">{cliente.nome_contato}</h4>
+            <div className="flex items-center gap-1">
+              <h4 className="font-medium text-xs truncate">{cliente.nome_contato}</h4>
+              {cliente.origem === 'IA' && (
+                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700 text-[10px] font-semibold">
+                  <Bot className="h-2.5 w-2.5" />
+                  IA
+                </span>
+              )}
+            </div>
             {cliente.nome_empresa && (
               <p className="text-xs text-gray-400 truncate">{cliente.nome_empresa}</p>
             )}

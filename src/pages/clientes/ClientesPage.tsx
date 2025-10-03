@@ -14,7 +14,8 @@ import {
   List,
   Eye,
   Trash2,
-  Phone
+  Phone,
+  Bot
 } from 'lucide-react'
 import { useClientes, useCreateCliente, useUpdateCliente, useDeleteCliente, useUpdatePipelineStage } from '@/hooks/useClientes'
 import { useVendedores } from '@/hooks/useVendedores'
@@ -670,6 +671,12 @@ export function ClientesPage() {
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
                             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{cliente.nome_contato}</h3>
+                            {cliente.origem === 'IA' && (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-purple-100 text-purple-700 text-xs font-semibold">
+                                <Bot className="h-3.5 w-3.5" />
+                                IA
+                              </span>
+                            )}
                             {cliente.classificacao && (
                               <span className={`px-2 py-1 text-xs font-medium rounded-full ${
                                 cliente.classificacao === 'quente' ? 'bg-red-100 text-red-700' :
@@ -728,8 +735,16 @@ export function ClientesPage() {
                           </div>
                           <div className="flex items-center gap-2">
                             <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                            <span className="text-sm text-gray-700 dark:text-gray-300">
-                              <span className="font-medium">Origem:</span> {cliente.origem || 'N/A'}
+                            <span className="text-sm text-gray-700 dark:text-gray-300 flex items-center gap-1">
+                              <span className="font-medium">Origem:</span>
+                              {cliente.origem === 'IA' ? (
+                                <span className="inline-flex items-center gap-1 text-purple-700 font-semibold">
+                                  <Bot className="h-3.5 w-3.5" />
+                                  IA
+                                </span>
+                              ) : (
+                                cliente.origem || 'N/A'
+                              )}
                             </span>
                           </div>
                         </div>
