@@ -98,29 +98,27 @@ export function AgendamentosPage() {
   const formatDateTime = (dateString: string) => {
     if (!dateString) return 'N/A'
     
-    // Se a string já contém timezone, usa diretamente
-    // Se não, assume que é UTC e converte para São Paulo
-    let date: Date
+    // Remove qualquer indicador de timezone para tratar como local
+    let cleanDateString = dateString.replace('Z', '').replace(/[+-]\d{2}:\d{2}$/, '')
     
-    if (dateString.includes('T') && (dateString.includes('+') || dateString.includes('-') || dateString.endsWith('Z'))) {
-      // String já tem timezone
-      date = new Date(dateString)
-    } else {
-      // Assume UTC e converte
-      date = new Date(dateString + (dateString.includes('T') ? '' : 'T00:00:00') + 'Z')
+    // Se não tem 'T', adiciona para formar ISO string válida
+    if (!cleanDateString.includes('T')) {
+      cleanDateString += 'T00:00:00'
     }
+    
+    // Cria a data SEM adicionar horas - exatamente como está no banco
+    const date = new Date(cleanDateString)
     
     if (isNaN(date.getTime())) return 'Data inválida'
     
-    // Formata para o timezone de São Paulo
-    return date.toLocaleString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit', 
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      timeZone: 'America/Sao_Paulo'
-    })
+    // Formata diretamente
+    const day = String(date.getDate()).padStart(2, '0')
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const year = date.getFullYear()
+    const hours = String(date.getHours()).padStart(2, '0')
+    const minutes = String(date.getMinutes()).padStart(2, '0')
+    
+    return `${day}/${month}/${year}, ${hours}:${minutes}`
   }
 
   // CRUD operations
@@ -318,26 +316,23 @@ export function AgendamentosPage() {
   const formatTime = (dateString: string) => {
     if (!dateString) return 'N/A'
     
-    // Se a string já contém timezone, usa diretamente
-    // Se não, assume que é UTC e converte para São Paulo
-    let date: Date
+    // Remove qualquer indicador de timezone para tratar como local
+    let cleanDateString = dateString.replace('Z', '').replace(/[+-]\d{2}:\d{2}$/, '')
     
-    if (dateString.includes('T') && (dateString.includes('+') || dateString.includes('-') || dateString.endsWith('Z'))) {
-      // String já tem timezone
-      date = new Date(dateString)
-    } else {
-      // Assume UTC e converte
-      date = new Date(dateString + (dateString.includes('T') ? '' : 'T00:00:00') + 'Z')
+    if (!cleanDateString.includes('T')) {
+      cleanDateString += 'T00:00:00'
     }
+    
+    // Cria a data SEM adicionar horas - exatamente como está no banco
+    const date = new Date(cleanDateString)
     
     if (isNaN(date.getTime())) return 'Hora inválida'
     
-    // Formata para o timezone de São Paulo
-    return date.toLocaleTimeString('pt-BR', {
-      hour: '2-digit',
-      minute: '2-digit',
-      timeZone: 'America/Sao_Paulo'
-    })
+    // Formata diretamente
+    const hours = String(date.getHours()).padStart(2, '0')
+    const minutes = String(date.getMinutes()).padStart(2, '0')
+    
+    return `${hours}:${minutes}`
   }
 
   // Calendar helpers

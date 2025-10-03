@@ -119,18 +119,52 @@ export function AgendamentoForm({ agendamento, clientes, vendedores, onSubmit, o
     return []
   }, [clientes, currentUser])
 
+  // Função para converter data do banco para o formato do formulário
+  const formatDateForForm = (dateString: string): string => {
+    if (!dateString) return ''
+    
+    // Remove timezone indicators e trata como local
+    let cleanDateString = dateString.replace('Z', '').replace(/[+-]\d{2}:\d{2}$/, '')
+    
+    // Se não tem 'T', adiciona
+    if (!cleanDateString.includes('T')) {
+      cleanDateString += 'T00:00:00'
+    }
+    
+    // Retorna diretamente a string limpa no formato datetime-local
+    // Não cria Date object para evitar conversão de timezone
+    return cleanDateString.slice(0, 16) // YYYY-MM-DDTHH:MM
+  }
+
   // Carregar dados do agendamento para edição ou dados pré-preenchidos
   useEffect(() => {
     if (agendamento) {
+      const dataInicioFormatted = formatDateForForm(agendamento.data_inicio)
+      const dataFimFormatted = formatDateForForm(agendamento.data_fim)
+      
+      // Calcula a duração real baseada nas datas do banco
+      let duracaoCalculada = agendamento.duracao_minutos || 60
+      if (agendamento.data_inicio && agendamento.data_fim) {
+        const inicio = new Date(agendamento.data_inicio)
+        const fim = new Date(agendamento.data_fim)
+        if (!isNaN(inicio.getTime()) && !isNaN(fim.getTime())) {
+          const diffMs = fim.getTime() - inicio.getTime()
+          const diffMinutes = Math.round(diffMs / (1000 * 60))
+          if (diffMinutes > 0) {
+            duracaoCalculada = diffMinutes
+          }
+        }
+      }
+      
       setFormData({
         cliente_id: agendamento.cliente_id || '',
         vendedor_id: agendamento.vendedor_id || '',
         titulo: agendamento.titulo || '',
         descricao: agendamento.descricao || '',
         objetivo: agendamento.objetivo || '',
-        data_inicio: agendamento.data_inicio || '',
-        data_fim: agendamento.data_fim || '',
-        duracao_minutos: agendamento.duracao_minutos || 60,
+        data_inicio: dataInicioFormatted,
+        data_fim: dataFimFormatted,
+        duracao_minutos: duracaoCalculada,
         tipo: agendamento.tipo || 'primeira_reuniao',
         categoria: agendamento.categoria || 'comercial',
         prioridade: agendamento.prioridade || 'media',
