@@ -110,14 +110,33 @@ export function IAConfigPage() {
   return (
     <div className="w-full h-full space-y-8">
       {/* Header */}
-      <div className="w-full">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
-          <Bot className="w-8 h-8" />
-          Configurações de IA
-        </h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-1">
-          Configure o comportamento e personalidade do assistente de IA da sua empresa.
-        </p>
+      <div className="w-full flex items-start justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
+            <Bot className="w-8 h-8" />
+            Configurações de IA
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">
+            Configure o comportamento e personalidade do assistente de IA da sua empresa.
+          </p>
+        </div>
+        <Button 
+          onClick={handleSaveConfig}
+          disabled={updateIAConfig.isPending}
+          className="bg-primary hover:bg-primary/90"
+        >
+          {updateIAConfig.isPending ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Salvando...
+            </>
+          ) : (
+            <>
+              <Check className="w-4 h-4 mr-2" />
+              Salvar Alterações
+            </>
+          )}
+        </Button>
       </div>
 
       <div className="w-full space-y-6">
@@ -153,7 +172,6 @@ export function IAConfigPage() {
                   <SelectItem value="casual">Casual</SelectItem>
                   <SelectItem value="formal">Formal</SelectItem>
                   <SelectItem value="amigavel">Amigável</SelectItem>
-                  <SelectItem value="tecnico">Técnico</SelectItem>
                 </SelectContent>
               </Select>
             </div>

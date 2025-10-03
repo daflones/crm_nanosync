@@ -52,6 +52,8 @@ export interface Proposta {
   requer_aprovacao: boolean
   aprovada_por?: string
   motivo_aprovacao?: string
+  recompra_ativada: boolean
+  data_recompra?: string
   itens?: PropostaItem[]
   created_at: string
   updated_at: string
@@ -112,6 +114,8 @@ export interface PropostaCreateData {
   template_usado?: string
   requer_aprovacao?: boolean
   motivo_aprovacao?: string
+  recompra_ativada?: boolean
+  data_recompra?: string
   itens?: Omit<PropostaItem, 'id' | 'proposta_id'>[]
 }
 

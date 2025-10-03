@@ -6,6 +6,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { SimpleDateTime } from '@/components/ui/simple-datetime'
 import { 
   Plus, 
   Search, 
@@ -347,14 +348,14 @@ export function PropostasPage() {
                 </div>
 
                 {/* Value Section */}
-                <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-lg p-4 mb-4">
+                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg p-4 mb-4 border border-blue-100 dark:border-blue-800">
                   <div className="text-center">
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Valor Total</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                    <p className="text-sm text-blue-600 dark:text-blue-400 mb-1 font-medium">Valor Total</p>
+                    <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">
                       R$ {proposta.valor_total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                     </p>
                     {proposta.percentual_desconto > 0 && (
-                      <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                      <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1 font-medium">
                         {proposta.percentual_desconto}% de desconto aplicado
                       </p>
                     )}
@@ -362,27 +363,40 @@ export function PropostasPage() {
                 </div>
 
                 {/* Details Grid */}
-                <div className="grid grid-cols-2 gap-4 mb-6">
-                  <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-3">
+                <div className="grid grid-cols-2 gap-3 mb-4">
+                  <div className="bg-indigo-50 dark:bg-indigo-900/20 rounded-lg p-3 border border-indigo-100 dark:border-indigo-800">
                     <div className="flex items-center space-x-2 mb-1">
-                      <div className="w-2 h-2 bg-amber-400 rounded-full"></div>
-                      <p className="text-xs font-medium text-amber-700 dark:text-amber-300">ITENS</p>
+                      <div className="w-2 h-2 bg-indigo-500 rounded-full"></div>
+                      <p className="text-xs font-semibold text-indigo-700 dark:text-indigo-300">ITENS</p>
                     </div>
-                    <p className="text-lg font-bold text-amber-900 dark:text-amber-100">
+                    <p className="text-lg font-bold text-indigo-900 dark:text-indigo-100">
                       {proposta.itens?.length || 0}
                     </p>
                   </div>
                   
-                  <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3">
+                  <div className="bg-violet-50 dark:bg-violet-900/20 rounded-lg p-3 border border-violet-100 dark:border-violet-800">
                     <div className="flex items-center space-x-2 mb-1">
-                      <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                      <p className="text-xs font-medium text-green-700 dark:text-green-300">VALIDADE</p>
+                      <div className="w-2 h-2 bg-violet-500 rounded-full"></div>
+                      <p className="text-xs font-semibold text-violet-700 dark:text-violet-300">VALIDADE</p>
                     </div>
-                    <p className="text-sm font-bold text-green-900 dark:text-green-100">
+                    <p className="text-sm font-bold text-violet-900 dark:text-violet-100">
                       {proposta.data_vencimento ? new Date(proposta.data_vencimento).toLocaleDateString('pt-BR') : 'N/A'}
                     </p>
                   </div>
                 </div>
+
+                {/* Recompra Info */}
+                {proposta.recompra_ativada && (
+                  <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-3 mb-6 border border-purple-100 dark:border-purple-800">
+                    <div className="flex items-center space-x-2 mb-1">
+                      <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                      <p className="text-xs font-semibold text-purple-700 dark:text-purple-300">RECOMPRA ATIVA</p>
+                    </div>
+                    <p className="text-sm font-bold text-purple-900 dark:text-purple-100">
+                      {proposta.data_recompra ? new Date(proposta.data_recompra).toLocaleDateString('pt-BR') : 'Data não definida'}
+                    </p>
+                  </div>
+                )}
 
                 {/* Vendedor Info */}
                 <div className="flex items-center space-x-2 mb-6 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
@@ -403,7 +417,7 @@ export function PropostasPage() {
                 <div className="flex space-x-2">
                   <Button 
                     size="sm" 
-                    className="flex-1 bg-blue-100 hover:bg-blue-200 text-blue-700 border-0 transition-all duration-200 hover:scale-105"
+                    className="flex-1 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 dark:border-blue-700 transition-all duration-200 hover:scale-105"
                     onClick={() => {
                       setSelectedProposta(proposta)
                       setIsViewModalOpen(true)
@@ -414,7 +428,7 @@ export function PropostasPage() {
                   </Button>
                   <Button 
                     size="sm" 
-                    className="flex-1 bg-amber-100 hover:bg-amber-200 text-amber-700 border-0 transition-all duration-200 hover:scale-105"
+                    className="flex-1 bg-violet-50 hover:bg-violet-100 text-violet-700 border border-violet-200 dark:border-violet-700 transition-all duration-200 hover:scale-105"
                     onClick={() => {
                       setEditProposta({
                         cliente_id: proposta.cliente_id,
@@ -462,11 +476,10 @@ export function PropostasPage() {
                   </Button>
                   <Button 
                     size="sm" 
-                    className="bg-red-100 hover:bg-red-200 text-red-700 border-0 transition-all duration-200 hover:scale-105"
+                    className="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 dark:border-rose-700 transition-all duration-200 hover:scale-105"
                     onClick={() => setPropostaToDelete(proposta.id)}
                   >
                     <Trash2 className="h-4 w-4" />
-                    Excluir
                   </Button>
                 </div>
               </CardContent>
@@ -565,11 +578,10 @@ export function PropostasPage() {
               </div>
               <div>
                 <Label htmlFor="data_vencimento">Data de Vencimento</Label>
-                <Input
-                  id="data_vencimento"
-                  type="date"
-                  value={newProposta.data_vencimento || ''}
-                  onChange={(e) => setNewProposta(prev => ({ ...prev, data_vencimento: e.target.value }))}
+                <SimpleDateTime
+                  value={newProposta.data_vencimento}
+                  onChange={(value) => setNewProposta(prev => ({ ...prev, data_vencimento: value }))}
+                  showTime={false}
                 />
               </div>
             </div>
@@ -581,7 +593,7 @@ export function PropostasPage() {
                     id="valor_produtos"
                     type="number"
                     step="0.01"
-                    value={newProposta.valor_produtos || 0}
+                    value={newProposta.valor_produtos || ''}
                     onChange={(e) => {
                       const valor = parseFloat(e.target.value) || 0
                       setNewProposta(prev => {
@@ -623,7 +635,7 @@ export function PropostasPage() {
                     id="valor_servicos"
                     type="number"
                     step="0.01"
-                    value={newProposta.valor_servicos || 0}
+                    value={newProposta.valor_servicos || ''}
                     onChange={(e) => {
                       const valor = parseFloat(e.target.value) || 0
                       setNewProposta(prev => {
@@ -664,7 +676,7 @@ export function PropostasPage() {
                   id="valor_total"
                   type="number"
                   step="0.01"
-                  value={newProposta.valor_total}
+                  value={newProposta.valor_total || ''}
                   onChange={(e) => setNewProposta(prev => ({ ...prev, valor_total: parseFloat(e.target.value) || 0 }))}
                   placeholder="0.00"
                 />
@@ -677,7 +689,7 @@ export function PropostasPage() {
                   id="valor_frete"
                   type="number"
                   step="0.01"
-                  value={newProposta.valor_frete || 0}
+                  value={newProposta.valor_frete || ''}
                   onChange={(e) => {
                     const valor = parseFloat(e.target.value) || 0
                     setNewProposta(prev => {
@@ -695,7 +707,7 @@ export function PropostasPage() {
                   type="number"
                   step="0.01"
                   max="100"
-                  value={newProposta.percentual_desconto || 0}
+                  value={newProposta.percentual_desconto || ''}
                   onChange={(e) => {
                     const perc = parseFloat(e.target.value) || 0
                     const subtotal = (newProposta.valor_produtos || 0) + (newProposta.valor_servicos || 0)
@@ -718,6 +730,28 @@ export function PropostasPage() {
                   placeholder="30"
                 />
               </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="recompra_ativada"
+                  checked={newProposta.recompra_ativada || false}
+                  onChange={(e) => setNewProposta(prev => ({ ...prev, recompra_ativada: e.target.checked }))}
+                  className="rounded"
+                />
+                <Label htmlFor="recompra_ativada" className="cursor-pointer">Ativar Recompra</Label>
+              </div>
+              {newProposta.recompra_ativada && (
+                <div>
+                  <Label htmlFor="data_recompra">Data de Recompra</Label>
+                  <SimpleDateTime
+                    value={newProposta.data_recompra}
+                    onChange={(value) => setNewProposta(prev => ({ ...prev, data_recompra: value }))}
+                    showTime={false}
+                  />
+                </div>
+              )}
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -1051,8 +1085,8 @@ export function PropostasPage() {
                           <Label>Quantidade</Label>
                           <Input
                             type="number"
-                            step="0.01"
-                            value={item.quantidade}
+                            step="1"
+                            value={item.quantidade || ''}
                             onChange={(e) => {
                               const quantidade = parseFloat(e.target.value) || 0
                               const valorTotal = quantidade * item.valor_unitario - item.valor_desconto
@@ -1078,8 +1112,8 @@ export function PropostasPage() {
                           <Label>Valor Unitário</Label>
                           <Input
                             type="number"
-                            step="0.01"
-                            value={item.valor_unitario}
+                            step="1"
+                            value={item.valor_unitario || ''}
                             onChange={(e) => {
                               const valorUnitario = parseFloat(e.target.value) || 0
                               const valorTotal = item.quantidade * valorUnitario - item.valor_desconto
@@ -1134,7 +1168,8 @@ export function PropostasPage() {
               onClick={() => {
                 const dataToCreate = {
                   ...newProposta,
-                  data_vencimento: newProposta.data_vencimento ? new Date(newProposta.data_vencimento).toISOString() : undefined
+                  data_vencimento: newProposta.data_vencimento ? new Date(newProposta.data_vencimento).toISOString() : undefined,
+                  data_recompra: newProposta.data_recompra ? new Date(newProposta.data_recompra).toISOString() : undefined
                 }
                 createProposta.mutate(dataToCreate, {
                   onSuccess: async (result) => {
@@ -1427,11 +1462,10 @@ export function PropostasPage() {
                 </div>
                 <div>
                   <Label htmlFor="edit_data_vencimento">Data de Vencimento</Label>
-                  <Input
-                    id="edit_data_vencimento"
-                    type="date"
-                    value={editProposta.data_vencimento || ''}
-                    onChange={(e) => setEditProposta(prev => ({ ...prev, data_vencimento: e.target.value }))}
+                  <SimpleDateTime
+                    value={editProposta.data_vencimento}
+                    onChange={(value) => setEditProposta(prev => ({ ...prev, data_vencimento: value }))}
+                    showTime={false}
                   />
                 </div>
               </div>
@@ -1443,7 +1477,7 @@ export function PropostasPage() {
                       id="edit_valor_produtos"
                       type="number"
                       step="0.01"
-                      value={editProposta.valor_produtos || 0}
+                      value={editProposta.valor_produtos || ''}
                       onChange={(e) => {
                         const valor = parseFloat(e.target.value) || 0
                         setEditProposta(prev => ({ 
@@ -1487,7 +1521,7 @@ export function PropostasPage() {
                       id="edit_valor_servicos"
                       type="number"
                       step="0.01"
-                      value={editProposta.valor_servicos || 0}
+                      value={editProposta.valor_servicos || ''}
                       onChange={(e) => {
                         const valor = parseFloat(e.target.value) || 0
                         setEditProposta(prev => ({ 
@@ -1550,7 +1584,7 @@ export function PropostasPage() {
                     id="edit_valor_frete"
                     type="number"
                     step="0.01"
-                    value={editProposta.valor_frete || 0}
+                    value={editProposta.valor_frete || ''}
                     onChange={(e) => {
                       const valor = parseFloat(e.target.value) || 0
                       setEditProposta(prev => ({ 
@@ -1569,7 +1603,7 @@ export function PropostasPage() {
                     type="number"
                     step="0.01"
                     max="100"
-                    value={editProposta.percentual_desconto || 0}
+                    value={editProposta.percentual_desconto || ''}
                     onChange={(e) => {
                       const perc = parseFloat(e.target.value) || 0
                       const subtotal = (editProposta.valor_produtos || 0) + (editProposta.valor_servicos || 0)
@@ -1681,6 +1715,28 @@ export function PropostasPage() {
                     placeholder="30"
                   />
                 </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="edit_recompra_ativada"
+                    checked={editProposta.recompra_ativada || false}
+                    onChange={(e) => setEditProposta(prev => ({ ...prev, recompra_ativada: e.target.checked }))}
+                    className="rounded"
+                  />
+                  <Label htmlFor="edit_recompra_ativada" className="cursor-pointer">Ativar Recompra</Label>
+                </div>
+                {editProposta.recompra_ativada && (
+                  <div>
+                    <Label htmlFor="edit_data_recompra">Data de Recompra</Label>
+                    <SimpleDateTime
+                      value={editProposta.data_recompra}
+                      onChange={(value) => setEditProposta(prev => ({ ...prev, data_recompra: value }))}
+                      showTime={false}
+                    />
+                  </div>
+                )}
               </div>
               <div className="grid grid-cols-3 gap-4">
                 <div className="flex items-center space-x-2">
@@ -1894,8 +1950,8 @@ export function PropostasPage() {
                             <Label>Quantidade</Label>
                             <Input
                               type="number"
-                              step="0.01"
-                              value={item.quantidade}
+                              step="1"
+                              value={item.quantidade || ''}
                               onChange={(e) => {
                                 const quantidade = parseFloat(e.target.value) || 0
                                 const valorTotal = quantidade * item.valor_unitario - item.valor_desconto
@@ -1921,8 +1977,8 @@ export function PropostasPage() {
                             <Label>Valor Unitário</Label>
                             <Input
                               type="number"
-                              step="0.01"
-                              value={item.valor_unitario}
+                              step="1"
+                              value={item.valor_unitario || ''}
                               onChange={(e) => {
                                 const valorUnitario = parseFloat(e.target.value) || 0
                                 const valorTotal = item.quantidade * valorUnitario - item.valor_desconto
@@ -2015,6 +2071,8 @@ export function PropostasPage() {
                   template_usado: editProposta.template_usado || '',
                   requer_aprovacao: Boolean(editProposta.requer_aprovacao),
                   motivo_aprovacao: editProposta.motivo_aprovacao || '',
+                  recompra_ativada: Boolean(editProposta.recompra_ativada),
+                  data_recompra: editProposta.data_recompra ? new Date(editProposta.data_recompra).toISOString() : undefined,
                   observacoes: editProposta.observacoes || '',
                   termos_condicoes: editProposta.termos_condicoes || '',
                   itens: editProposta.itens || []

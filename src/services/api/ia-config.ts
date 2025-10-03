@@ -245,6 +245,61 @@ export const upsertIAConfig = async (userId: string, config: Partial<IAConfig>) 
   }
 }
 
+// Atualizar apenas detalhes da empresa
+export const updateDetalhesEmpresa = async (userId: string, detalhes: Partial<IAConfig['detalhes_empresa']>) => {
+  try {
+    // Get current user's profile to filter by company
+    const { data: { user: currentUser } } = await supabase.auth.getUser()
+    if (!currentUser) {
+      throw new Error('Usuário não autenticado')
+    }
+
+    const { data: currentProfile } = await supabase
+      .from('profiles')
+      .select('id, role, admin_profile_id')
+      .eq('id', currentUser.id)
+      .single()
+
+    if (!currentProfile) {
+      throw new Error('Perfil do usuário não encontrado')
+    }
+
+    // Determine company profile ID for filtering
+    const adminId = currentProfile.admin_profile_id || currentProfile.id
+
+    // Buscar configuração existente
+    const { data: existingConfig } = await supabase
+      .from('ia_config')
+      .select('detalhes_empresa')
+      .eq('user_id', userId)
+      .eq('profile', adminId)
+      .single()
+
+    // Mesclar detalhes existentes com novos
+    const detalhesAtualizados = {
+      ...existingConfig?.detalhes_empresa,
+      ...detalhes
+    }
+
+    // Atualizar apenas o campo detalhes_empresa
+    const { data, error } = await supabase
+      .from('ia_config')
+      .update({ 
+        detalhes_empresa: detalhesAtualizados,
+        updated_at: new Date().toISOString()
+      })
+      .eq('user_id', userId)
+      .eq('profile', adminId)
+      .select()
+      .single()
+
+    return { data, error }
+  } catch (error) {
+    console.error('Erro ao atualizar detalhes da empresa:', error)
+    return { data: null, error }
+  }
+}
+
 // Testar configurações IA
 export const testIAConfig = async (_config: Partial<IAConfig>) => {
   // Simular teste das configurações

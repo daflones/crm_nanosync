@@ -1,13 +1,10 @@
 import { Button } from '@/components/ui/button'
 import {
   Menu,
-  Sun,
-  Moon,
   User,
   CreditCard
 } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
-import { useState, useEffect } from 'react'
 import { NotificationButton } from '@/components/notifications/NotificationButton'
 import { useSubscriptionStatus } from '@/hooks/useSubscriptionStatus'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
@@ -18,28 +15,9 @@ interface HeaderProps {
 }
 
 export function Header({ onMenuClick, onNotificationCenterOpen }: HeaderProps) {
-  const [isDark, setIsDark] = useState(false)
   const navigate = useNavigate()
   const { data: user } = useCurrentUser()
   const { isActive, status, daysRemaining } = useSubscriptionStatus()
-
-  useEffect(() => {
-    const isDarkMode = document.documentElement.classList.contains('dark')
-    setIsDark(isDarkMode)
-  }, [])
-
-  const toggleTheme = () => {
-    const newTheme = !isDark
-    setIsDark(newTheme)
-    
-    if (newTheme) {
-      document.documentElement.classList.add('dark')
-      localStorage.setItem('theme', 'dark')
-    } else {
-      document.documentElement.classList.remove('dark')
-      localStorage.setItem('theme', 'light')
-    }
-  }
 
   // Determinar se deve mostrar botão de assinatura
   const shouldShowSubscriptionButton = () => {
@@ -96,20 +74,6 @@ export function Header({ onMenuClick, onNotificationCenterOpen }: HeaderProps) {
             {getSubscriptionButtonText()}
           </Button>
         )}
-
-        {/* Theme Toggle */}
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={toggleTheme}
-          className="relative"
-        >
-          {isDark ? (
-            <Sun className="h-5 w-5" />
-          ) : (
-            <Moon className="h-5 w-5" />
-          )}
-        </Button>
 
         {/* Notifications */}
         <NotificationButton onOpenCenter={onNotificationCenterOpen} />

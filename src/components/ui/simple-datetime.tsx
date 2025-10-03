@@ -10,9 +10,10 @@ interface SimpleDateTimeProps {
   label?: string
   required?: boolean
   popoverDirection?: 'left' | 'right'
+  showTime?: boolean
 }
 
-export function SimpleDateTime({ value, onChange, label, required, popoverDirection = 'left' }: SimpleDateTimeProps) {
+export function SimpleDateTime({ value, onChange, label, required, popoverDirection = 'left', showTime: showTimeField = true }: SimpleDateTimeProps) {
   const [showCalendar, setShowCalendar] = useState(false)
   const [showTime, setShowTime] = useState(false)
   const [currentDate, setCurrentDate] = useState(new Date())
@@ -105,9 +106,9 @@ export function SimpleDateTime({ value, onChange, label, required, popoverDirect
         {label} {required && <span className="text-red-500">*</span>}
       </Label>
       
-      <div className="flex gap-2">
+      <div className={showTimeField ? "flex gap-2" : "w-full"}>
         {/* Campo de Data */}
-        <div className="flex-1 relative">
+        <div className={showTimeField ? "flex-1 relative" : "w-full relative"}>
           <div className="relative">
             <CalendarIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
@@ -230,6 +231,7 @@ export function SimpleDateTime({ value, onChange, label, required, popoverDirect
         </div>
 
         {/* Campo de Hora */}
+        {showTimeField && (
         <div className="flex-1 relative">
           <div className="relative">
             <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -315,6 +317,7 @@ export function SimpleDateTime({ value, onChange, label, required, popoverDirect
             </div>
           )}
         </div>
+        )}
       </div>
     </div>
   )

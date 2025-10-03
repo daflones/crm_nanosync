@@ -3,17 +3,17 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Switch } from '@/components/ui/switch'
 import { Separator } from '@/components/ui/separator'
-import { Settings, User, Bell, Palette, Check, Loader2 } from 'lucide-react'
+import { Settings, User, Check, Loader2, Building2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/stores/authStore'
 import { 
   useConfiguracoes, 
   useProfile, 
-  useUpdateProfile, 
-  useToggleConfig
+  useUpdateProfile,
+  useUpdateDetalhesEmpresa
 } from '@/hooks/useConfiguracoes'
+import { useIAConfig } from '@/hooks/useIAConfig'
 
 // Função para formatar telefone
 const formatPhone = (value: string) => {
@@ -43,16 +43,32 @@ export function ConfiguracoesPage() {
   const { user } = useAuthStore()
   
   // Usar hooks para dados e ações
-  const { data: configuracoes, isLoading: loadingConfiguracoes } = useConfiguracoes()
+  const { isLoading: loadingConfiguracoes } = useConfiguracoes()
   const { data: profileData, isLoading: loadingProfile } = useProfile()
+  const { data: iaConfigData } = useIAConfig()
   const updateProfile = useUpdateProfile()
-  const toggleConfig = useToggleConfig()
+  const updateDetalhesEmpresaMutation = useUpdateDetalhesEmpresa()
   
   const [profile, setProfile] = useState<Partial<Profile>>({
     full_name: '',
     email: '',
     phone: '',
     cargo: ''
+  })
+  
+  const [detalhesEmpresa, setDetalhesEmpresa] = useState({
+    contatos: {
+      telefone: '',
+      email: '',
+      whatsapp: '',
+      endereco: ''
+    },
+    redes_sociais: {
+      website: '',
+      facebook: '',
+      linkedin: '',
+      instagram: ''
+    }
   })
   
 
@@ -67,8 +83,39 @@ export function ConfiguracoesPage() {
         phone: profileData.telefone || '',
         cargo: profileData.cargo || ''
       })
+      
+      // Atualizar telefone em detalhes da empresa se existir no perfil
+      if (profileData.telefone) {
+        setDetalhesEmpresa(prev => ({
+          ...prev,
+          contatos: {
+            ...prev.contatos,
+            telefone: profileData.telefone
+          }
+        }))
+      }
     }
   }, [profileData])
+
+  // Carregar detalhes da empresa salvos no ia_config
+  useEffect(() => {
+    if (iaConfigData?.detalhes_empresa) {
+      setDetalhesEmpresa({
+        contatos: {
+          telefone: iaConfigData.detalhes_empresa.contatos?.telefone || '',
+          email: iaConfigData.detalhes_empresa.contatos?.email || '',
+          whatsapp: iaConfigData.detalhes_empresa.contatos?.whatsapp || '',
+          endereco: iaConfigData.detalhes_empresa.contatos?.endereco || ''
+        },
+        redes_sociais: {
+          website: iaConfigData.detalhes_empresa.redes_sociais?.website || '',
+          facebook: iaConfigData.detalhes_empresa.redes_sociais?.facebook || '',
+          linkedin: iaConfigData.detalhes_empresa.redes_sociais?.linkedin || '',
+          instagram: iaConfigData.detalhes_empresa.redes_sociais?.instagram || ''
+        }
+      })
+    }
+  }, [iaConfigData])
 
 
   const handleSaveProfile = () => {
@@ -76,8 +123,16 @@ export function ConfiguracoesPage() {
     updateProfile.mutate(profile)
   }
 
-  const handleToggleConfig = (key: string, value: boolean) => {
-    toggleConfig.mutate({ key, value })
+  const handleSaveDetalhesEmpresa = () => {
+    // Adicionar o email do perfil aos detalhes da empresa
+    const detalhesComEmail = {
+      ...detalhesEmpresa,
+      contatos: {
+        ...detalhesEmpresa.contatos,
+        email: profile.email || profileData?.email || ''
+      }
+    }
+    updateDetalhesEmpresaMutation.mutate(detalhesComEmail)
   }
 
   return (
@@ -115,26 +170,15 @@ export function ConfiguracoesPage() {
                 Perfil
               </Button>
               <Button 
-                variant={activeSection === 'notificacoes' ? 'default' : 'ghost'} 
+                variant={activeSection === 'empresa' ? 'default' : 'ghost'} 
                 className={cn(
                   "w-full justify-start",
-                  activeSection === 'notificacoes' && "bg-primary text-white"
+                  activeSection === 'empresa' && "bg-primary text-white"
                 )}
-                onClick={() => setActiveSection('notificacoes')}
+                onClick={() => setActiveSection('empresa')}
               >
-                <Bell className="w-4 h-4 mr-2" />
-                Notificações
-              </Button>
-              <Button 
-                variant={activeSection === 'aparencia' ? 'default' : 'ghost'} 
-                className={cn(
-                  "w-full justify-start",
-                  activeSection === 'aparencia' && "bg-primary text-white"
-                )}
-                onClick={() => setActiveSection('aparencia')}
-              >
-                <Palette className="w-4 h-4 mr-2" />
-                Aparência
+                <Building2 className="w-4 h-4 mr-2" />
+                Detalhes da Empresa
               </Button>
             </CardContent>
           </Card>
@@ -195,9 +239,9 @@ export function ConfiguracoesPage() {
                         <Label htmlFor="role">Cargo</Label>
                         <Input 
                           id="role" 
-                          placeholder="Seu cargo na empresa"
-                          value={profile.cargo}
-                          onChange={(e) => setProfile({...profile, cargo: e.target.value})}
+                          value={profileData?.role === 'admin' ? 'Administrador' : 'Vendedor'}
+                          disabled
+                          className="bg-gray-100 dark:bg-gray-800 cursor-not-allowed"
                         />
                       </div>
                     </div>
@@ -224,104 +268,142 @@ export function ConfiguracoesPage() {
             </Card>
           )}
 
-          {/* Notifications Settings */}
-          {activeSection === 'notificacoes' && (
+          {/* Company Details Settings */}
+          {activeSection === 'empresa' && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Bell className="w-5 h-5" />
-                  Notificações
+                  <Building2 className="w-5 h-5" />
+                  Detalhes da Empresa
                 </CardTitle>
                 <CardDescription>
-                  Configure suas preferências de notificação.
+                  Configure as informações da sua empresa para uso na IA.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Notificações por Email</Label>
-                      <p className="text-sm text-gray-500">
-                        Receba notificações importantes por email.
-                      </p>
+                  <div>
+                    <h4 className="font-semibold mb-3">Contatos</h4>
+                    <div className="grid gap-4">
+                      <div className="grid gap-2">
+                        <Label htmlFor="empresa_telefone">Telefone</Label>
+                        <Input 
+                          id="empresa_telefone" 
+                          placeholder="(11) 99999-9999"
+                          value={detalhesEmpresa.contatos.telefone}
+                          onChange={(e) => setDetalhesEmpresa({
+                            ...detalhesEmpresa,
+                            contatos: { ...detalhesEmpresa.contatos, telefone: formatPhone(e.target.value) }
+                          })}
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="empresa_whatsapp">WhatsApp</Label>
+                        <Input 
+                          id="empresa_whatsapp" 
+                          placeholder="(11) 99999-9999"
+                          value={detalhesEmpresa.contatos.whatsapp}
+                          onChange={(e) => setDetalhesEmpresa({
+                            ...detalhesEmpresa,
+                            contatos: { ...detalhesEmpresa.contatos, whatsapp: formatPhone(e.target.value) }
+                          })}
+                        />
+                      </div>
                     </div>
-                    <Switch 
-                      checked={configuracoes.notificacoes_email}
-                      onCheckedChange={(checked) => handleToggleConfig('notificacoes_email', checked)}
-                    />
                   </div>
+
                   <Separator />
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Novos Clientes</Label>
-                      <p className="text-sm text-gray-500">
-                        Seja notificado quando novos clientes forem cadastrados.
-                      </p>
+
+                  <div>
+                    <h4 className="font-semibold mb-3">Endereço</h4>
+                    <div className="grid gap-2">
+                      <Label htmlFor="empresa_endereco">Endereço Completo</Label>
+                      <Input 
+                        id="empresa_endereco" 
+                        placeholder="Rua, número, bairro, cidade - UF"
+                        value={detalhesEmpresa.contatos.endereco}
+                        onChange={(e) => setDetalhesEmpresa({
+                          ...detalhesEmpresa,
+                          contatos: { ...detalhesEmpresa.contatos, endereco: e.target.value }
+                        })}
+                      />
                     </div>
-                    <Switch 
-                      checked={configuracoes.notificacoes_novos_clientes}
-                      onCheckedChange={(checked) => handleToggleConfig('notificacoes_novos_clientes', checked)}
-                    />
                   </div>
+
                   <Separator />
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Propostas Vencendo</Label>
-                      <p className="text-sm text-gray-500">
-                        Receba alertas sobre propostas próximas do vencimento.
-                      </p>
+
+                  <div>
+                    <h4 className="font-semibold mb-3">Redes Sociais</h4>
+                    <div className="grid gap-4">
+                      <div className="grid gap-2">
+                        <Label htmlFor="empresa_website">Website</Label>
+                        <Input 
+                          id="empresa_website" 
+                          placeholder="https://www.suaempresa.com"
+                          value={detalhesEmpresa.redes_sociais.website}
+                          onChange={(e) => setDetalhesEmpresa({
+                            ...detalhesEmpresa,
+                            redes_sociais: { ...detalhesEmpresa.redes_sociais, website: e.target.value }
+                          })}
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="empresa_facebook">Facebook</Label>
+                        <Input 
+                          id="empresa_facebook" 
+                          placeholder="https://facebook.com/suaempresa"
+                          value={detalhesEmpresa.redes_sociais.facebook}
+                          onChange={(e) => setDetalhesEmpresa({
+                            ...detalhesEmpresa,
+                            redes_sociais: { ...detalhesEmpresa.redes_sociais, facebook: e.target.value }
+                          })}
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="empresa_linkedin">LinkedIn</Label>
+                        <Input 
+                          id="empresa_linkedin" 
+                          placeholder="https://linkedin.com/company/suaempresa"
+                          value={detalhesEmpresa.redes_sociais.linkedin}
+                          onChange={(e) => setDetalhesEmpresa({
+                            ...detalhesEmpresa,
+                            redes_sociais: { ...detalhesEmpresa.redes_sociais, linkedin: e.target.value }
+                          })}
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="empresa_instagram">Instagram</Label>
+                        <Input 
+                          id="empresa_instagram" 
+                          placeholder="https://instagram.com/suaempresa"
+                          value={detalhesEmpresa.redes_sociais.instagram}
+                          onChange={(e) => setDetalhesEmpresa({
+                            ...detalhesEmpresa,
+                            redes_sociais: { ...detalhesEmpresa.redes_sociais, instagram: e.target.value }
+                          })}
+                        />
+                      </div>
                     </div>
-                    <Switch 
-                      checked={configuracoes.notificacoes_propostas_vencendo}
-                      onCheckedChange={(checked) => handleToggleConfig('notificacoes_propostas_vencendo', checked)}
-                    />
-                  </div>
-                  <Separator />
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Agendamentos</Label>
-                      <p className="text-sm text-gray-500">
-                        Notificações sobre agendamentos e compromissos.
-                      </p>
-                    </div>
-                    <Switch 
-                      checked={configuracoes.notificacoes_agendamentos}
-                      onCheckedChange={(checked) => handleToggleConfig('notificacoes_agendamentos', checked)}
-                    />
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          )}
 
-
-          {/* Appearance Settings */}
-          {activeSection === 'aparencia' && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Palette className="w-5 h-5" />
-                  Aparência
-                </CardTitle>
-                <CardDescription>
-                  Personalize a aparência do sistema.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Tema Escuro</Label>
-                      <p className="text-sm text-gray-500">
-                        Ative o tema escuro para reduzir o cansaço visual.
-                      </p>
-                    </div>
-                    <Switch 
-                      checked={configuracoes.tema === 'dark'}
-                      onCheckedChange={(checked) => handleToggleConfig('tema' as any, checked)}
-                    />
-                  </div>
-                </div>
+                <Button 
+                  className="w-full"
+                  onClick={handleSaveDetalhesEmpresa}
+                  disabled={updateDetalhesEmpresaMutation.isPending}
+                >
+                  {updateDetalhesEmpresaMutation.isPending ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Salvando...
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-4 h-4 mr-2" />
+                      Salvar Detalhes da Empresa
+                    </>
+                  )}
+                </Button>
               </CardContent>
             </Card>
           )}

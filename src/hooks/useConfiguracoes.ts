@@ -10,6 +10,7 @@ import {
   testEmailConfig,
   type Configuracoes 
 } from '../services/api/configuracoes'
+import { updateDetalhesEmpresa, type IAConfig } from '../services/api/ia-config'
 import { useAuthStore } from '@/stores/authStore'
 
 // Query keys
@@ -178,6 +179,27 @@ export const useToggleConfig = () => {
   })
 }
 
+// Hook para atualizar detalhes da empresa
+export const useUpdateDetalhesEmpresa = () => {
+  const { user } = useAuthStore()
+
+  return useMutation({
+    mutationFn: async (detalhes: Partial<IAConfig['detalhes_empresa']>) => {
+      if (!user?.id) throw new Error('Usuário não autenticado')
+      const result = await updateDetalhesEmpresa(user.id, detalhes)
+      if (result.error) throw result.error
+      return result.data
+    },
+    onSuccess: () => {
+      toast.success('Detalhes da empresa atualizados com sucesso!')
+    },
+    onError: (error) => {
+      console.error('Erro ao atualizar detalhes da empresa:', error)
+      toast.error('Erro ao atualizar detalhes da empresa')
+    },
+  })
+}
+
 // Hook combinado para facilitar o uso
 export const useConfiguracoesActions = () => {
   return {
@@ -186,5 +208,6 @@ export const useConfiguracoesActions = () => {
     changePassword: useChangePassword(),
     testEmailConfig: useTestEmailConfig(),
     toggleConfig: useToggleConfig(),
+    updateDetalhesEmpresa: useUpdateDetalhesEmpresa(),
   }
 }
