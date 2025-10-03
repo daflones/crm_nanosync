@@ -96,12 +96,30 @@ export function AgendamentosPage() {
   }
 
   const formatDateTime = (dateString: string) => {
-    return new Date(dateString).toLocaleString('pt-BR', {
+    if (!dateString) return 'N/A'
+    
+    // Se a string já contém timezone, usa diretamente
+    // Se não, assume que é UTC e converte para São Paulo
+    let date: Date
+    
+    if (dateString.includes('T') && (dateString.includes('+') || dateString.includes('-') || dateString.endsWith('Z'))) {
+      // String já tem timezone
+      date = new Date(dateString)
+    } else {
+      // Assume UTC e converte
+      date = new Date(dateString + (dateString.includes('T') ? '' : 'T00:00:00') + 'Z')
+    }
+    
+    if (isNaN(date.getTime())) return 'Data inválida'
+    
+    // Formata para o timezone de São Paulo
+    return date.toLocaleString('pt-BR', {
       day: '2-digit',
       month: '2-digit', 
       year: 'numeric',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
+      timeZone: 'America/Sao_Paulo'
     })
   }
 
@@ -298,9 +316,27 @@ export function AgendamentosPage() {
   }
 
   const formatTime = (dateString: string) => {
-    return new Date(dateString).toLocaleTimeString('pt-BR', {
+    if (!dateString) return 'N/A'
+    
+    // Se a string já contém timezone, usa diretamente
+    // Se não, assume que é UTC e converte para São Paulo
+    let date: Date
+    
+    if (dateString.includes('T') && (dateString.includes('+') || dateString.includes('-') || dateString.endsWith('Z'))) {
+      // String já tem timezone
+      date = new Date(dateString)
+    } else {
+      // Assume UTC e converte
+      date = new Date(dateString + (dateString.includes('T') ? '' : 'T00:00:00') + 'Z')
+    }
+    
+    if (isNaN(date.getTime())) return 'Hora inválida'
+    
+    // Formata para o timezone de São Paulo
+    return date.toLocaleTimeString('pt-BR', {
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
+      timeZone: 'America/Sao_Paulo'
     })
   }
 
