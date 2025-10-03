@@ -167,20 +167,45 @@ export function AgendamentoForm({ agendamento, clientes, vendedores, onSubmit, o
     if (!dataInicio || !duracaoMinutos) return ''
     
     const inicio = new Date(dataInicio)
+    if (isNaN(inicio.getTime())) return ''
+    
+    // Adiciona a duração em minutos
     const fim = new Date(inicio.getTime() + duracaoMinutos * 60000)
     
-    return fim.toISOString().slice(0, 16)
+    // Retorna no formato ISO mantendo o timezone local
+    const year = fim.getFullYear()
+    const month = String(fim.getMonth() + 1).padStart(2, '0')
+    const day = String(fim.getDate()).padStart(2, '0')
+    const hours = String(fim.getHours()).padStart(2, '0')
+    const minutes = String(fim.getMinutes()).padStart(2, '0')
+    const seconds = String(fim.getSeconds()).padStart(2, '0')
+    
+    // Calcula o offset do timezone (São Paulo é GMT-3)
+    const timezoneOffset = fim.getTimezoneOffset()
+    const offsetHours = Math.floor(Math.abs(timezoneOffset) / 60)
+    const offsetMinutes = Math.abs(timezoneOffset) % 60
+    const offsetSign = timezoneOffset <= 0 ? '+' : '-'
+    const offsetString = `${offsetSign}${String(offsetHours).padStart(2, '0')}:${String(offsetMinutes).padStart(2, '0')}`
+    
+    return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}${offsetString}`
   }
 
   // Função para calcular duração baseada nas datas
   const calcularDuracao = (dataInicio: string, dataFim: string): number => {
     if (!dataInicio || !dataFim) return 0
     
+    // Cria as datas considerando o timezone local
     const inicio = new Date(dataInicio)
     const fim = new Date(dataFim)
     
+    if (isNaN(inicio.getTime()) || isNaN(fim.getTime())) return 0
+    
+    // Calcula a diferença em milissegundos
     const diffMs = fim.getTime() - inicio.getTime()
-    return Math.round(diffMs / (1000 * 60))
+    const diffMinutes = Math.round(diffMs / (1000 * 60))
+    
+    // Garantir que a duração seja positiva
+    return Math.max(0, diffMinutes)
   }
     
   const addToArray = (field: keyof AgendamentoCreateData, value: string) => {
@@ -469,8 +494,9 @@ export function AgendamentoForm({ agendamento, clientes, vendedores, onSubmit, o
                     value={formData.data_inicio}
                     onChange={(value) => {
                       updateField('data_inicio', value)
+                      
                       const duracao = formData.duracao_minutos || 0
-                      if (duracao > 0) {
+                      if (value && duracao > 0) {
                         const novaDataFim = calcularDataFim(value, duracao)
                         updateField('data_fim', novaDataFim)
                       }
@@ -491,9 +517,12 @@ export function AgendamentoForm({ agendamento, clientes, vendedores, onSubmit, o
                         onChange={(e) => {
                           const duracao = parseInt(e.target.value) || 0
                           updateField('duracao_minutos', duracao)
+                          
                           if (formData.data_inicio && duracao > 0) {
                             const novaDataFim = calcularDataFim(formData.data_inicio, duracao)
                             updateField('data_fim', novaDataFim)
+                          } else if (duracao <= 0) {
+                            updateField('data_fim', '')
                           }
                         }}
                         min="1"
@@ -505,11 +534,12 @@ export function AgendamentoForm({ agendamento, clientes, vendedores, onSubmit, o
                           <Button
                             key={minutos}
                             type="button"
-                            variant="outline"
+                            variant={formData.duracao_minutos === minutos ? "default" : "outline"}
                             size="sm"
                             className="text-xs h-6 px-2"
                             onClick={() => {
                               updateField('duracao_minutos', minutos)
+                              
                               if (formData.data_inicio) {
                                 const novaDataFim = calcularDataFim(formData.data_inicio, minutos)
                                 updateField('data_fim', novaDataFim)
