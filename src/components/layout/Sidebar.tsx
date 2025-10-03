@@ -1,4 +1,4 @@
-﻿import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import {
   LayoutDashboard,
@@ -201,6 +201,28 @@ export function Sidebar() {
                 )} />
                 <span className="font-medium">{item.label}</span>
               </a>
+            )
+          }
+
+          // Se for Planos, usar link absoluto (fora do /app)
+          if (item.href === '/planos') {
+            return (
+              <Link
+                key={item.href}
+                to={item.href}
+                className={cn(
+                  'flex items-center space-x-3 rounded-xl px-4 py-2.5 text-sm font-medium transition-all duration-200 group',
+                  location.pathname === item.href
+                    ? 'bg-primary-600 text-white shadow-lg shadow-primary-600/25'
+                    : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700 hover:shadow-md'
+                )}
+              >
+                <Icon className={cn(
+                  'h-5 w-5 transition-transform group-hover:scale-110', 
+                  location.pathname === item.href ? 'text-white' : item.color
+                )} />
+                <span className="font-medium">{item.label}</span>
+              </Link>
             )
           }
 

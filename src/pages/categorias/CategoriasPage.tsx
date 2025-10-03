@@ -288,10 +288,7 @@ export function CategoriasPage() {
                         </div>
                         <div className="min-w-0 flex-1">
                           <CardTitle className="text-lg font-bold flex items-center gap-3 text-gray-900 dark:text-white">
-                            <span className="truncate group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r transition-all duration-300" 
-                                  style={{ 
-                                    backgroundImage: `linear-gradient(135deg, ${categoria.cor} 0%, ${categoria.cor}80 100%)`
-                                  }}>
+                            <span className="truncate">
                               {categoria.nome}
                             </span>
                             {categoria.status === 'inativo' && (

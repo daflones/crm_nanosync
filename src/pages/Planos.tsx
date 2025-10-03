@@ -3,17 +3,9 @@ import { toast } from 'sonner';
 import { supabase } from '../lib/supabase';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import { usePaymentStatus } from '../hooks/usePaymentStatus-webhook';
+import { usePayment } from '../hooks/usePayment';
+import { CardPaymentBrick } from '../components/payment/CardPaymentBrick';
 import { CreditCard, Zap, Check, Smartphone, Clock, Star, Shield, AlertCircle } from 'lucide-react';
-import { 
-  formatCardNumber, 
-  formatExpiry, 
-  formatCVV, 
-  formatCPF, 
-  detectCardBrand, 
-  isValidExpiry, 
-  isValidCPF, 
-  getCardBrandName 
-} from '../utils/cardUtils';
 
 // Declaração de tipos para window.MercadoPago
 declare global {
@@ -67,12 +59,14 @@ const plans: Plan[] = [
 function Planos() {
   const { data: user } = useCurrentUser();
   const { isPaymentApproved, isLoading, error, startRealtimeListener } = usePaymentStatus();
+  const { processCardPayment: handleCardPayment, isProcessing: isProcessingCard } = usePayment();
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<'pix' | 'card'>('pix');
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentResult, setPaymentResult] = useState<any>(null);
   const [currentStep, setCurrentStep] = useState<'plans' | 'checkout' | 'payment-status'>('plans');
   const [paymentTimeout, setPaymentTimeout] = useState(false);
+  const [planoExpiraEm, setPlanoExpiraEm] = useState<string | null>(null);
 
   // Dados do formulário
   const [formData, setFormData] = useState({
@@ -141,6 +135,34 @@ function Planos() {
 
     loadUserData();
   }, [user, hasLoadedUserData]);
+
+  // Buscar data de expiração do plano quando pagamento for aprovado
+  useEffect(() => {
+    const fetchPlanoExpiracao = async () => {
+      if (isPaymentApproved && user?.id) {
+        try {
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('plano_expira_em')
+            .eq('id', user.id)
+            .single();
+
+          if (error) {
+            console.error('Erro ao buscar data de expiração:', error);
+            return;
+          }
+
+          if (data?.plano_expira_em) {
+            setPlanoExpiraEm(data.plano_expira_em);
+          }
+        } catch (error) {
+          console.error('Erro ao buscar plano:', error);
+        }
+      }
+    };
+
+    fetchPlanoExpiracao();
+  }, [isPaymentApproved, user?.id]);
 
   const [cardData, setCardData] = useState({
     numero_cartao: '',
@@ -615,252 +637,133 @@ function Planos() {
 
               {/* Form */}
               <form onSubmit={handlePaymentSubmit} className="space-y-6">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Nome</label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.firstName}
-                      onChange={(e) => setFormData({...formData, firstName: e.target.value})}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                      placeholder="Seu nome"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Sobrenome</label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.lastName}
-                      onChange={(e) => setFormData({...formData, lastName: e.target.value})}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                      placeholder="Seu sobrenome"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Email</label>
-                  <input
-                    type="email"
-                    required
-                    value={formData.email}
-                    onChange={(e) => setFormData({...formData, email: e.target.value})}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                    placeholder="seu@email.com"
-                  />
-                </div>
-
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Tipo</label>
-                    <select
-                      value={formData.documentType}
-                      onChange={(e) => setFormData({...formData, documentType: e.target.value})}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                    >
-                      <option value="CPF">CPF</option>
-                      <option value="CNPJ">CNPJ</option>
-                    </select>
-                  </div>
-                  <div className="col-span-2">
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Documento</label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.document}
-                      onChange={(e) => handleDocumentChange(e.target.value)}
-                      placeholder={formData.documentType === 'CPF' ? '000.000.000-00' : '00.000.000/0000-00'}
-                      className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
-                        formErrors.document ? 'border-red-300 bg-red-50' : 'border-gray-300'
-                      }`}
-                      maxLength={formData.documentType === 'CPF' ? 14 : 18}
-                    />
-                    {formErrors.document && (
-                      <div className="mt-2 flex items-center text-red-600 text-sm">
-                        <AlertCircle className="h-4 w-4 mr-1" />
-                        {formErrors.document}
+                {/* Campos de dados pessoais - apenas para PIX */}
+                {paymentMethod === 'pix' && (
+                  <>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">Nome</label>
+                        <input
+                          type="text"
+                          required
+                          value={formData.firstName}
+                          onChange={(e) => setFormData({...formData, firstName: e.target.value})}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                          placeholder="Seu nome"
+                        />
                       </div>
-                    )}
-                  </div>
-                </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">Sobrenome</label>
+                        <input
+                          type="text"
+                          required
+                          value={formData.lastName}
+                          onChange={(e) => setFormData({...formData, lastName: e.target.value})}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                          placeholder="Seu sobrenome"
+                        />
+                      </div>
+                    </div>
 
-                {/* Formulário de Cartão */}
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Email</label>
+                      <input
+                        type="email"
+                        required
+                        value={formData.email}
+                        onChange={(e) => setFormData({...formData, email: e.target.value})}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                        placeholder="seu@email.com"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">Tipo</label>
+                        <select
+                          value={formData.documentType}
+                          onChange={(e) => setFormData({...formData, documentType: e.target.value})}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                        >
+                          <option value="CPF">CPF</option>
+                          <option value="CNPJ">CNPJ</option>
+                        </select>
+                      </div>
+                      <div className="col-span-2">
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">Documento</label>
+                        <input
+                          type="text"
+                          required
+                          value={formData.document}
+                          onChange={(e) => handleDocumentChange(e.target.value)}
+                          placeholder={formData.documentType === 'CPF' ? '000.000.000-00' : '00.000.000/0000-00'}
+                          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                            formErrors.document ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                          }`}
+                          maxLength={formData.documentType === 'CPF' ? 14 : 18}
+                        />
+                        {formErrors.document && (
+                          <div className="mt-2 flex items-center text-red-600 text-sm">
+                            <AlertCircle className="h-4 w-4 mr-1" />
+                            {formErrors.document}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {/* Formulário de Cartão - Card Payment Brick */}
                 {paymentMethod === 'card' && (
                   <div className="space-y-4">
                     <div className="bg-green-50 border border-green-200 rounded-md p-4 mb-4">
                       <div className="flex items-center">
                         <Shield className="h-5 w-5 text-green-600 mr-2" />
                         <p className="text-sm text-green-800">
-                          <strong>Seus dados são 100% processados pelo seu banco!</strong> Todas as informações são criptografadas e protegidas.
+                          <strong>Pagamento 100% Seguro!</strong> Processado diretamente pelo Mercado Pago com criptografia de ponta.
                         </p>
                       </div>
                     </div>
                     
-                    {/* MercadoPago elements - temporariamente desabilitado */}
-                    <div id="form-checkout" style={{ display: 'none' }}>
-                      <input id="form-checkout__cardNumber" type="text" />
-                      <input id="form-checkout__expirationDate" type="text" />
-                      <input id="form-checkout__securityCode" type="text" />
-                      <input id="form-checkout__cardholderName" type="text" />
-                      <select id="form-checkout__issuer"></select>
-                      <select id="form-checkout__installments"></select>
-                      <select id="form-checkout__identificationType"></select>
-                      <input id="form-checkout__identificationNumber" type="text" />
-                      <input id="form-checkout__cardholderEmail" type="email" />
-                    </div>
-                    
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-2">
-                            Número do Cartão
-                          </label>
-                          <div className="relative">
-                            <input
-                              type="text"
-                              value={cardData.numero_cartao}
-                              onChange={(e) => {
-                                const formatted = formatCardNumber(e.target.value);
-                                setCardData({...cardData, numero_cartao: formatted});
-                              }}
-                              className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                              placeholder="0000 0000 0000 0000"
-                              maxLength={19}
-                            />
-                            <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-sm font-medium text-gray-600">
-                              {getCardBrandName(detectCardBrand(cardData.numero_cartao))}
-                            </div>
-                          </div>
-                        </div>
-                        <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-2">
-                            Validade
-                          </label>
-                          <input
-                            type="text"
-                            value={cardData.validade}
-                            onChange={(e) => {
-                              const formatted = formatExpiry(e.target.value);
-                              setCardData({...cardData, validade: formatted});
-                            }}
-                            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
-                              cardData.validade && !isValidExpiry(cardData.validade) 
-                                ? 'border-red-300 bg-red-50' 
-                                : 'border-gray-300'
-                            }`}
-                            placeholder="MM/AA"
-                            maxLength={5}
-                          />
-                          {cardData.validade && !isValidExpiry(cardData.validade) && (
-                            <p className="text-red-500 text-xs mt-1">Data de validade inválida</p>
-                          )}
-                        </div>
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-2">
-                            CVV
-                          </label>
-                          <input
-                            type="text"
-                            value={cardData.cvv}
-                            onChange={(e) => {
-                              const brand = detectCardBrand(cardData.numero_cartao);
-                              const formatted = formatCVV(e.target.value, brand);
-                              setCardData({...cardData, cvv: formatted});
-                            }}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                            placeholder="123"
-                            maxLength={4}
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-2">
-                            Nome no Cartão
-                          </label>
-                          <input
-                            type="text"
-                            value={cardData.nome_cartao}
-                            onChange={(e) => setCardData({...cardData, nome_cartao: e.target.value})}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                            placeholder="Nome no cartão"
-                          />
-                        </div>
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-2">
-                            Banco Emissor
-                          </label>
-                          <select 
-                            value={cardData.banco_emissor}
-                            onChange={(e) => setCardData({...cardData, banco_emissor: e.target.value})}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                          >
-                            <option value="">Selecione o banco</option>
-                            <option value="Banco do Brasil">Banco do Brasil</option>
-                            <option value="Bradesco">Bradesco</option>
-                            <option value="Caixa">Caixa Econômica Federal</option>
-                            <option value="Itaú">Itaú</option>
-                            <option value="Santander">Santander</option>
-                            <option value="Nubank">Nubank</option>
-                            <option value="Inter">Inter</option>
-                            <option value="C6 Bank">C6 Bank</option>
-                            <option value="Outro">Outro</option>
-                          </select>
-                        </div>
-                        <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-2">
-                            Parcelas
-                          </label>
-                          <select 
-                            value={cardData.parcelas}
-                            onChange={(e) => setCardData({...cardData, parcelas: e.target.value})}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                          >
-                            <option value="2">2x sem juros</option>
-                          </select>
-                        </div>
-                      </div>
-                      
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                          CPF do Portador
-                        </label>
-                        <input
-                          type="text"
-                          value={cardData.cpf}
-                          onChange={(e) => {
-                            const formatted = formatCPF(e.target.value);
-                            setCardData({...cardData, cpf: formatted});
-                          }}
-                          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
-                            cardData.cpf && !isValidCPF(cardData.cpf) 
-                              ? 'border-red-300 bg-red-50' 
-                              : 'border-gray-300'
-                          }`}
-                          placeholder="000.000.000-00"
-                          maxLength={14}
-                        />
-                        {cardData.cpf && !isValidCPF(cardData.cpf) && (
-                          <p className="text-red-500 text-xs mt-1">CPF inválido</p>
-                        )}
-                      </div>
-                    </div>
+                    {/* Card Payment Brick do Mercado Pago */}
+                    {selectedPlan && user && (
+                      <CardPaymentBrick
+                        amount={selectedPlan.price}
+                        onSubmit={async (formData, additionalData) => {
+                          const result = await handleCardPayment(
+                            formData,
+                            additionalData,
+                            user.id,
+                            selectedPlan.id,
+                            selectedPlan.name
+                          )
+                          
+                          if (result?.success) {
+                            setPaymentResult(result.result)
+                            setCurrentStep('payment-status')
+                          }
+                        }}
+                        onReady={() => {
+                          console.log('Formulário de pagamento pronto')
+                        }}
+                        onError={(error) => {
+                          console.error('Erro no formulário:', error)
+                          toast.error('Erro ao carregar formulário de pagamento')
+                        }}
+                      />
+                    )}
                   </div>
                 )}
 
-              <button
-                type="submit"
-                disabled={isProcessing}
-                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-4 px-6 rounded-xl hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-semibold text-lg shadow-lg"
-              >
-                {isProcessing ? 'Processando...' : `Finalizar Pagamento - R$ ${selectedPlan.price.toFixed(2)}`}
-              </button>
+              {paymentMethod === 'pix' && (
+                <button
+                  type="submit"
+                  disabled={isProcessing}
+                  className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-4 px-6 rounded-xl hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-semibold text-lg shadow-lg"
+                >
+                  {isProcessing ? 'Processando...' : `Finalizar Pagamento - R$ ${selectedPlan.price.toFixed(2)}`}
+                </button>
+              )}
               </form>
 
               {/* Security Badges */}
@@ -1050,8 +953,13 @@ function Planos() {
                     <p className={isPaymentApproved ? 'text-green-700' : 'text-blue-700'}>
                       ID: {paymentResult.id}
                     </p>
-                    {paymentResult.date_of_expiration && (
-                      <p className={isPaymentApproved ? 'text-green-700' : 'text-blue-700'}>
+                    {isPaymentApproved && planoExpiraEm && (
+                      <p className="text-green-700">
+                        Expira: {new Date(planoExpiraEm).toLocaleString('pt-BR')}
+                      </p>
+                    )}
+                    {!isPaymentApproved && paymentResult.date_of_expiration && (
+                      <p className="text-blue-700">
                         Expira: {new Date(paymentResult.date_of_expiration).toLocaleString('pt-BR')}
                       </p>
                     )}
