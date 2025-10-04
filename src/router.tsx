@@ -1,6 +1,7 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { lazy, Suspense } from 'react'
 import { AppLayout } from './components/layout/AppLayout'
+import { ArquivosIAGuard } from './components/guards/ArquivosIAGuard'
 
 // Lazy load pages
 const LoginPage = lazy(() => import('./pages/auth/LoginPage').then(m => ({ default: m.LoginPage })))
@@ -121,7 +122,11 @@ export const router = createBrowserRouter([
       },
       {
         path: 'arquivos-ia',
-        element: withSuspense(ArquivosIAPage),
+        element: (
+          <ArquivosIAGuard>
+            {withSuspense(ArquivosIAPage)}
+          </ArquivosIAGuard>
+        ),
       },
       {
         path: 'relatorios',

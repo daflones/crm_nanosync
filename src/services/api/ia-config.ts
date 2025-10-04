@@ -70,6 +70,7 @@ export interface IAConfig {
   // Configurações avançadas
   tempo_resposta_ms: number
   mensagem_ausencia: string
+  envia_documento?: boolean
   created_at?: string
   updated_at?: string
 }
@@ -160,7 +161,8 @@ export const getIAConfig = async (userId: string) => {
           domingo: { inicio: '08:00', fim: '12:00', ativo: false }
         },
         tempo_resposta_ms: 2000,
-        mensagem_ausencia: 'No momento estou fora do horário de atendimento. Deixe sua mensagem que retornarei assim que possível.'
+        mensagem_ausencia: 'No momento estou fora do horário de atendimento. Deixe sua mensagem que retornarei assim que possível.',
+        envia_documento: false
       }
 
       const { data: newData, error: createError } = await supabase

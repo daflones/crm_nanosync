@@ -1,10 +1,11 @@
-﻿import { Fragment } from 'react'
+import { Fragment } from 'react'
 import { Dialog, Transition } from '@headlessui/react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { useAuthStore } from '@/stores/authStore'
+import { useIAConfig } from '@/hooks/useIAConfig'
 import {
   LayoutDashboard,
   Users,
@@ -18,7 +19,8 @@ import {
   Layers,
   Tags,
   LogOut,
-  Activity
+  Activity,
+  Bot
 } from 'lucide-react'
 
 interface MobileNavProps {
@@ -40,12 +42,14 @@ const menuItems = [
   { label: 'Resumo de Atividades', icon: Activity, href: '/app/atividades', color: 'text-emerald-600' },
   { label: 'Relatórios', icon: BarChart3, href: '/app/relatorios', color: 'text-red-600', hideOnMobile: true },
   { label: 'Configurações', icon: Settings, href: '/app/configuracoes', color: 'text-gray-600', adminOnly: true },
+  { label: 'Configurações IA', icon: Bot, href: '/app/configuracoes-ia', color: 'text-purple-600', adminOnly: true },
 ]
 
 export function MobileNav({ open, onClose }: MobileNavProps) {
   const location = useLocation()
   const navigate = useNavigate()
   const { user, signOut } = useAuthStore()
+  const { data: iaConfigData } = useIAConfig()
   const isAdmin = user?.role === 'admin'
 
   // Handler para navegar para o dashboard com refresh
@@ -63,9 +67,18 @@ export function MobileNav({ open, onClose }: MobileNavProps) {
     }
   }
 
-  const filteredMenuItems = menuItems.filter(item => 
-    (!item.adminOnly || (item.adminOnly && isAdmin)) && !item.hideOnMobile
-  )
+  const filteredMenuItems = menuItems.filter(item => {
+    // Filtrar por permissão de admin
+    if (item.adminOnly && !isAdmin) return false
+    
+    // Ocultar itens marcados para ocultar no mobile
+    if (item.hideOnMobile) return false
+    
+    // Ocultar Arquivos IA se envia_documento não for explicitamente true
+    if (item.href === '/app/arquivos-ia' && iaConfigData?.envia_documento !== true) return false
+    
+    return true
+  })
 
   return (
     <Transition.Root show={open} as={Fragment}>

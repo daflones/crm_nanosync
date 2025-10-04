@@ -19,6 +19,7 @@ import {
 } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 import { usePlanoAtivo } from '@/hooks/usePlanoAtivo'
+import { useIAConfig } from '@/hooks/useIAConfig'
 import { SubscriptionStatusBanner } from '@/components/SubscriptionNotifications'
 import { Button } from '@/components/ui/button'
 
@@ -130,6 +131,7 @@ export function Sidebar() {
   const navigate = useNavigate()
   const { user, signOut } = useAuthStore()
   const { planoAtivo } = usePlanoAtivo()
+  const { data: iaConfigData } = useIAConfig()
 
   const handleDashboardClick = (e: React.MouseEvent) => {
     e.preventDefault()
@@ -154,6 +156,9 @@ export function Sidebar() {
     
     // Ocultar página Planos se o usuário já tem plano ativo
     if (item.href === '/planos' && planoAtivo) return false
+    
+    // Ocultar Arquivos IA se envia_documento não for explicitamente true
+    if (item.href === '/arquivos-ia' && iaConfigData?.envia_documento !== true) return false
     
     return true
   })

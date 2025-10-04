@@ -63,6 +63,8 @@ const initialPropostaState: PropostaCreateData = {
   template_usado: '',
   requer_aprovacao: false,
   motivo_aprovacao: '',
+  recompra_ativada: false,
+  data_recompra: '',
   observacoes: '',
   termos_condicoes: '',
   itens: []
@@ -463,6 +465,8 @@ export function PropostasPage() {
                         template_usado: proposta.template_usado || '',
                         requer_aprovacao: proposta.requer_aprovacao || false,
                         motivo_aprovacao: proposta.motivo_aprovacao || '',
+                        recompra_ativada: proposta.recompra_ativada || false,
+                        data_recompra: proposta.data_recompra ? new Date(proposta.data_recompra).toISOString().split('T')[0] : '',
                         observacoes: proposta.observacoes || '',
                         termos_condicoes: proposta.termos_condicoes || '',
                         itens: proposta.itens || []

@@ -273,6 +273,19 @@ export function IAConfigPage() {
               />
             </div>
             
+            <div className="flex items-center justify-between pt-4 border-t">
+              <div className="space-y-0.5">
+                <Label>IA enviará documentos?</Label>
+                <p className="text-sm text-gray-500">
+                  Quando ativado, a área de Arquivos IA ficará visível e funcional.
+                </p>
+              </div>
+              <Switch 
+                checked={iaConfig.envia_documento || false}
+                onCheckedChange={(checked) => setIaConfig({...iaConfig, envia_documento: checked})}
+              />
+            </div>
+
             {iaConfig.agendamento_ia && (
               <>
                 <div className="grid gap-2">

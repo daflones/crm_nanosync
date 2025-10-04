@@ -287,7 +287,9 @@ export const propostasService = {
         data_vencimento: dataVencimento,
         visualizacoes: 0,
         tempo_visualizacao: 0,
-        requer_aprovacao: propostaData.requer_aprovacao || false
+        requer_aprovacao: propostaData.requer_aprovacao || false,
+        recompra_ativada: propostaData.recompra_ativada || false,
+        data_recompra: propostaData.data_recompra || null
       })
       .select()
       .single()
