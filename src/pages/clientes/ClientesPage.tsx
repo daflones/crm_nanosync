@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Plus,
   Search,
@@ -171,6 +171,22 @@ export function ClientesPage() {
       cliente.email?.toLowerCase().includes(searchTerm.toLowerCase())
     return matchesStage && matchesSearch
   })
+
+  // Update form when editing a client
+  useEffect(() => {
+    if (isEditModalOpen && selectedCliente) {
+      // Reset form with client data
+      reset({
+        ...selectedCliente,
+        ddd: selectedCliente.whatsapp ? selectedCliente.whatsapp.replace(/\D/g, '').substring(0, 2) : '',
+        telefone: selectedCliente.whatsapp ? selectedCliente.whatsapp.replace(/\D/g, '').substring(2) : '',
+        produtos_interesse: selectedCliente.produtos_interesse ? selectedCliente.produtos_interesse.join(', ') : '',
+        origem: selectedCliente.origem || 'manual',
+        etapa_pipeline: selectedCliente.etapa_pipeline || 'novo',
+        classificacao: selectedCliente.classificacao || 'frio'
+      })
+    }
+  }, [isEditModalOpen, selectedCliente, reset])
 
   // CRUD handlers
   const { createDatabaseNotification } = useNotifications()
