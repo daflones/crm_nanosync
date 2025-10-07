@@ -899,12 +899,12 @@ export function AgendamentosPage() {
                 </div>
               )}
 
-              {(selectedAgendamento?.participantes && selectedAgendamento.participantes.length > 0) || 
-               (selectedAgendamento?.participantes_externos && selectedAgendamento.participantes_externos.length > 0) ? (
+              {(selectedAgendamento?.participantes && Array.isArray(selectedAgendamento.participantes) && selectedAgendamento.participantes.length > 0) || 
+               (selectedAgendamento?.participantes_externos && Array.isArray(selectedAgendamento.participantes_externos) && selectedAgendamento.participantes_externos.length > 0) ? (
                 <div>
                   <h4 className="font-medium mb-3 text-gray-900">Participantes</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {selectedAgendamento?.participantes && selectedAgendamento.participantes.length > 0 && (
+                    {selectedAgendamento?.participantes && Array.isArray(selectedAgendamento.participantes) && selectedAgendamento.participantes.length > 0 && (
                       <div>
                         <h5 className="text-sm font-medium text-gray-700 mb-2">Participantes Internos</h5>
                         <div className="space-y-2">
@@ -918,7 +918,7 @@ export function AgendamentosPage() {
                         </div>
                       </div>
                     )}
-                    {selectedAgendamento?.participantes_externos && selectedAgendamento.participantes_externos.length > 0 && (
+                    {selectedAgendamento?.participantes_externos && Array.isArray(selectedAgendamento.participantes_externos) && selectedAgendamento.participantes_externos.length > 0 && (
                       <div>
                         <h5 className="text-sm font-medium text-gray-700 mb-2">Participantes Externos</h5>
                         <div className="flex flex-wrap gap-2">

@@ -21,8 +21,6 @@ export function IAConfigPage() {
     nome_agente: '',
     contexto_ia: null,
     tom_fala: 'profissional',
-    regras_especificas: '',
-    regras_adicionais: '',
     tamanho_textos: 'medio',
     usar_emojis: false,
     tempo_resposta_ms: 2000,
@@ -140,12 +138,12 @@ export function IAConfigPage() {
       </div>
 
       <div className="w-full space-y-6">
-        {/* Contexto e Personalidade */}
+        {/* Nome e Tom de Fala */}
         <Card>
           <CardHeader>
-            <CardTitle>Contexto e Personalidade</CardTitle>
+            <CardTitle>Nome e Tom de Fala</CardTitle>
             <CardDescription>
-              Defina como a IA deve se comportar e se comunicar com os clientes.
+              Personalize o nome do assistente virtual e escolha o estilo de comunicação que melhor representa sua empresa.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -174,38 +172,6 @@ export function IAConfigPage() {
                   <SelectItem value="amigavel">Amigável</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Regras e Comportamentos */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Regras e Comportamentos</CardTitle>
-            <CardDescription>
-              Estabeleça diretrizes específicas para o comportamento da IA.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-2">
-              <Label htmlFor="regras-especificas">Regras Específicas</Label>
-              <Textarea
-                id="regras-especificas"
-                placeholder="Defina regras específicas para a IA seguir..."
-                value={iaConfig.regras_especificas || ''}
-                onChange={(e) => setIaConfig({...iaConfig, regras_especificas: e.target.value})}
-                rows={2}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="regras-adicionais">Regras Adicionais (Opcional)</Label>
-              <Textarea
-                id="regras-adicionais"
-                placeholder="Regras adicionais ou instruções especiais..."
-                value={iaConfig.regras_adicionais || ''}
-                onChange={(e) => setIaConfig({...iaConfig, regras_adicionais: e.target.value})}
-                rows={2}
-              />
             </div>
           </CardContent>
         </Card>
@@ -407,12 +373,12 @@ export function IAConfigPage() {
           </CardContent>
         </Card>
 
-        {/* Configurações Avançadas */}
+        {/* Tempo de Resposta e Mensagem de Ausência */}
         <Card>
           <CardHeader>
-            <CardTitle>Configurações Avançadas</CardTitle>
+            <CardTitle>Tempo de Resposta e Mensagem de Ausência</CardTitle>
             <CardDescription>
-              Ajustes técnicos para o comportamento da IA.
+              Configure o tempo que a IA leva para responder e a mensagem exibida quando o atendimento estiver indisponível fora do horário de funcionamento.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">

@@ -21,7 +21,8 @@ import {
   useArquivosIA, 
   useUploadArquivoIA, 
   useUpdateArquivoIA, 
-  useDeleteArquivoIA 
+  useDeleteArquivoIA,
+  useHardDeleteArquivoIA 
 } from '@/hooks/useArquivosIA'
 import { clientesService } from '@/services/api/clientes'
 import { arquivosService, type CategoriaArquivo } from '@/services/api/arquivos'
@@ -140,7 +141,7 @@ export default function ArquivosIAPage() {
 
   const uploadMutation = useUploadArquivoIA()
   const updateMutation = useUpdateArquivoIA()
-  const deleteMutation = useDeleteArquivoIA()
+  const deleteMutation = useHardDeleteArquivoIA() // Hard delete removes from database AND storage
 
   // Override success handlers to close modals and reset forms
   const handleUploadSuccess = () => {

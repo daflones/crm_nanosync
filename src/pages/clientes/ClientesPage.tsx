@@ -15,7 +15,9 @@ import {
   Eye,
   Trash2,
   Phone,
-  Bot
+  Bot,
+  Globe,
+  UserPlus
 } from 'lucide-react'
 import { useClientes, useCreateCliente, useUpdateCliente, useDeleteCliente, useUpdatePipelineStage } from '@/hooks/useClientes'
 import { useVendedores } from '@/hooks/useVendedores'
@@ -153,13 +155,8 @@ export function ClientesPage() {
 
   const origens = [
     { value: 'manual', label: 'Manual' },
-    { value: 'whatsapp', label: 'WhatsApp' },
     { value: 'site', label: 'Site' },
-    { value: 'indicacao', label: 'Indicação' },
-    { value: 'feira', label: 'Feira' },
-    { value: 'cold_call', label: 'Cold Call' },
-    { value: 'email', label: 'Email' },
-    { value: 'redes_sociais', label: 'Redes Sociais' },
+    { value: 'IA', label: 'IA' },
   ]
 
   const getStageCount = (stageId: string) => {
@@ -677,6 +674,18 @@ export function ClientesPage() {
                                 IA
                               </span>
                             )}
+                            {cliente.origem === 'site' && (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold">
+                                <Globe className="h-3.5 w-3.5" />
+                                Site
+                              </span>
+                            )}
+                            {cliente.origem === 'manual' && (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-gray-100 text-gray-700 text-xs font-semibold">
+                                <UserPlus className="h-3.5 w-3.5" />
+                                Manual
+                              </span>
+                            )}
                             {cliente.classificacao && (
                               <span className={`px-2 py-1 text-xs font-medium rounded-full ${
                                 cliente.classificacao === 'quente' ? 'bg-red-100 text-red-700' :
@@ -741,6 +750,16 @@ export function ClientesPage() {
                                 <span className="inline-flex items-center gap-1 text-purple-700 font-semibold">
                                   <Bot className="h-3.5 w-3.5" />
                                   IA
+                                </span>
+                              ) : cliente.origem === 'site' ? (
+                                <span className="inline-flex items-center gap-1 text-blue-700 font-semibold">
+                                  <Globe className="h-3.5 w-3.5" />
+                                  Site
+                                </span>
+                              ) : cliente.origem === 'manual' ? (
+                                <span className="inline-flex items-center gap-1 text-gray-700 font-semibold">
+                                  <UserPlus className="h-3.5 w-3.5" />
+                                  Manual
                                 </span>
                               ) : (
                                 cliente.origem || 'N/A'
@@ -1537,7 +1556,6 @@ export function ClientesPage() {
                       { key: 'documento', label: 'CNPJ ou CPF', value: cliente.cpf || cliente.cnpj },
                       { key: 'whatsapp', label: 'WhatsApp', value: cliente.whatsapp },
                       { key: 'email', label: 'E-mail', value: cliente.email },
-                      { key: 'dores_atuais', label: 'Dores Atuais', value: cliente.dores_atuais },
                       { key: 'contexto_cliente', label: 'Contexto', value: cliente.contexto_cliente },
                       { key: 'motivacao', label: 'Motivação', value: cliente.motivacao },
                       { key: 'endereco_completo', label: 'Endereço', value: [cliente.endereco, cliente.numero, cliente.cidade, cliente.estado, cliente.cep].filter(Boolean).join(', ') },
@@ -1700,11 +1718,42 @@ export function ClientesPage() {
                     
                     {selectedCliente.origem && (
                       <div className="flex items-center gap-3">
-                        <Building className="h-4 w-4 text-orange-600" />
+                        {selectedCliente.origem === 'IA' ? (
+                          <Bot className="h-4 w-4 text-purple-600" />
+                        ) : selectedCliente.origem === 'site' ? (
+                          <Globe className="h-4 w-4 text-blue-600" />
+                        ) : selectedCliente.origem === 'manual' ? (
+                          <UserPlus className="h-4 w-4 text-gray-600" />
+                        ) : (
+                          <Building className="h-4 w-4 text-orange-600" />
+                        )}
                         <div>
                           <p className="text-sm text-orange-600 dark:text-orange-300">Origem</p>
-                          <p className="font-medium text-orange-800 dark:text-orange-200 capitalize">
-                            {selectedCliente.origem}
+                          <p className={`font-medium capitalize flex items-center gap-2 ${
+                            selectedCliente.origem === 'IA' ? 'text-purple-800 dark:text-purple-200' :
+                            selectedCliente.origem === 'site' ? 'text-blue-800 dark:text-blue-200' :
+                            selectedCliente.origem === 'manual' ? 'text-gray-800 dark:text-gray-200' :
+                            'text-orange-800 dark:text-orange-200'
+                          }`}>
+                            {selectedCliente.origem === 'site' && (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold">
+                                <Globe className="h-3 w-3" />
+                                Site
+                              </span>
+                            )}
+                            {selectedCliente.origem === 'IA' && (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 text-xs font-semibold">
+                                <Bot className="h-3 w-3" />
+                                IA
+                              </span>
+                            )}
+                            {selectedCliente.origem === 'manual' && (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-100 text-gray-700 text-xs font-semibold">
+                                <UserPlus className="h-3 w-3" />
+                                Manual
+                              </span>
+                            )}
+                            {selectedCliente.origem !== 'site' && selectedCliente.origem !== 'IA' && selectedCliente.origem !== 'manual' && selectedCliente.origem}
                           </p>
                         </div>
                       </div>

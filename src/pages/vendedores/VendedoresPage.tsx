@@ -362,8 +362,14 @@ export default function VendedoresPage() {
         comissao_percentual: Number(formData.comissao_percentual) || 5,
         salario_base: Number(formData.salario_base) || 0,
         data_contratacao: formData.data_contratacao || new Date().toISOString().split('T')[0],
-        segmentos_principais: formData.segmentos_principais,
-        segmentos_secundarios: formData.segmentos_secundarios,
+        segmentos_principais: formData.segmentos_principais.map(id => {
+          const segmento = segmentos.find(s => s.id === id)
+          return segmento ? segmento.nome : id
+        }),
+        segmentos_secundarios: formData.segmentos_secundarios.map(id => {
+          const segmento = segmentos.find(s => s.id === id)
+          return segmento ? segmento.nome : id
+        }),
         regioes_atendimento: formData.regioes_atendimento,
         horarios_vendedor: formData.horarios_vendedor
       }
@@ -471,8 +477,14 @@ export default function VendedoresPage() {
         comissao_percentual: Number(formData.comissao_percentual),
         salario_base: Number(formData.salario_base),
         data_contratacao: formData.data_contratacao,
-        segmentos_principais: formData.segmentos_principais,
-        segmentos_secundarios: formData.segmentos_secundarios,
+        segmentos_principais: formData.segmentos_principais.map(id => {
+          const segmento = segmentos.find(s => s.id === id)
+          return segmento ? segmento.nome : id
+        }),
+        segmentos_secundarios: formData.segmentos_secundarios.map(id => {
+          const segmento = segmentos.find(s => s.id === id)
+          return segmento ? segmento.nome : id
+        }),
         regioes_atendimento: formData.regioes_atendimento,
         horarios_vendedor: formData.horarios_vendedor
       }
@@ -1150,14 +1162,11 @@ export default function VendedoresPage() {
                     <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300">Segmentos Principais</h5>
                     {selectedVendedor.segmentos_principais && selectedVendedor.segmentos_principais.length > 0 ? (
                       <div className="flex flex-wrap gap-1">
-                        {selectedVendedor.segmentos_principais.map((segmentoId) => {
-                          const segmento = segmentos.find(s => s.id === segmentoId)
-                          return (
-                            <span key={segmentoId} className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                              {segmento?.nome || segmentoId}
-                            </span>
-                          )
-                        })}
+                        {selectedVendedor.segmentos_principais.map((segmentoNome, index) => (
+                          <span key={index} className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            {segmentoNome}
+                          </span>
+                        ))}
                       </div>
                     ) : (
                       <p className="text-sm text-gray-500">Nenhum segmento principal definido</p>
@@ -1167,14 +1176,11 @@ export default function VendedoresPage() {
                       <>
                         <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mt-4">Segmentos Secundários</h5>
                         <div className="flex flex-wrap gap-1">
-                          {selectedVendedor.segmentos_secundarios.map((segmentoId) => {
-                            const segmento = segmentos.find(s => s.id === segmentoId)
-                            return (
-                              <span key={segmentoId} className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                                {segmento?.nome || segmentoId}
-                              </span>
-                            )
-                          })}
+                        {selectedVendedor.segmentos_secundarios.map((segmentoNome, index) => (
+                            <span key={index} className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                              {segmentoNome}
+                            </span>
+                          ))}
                         </div>
                       </>
                     )}
@@ -1216,6 +1222,30 @@ export default function VendedoresPage() {
                   </div>
                 </div>
               </div>
+
+              {/* Horários do Vendedor */}
+              {selectedVendedor.horarios_vendedor && (
+                <div className="border-t pt-4">
+                  <h4 className="font-semibold text-gray-900 dark:text-white mb-3">Horários de Atendimento</h4>
+                  <div className="space-y-2">
+                    {Object.entries(selectedVendedor.horarios_vendedor).map(([dia, horario]: [string, any]) => (
+                      <div key={dia} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-3 h-3 rounded-full ${horario.ativo ? 'bg-green-500' : 'bg-gray-300'}`} />
+                          <span className="font-medium text-gray-900 dark:text-white capitalize">{dia}</span>
+                        </div>
+                        {horario.ativo ? (
+                          <span className="text-sm text-gray-600 dark:text-gray-300">
+                            {horario.inicio} - {horario.fim}
+                          </span>
+                        ) : (
+                          <span className="text-sm text-gray-400">Inativo</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </DialogContent>
