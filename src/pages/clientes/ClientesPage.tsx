@@ -107,7 +107,6 @@ type ClienteFormData = z.infer<typeof clienteSchema>
 
 export function ClientesPage() {
   const [searchTerm, setSearchTerm] = useState('')
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('')
   const [selectedStage, setSelectedStage] = useState('todos')
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
@@ -117,16 +116,8 @@ export function ClientesPage() {
   const [viewMode, setViewMode] = useState<'grid' | 'list' | 'kanban'>('grid')
   const [displayLimit, setDisplayLimit] = useState(10) // Show 10 clients initially
 
-  // Debounce search term to avoid too many requests
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearchTerm(searchTerm)
-    }, 500) // Wait 500ms after user stops typing
-
-    return () => clearTimeout(timer)
-  }, [searchTerm])
-
-  const { data: clientes = [], isLoading } = useClientes({ search: debouncedSearchTerm })
+  // Load all clients without search filter (search will be done on frontend)
+  const { data: clientes = [], isLoading } = useClientes()
   const { data: _vendedores = [] } = useVendedores()
   const createCliente = useCreateCliente()
   const updateCliente = useUpdateCliente()
@@ -185,9 +176,29 @@ export function ClientesPage() {
     return clientes.filter((cliente: any) => cliente.etapa_pipeline === stageId).length
   }
 
-  // Filter only by stage - search is handled by backend
+  // Filter by stage and search term (frontend filtering for instant results)
   const filteredClientes = clientes.filter((cliente: any) => {
     const matchesStage = selectedStage === 'todos' || cliente.etapa_pipeline === selectedStage
+    
+    // Instant search - match on any character
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase()
+      const searchNumbers = searchTerm.replace(/\D/g, '') // Remove non-digits for phone/CPF/CNPJ
+      
+      const matchesName = cliente.nome_contato?.toLowerCase().includes(searchLower)
+      const matchesCompany = cliente.nome_empresa?.toLowerCase().includes(searchLower)
+      const matchesEmail = cliente.email?.toLowerCase().includes(searchLower)
+      const matchesPhone = cliente.whatsapp?.replace(/\D/g, '').includes(searchNumbers)
+      const matchesPhoneCompany = cliente.telefone_empresa?.replace(/\D/g, '').includes(searchNumbers)
+      const matchesCPF = cliente.cpf?.replace(/\D/g, '').includes(searchNumbers)
+      const matchesCNPJ = cliente.cnpj?.replace(/\D/g, '').includes(searchNumbers)
+      
+      const matchesSearch = matchesName || matchesCompany || matchesEmail || 
+                           matchesPhone || matchesPhoneCompany || matchesCPF || matchesCNPJ
+      
+      return matchesStage && matchesSearch
+    }
+    
     return matchesStage
   })
 
@@ -198,7 +209,7 @@ export function ClientesPage() {
   // Reset display limit when filters change
   useEffect(() => {
     setDisplayLimit(10)
-  }, [debouncedSearchTerm, selectedStage])
+  }, [searchTerm, selectedStage])
 
   // Update form when editing a client
   useEffect(() => {
@@ -484,13 +495,13 @@ export function ClientesPage() {
   }
 
   return (
-    <div className="w-full h-full space-y-6">
-      {/* Header */}
-      <div className="w-full">
+    <div className="w-full h-full space-y-6 transition-all duration-300 ease-in-out">
+      {/* Products List with smooth transition */}
+      <div className="w-full space-y-6 transition-all duration-300 ease-in-out">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Clientes</h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-1">
+            <p className="text-gray-600 dark:text-gray-400 mt-1 transition-colors duration-300 ease-in-out">
               Gerencie seus clientes e oportunidades de vendas
             </p>
           </div>
