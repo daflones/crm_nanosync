@@ -96,9 +96,10 @@ export const clientesService = {
 
     let query = supabase
       .from('clientes')
-      .select('*')
+      .select('*', { count: 'exact' })
       .eq('profile', adminId) // Filter by company
       .order('created_at', { ascending: false })
+      .limit(10000) // Increase limit to 10000 to avoid default 1000 limit
 
     if (filters?.vendedorId) {
       query = query.eq('vendedor_id', filters.vendedorId)
@@ -113,7 +114,9 @@ export const clientesService = {
       query = query.eq('classificacao', filters.classificacao)
     }
     if (filters?.search) {
-      query = query.or(`nome_contato.ilike.%${filters.search}%,nome_empresa.ilike.%${filters.search}%`)
+      // Search in multiple fields: name, company, phone, email, CPF, CNPJ
+      const searchTerm = filters.search.replace(/\D/g, '') // Remove non-digits for phone/CPF/CNPJ search
+      query = query.or(`nome_contato.ilike.%${filters.search}%,nome_empresa.ilike.%${filters.search}%,email.ilike.%${filters.search}%,whatsapp.ilike.%${searchTerm}%,telefone_empresa.ilike.%${searchTerm}%,cpf.ilike.%${searchTerm}%,cnpj.ilike.%${searchTerm}%`)
     }
 
     const { data, error } = await query

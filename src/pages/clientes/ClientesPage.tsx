@@ -17,7 +17,8 @@ import {
   Phone,
   Bot,
   Globe,
-  UserPlus
+  UserPlus,
+  Plug
 } from 'lucide-react'
 import { useClientes, useCreateCliente, useUpdateCliente, useDeleteCliente, useUpdatePipelineStage } from '@/hooks/useClientes'
 import { useVendedores } from '@/hooks/useVendedores'
@@ -106,6 +107,7 @@ type ClienteFormData = z.infer<typeof clienteSchema>
 
 export function ClientesPage() {
   const [searchTerm, setSearchTerm] = useState('')
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('')
   const [selectedStage, setSelectedStage] = useState('todos')
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
@@ -113,8 +115,18 @@ export function ClientesPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [selectedCliente, setSelectedCliente] = useState<any>(null)
   const [viewMode, setViewMode] = useState<'grid' | 'list' | 'kanban'>('grid')
+  const [displayLimit, setDisplayLimit] = useState(10) // Show 10 clients initially
 
-  const { data: clientes = [], isLoading } = useClientes()
+  // Debounce search term to avoid too many requests
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm)
+    }, 500) // Wait 500ms after user stops typing
+
+    return () => clearTimeout(timer)
+  }, [searchTerm])
+
+  const { data: clientes = [], isLoading } = useClientes({ search: debouncedSearchTerm })
   const { data: _vendedores = [] } = useVendedores()
   const createCliente = useCreateCliente()
   const updateCliente = useUpdateCliente()
@@ -157,20 +169,36 @@ export function ClientesPage() {
     { value: 'manual', label: 'Manual' },
     { value: 'site', label: 'Site' },
     { value: 'IA', label: 'IA' },
+    { value: 'integracao', label: 'Integração' },
   ]
+
+  // Helper function to format origem for display
+  const formatOrigem = (origem: string) => {
+    if (origem === 'integracao') return 'Integração'
+    if (origem === 'IA') return 'IA'
+    if (origem === 'site') return 'Site'
+    if (origem === 'manual') return 'Manual'
+    return origem
+  }
 
   const getStageCount = (stageId: string) => {
     return clientes.filter((cliente: any) => cliente.etapa_pipeline === stageId).length
   }
 
+  // Filter only by stage - search is handled by backend
   const filteredClientes = clientes.filter((cliente: any) => {
     const matchesStage = selectedStage === 'todos' || cliente.etapa_pipeline === selectedStage
-    const matchesSearch = !searchTerm || 
-      cliente.nome_contato?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      cliente.nome_empresa?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      cliente.email?.toLowerCase().includes(searchTerm.toLowerCase())
-    return matchesStage && matchesSearch
+    return matchesStage
   })
+
+  // Apply display limit for pagination
+  const displayedClientes = filteredClientes.slice(0, displayLimit)
+  const hasMore = filteredClientes.length > displayLimit
+
+  // Reset display limit when filters change
+  useEffect(() => {
+    setDisplayLimit(10)
+  }, [debouncedSearchTerm, selectedStage])
 
   // Update form when editing a client
   useEffect(() => {
@@ -492,7 +520,7 @@ export function ClientesPage() {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <input
               type="text"
-              placeholder="Buscar clientes..."
+              placeholder="Buscar por nome, empresa, telefone, email, CPF ou CNPJ..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
@@ -664,8 +692,9 @@ export function ClientesPage() {
               </p>
             </div>
           ) : (
-            <div className="divide-y divide-gray-200 dark:divide-gray-700 discrete-scroll max-h-[600px] overflow-y-auto">
-              {filteredClientes.map((cliente: any) => (
+            <>
+              <div className="divide-y divide-gray-200 dark:divide-gray-700 discrete-scroll max-h-[600px] overflow-y-auto">
+                {displayedClientes.map((cliente: any) => (
                 <div key={cliente.id} className="p-6 hover:bg-gray-50 dark:hover:bg-gray-700 border-l-4 border-l-transparent hover:border-l-primary-500 transition-all duration-200">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
@@ -700,6 +729,12 @@ export function ClientesPage() {
                               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-gray-100 text-gray-700 text-xs font-semibold">
                                 <UserPlus className="h-3.5 w-3.5" />
                                 Manual
+                              </span>
+                            )}
+                            {cliente.origem === 'integracao' && (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-orange-100 text-orange-700 text-xs font-semibold">
+                                <Plug className="h-3.5 w-3.5" />
+                                Integração
                               </span>
                             )}
                             {cliente.classificacao && (
@@ -777,8 +812,13 @@ export function ClientesPage() {
                                   <UserPlus className="h-3.5 w-3.5" />
                                   Manual
                                 </span>
+                              ) : cliente.origem === 'integracao' ? (
+                                <span className="inline-flex items-center gap-1 text-orange-700 font-semibold">
+                                  <Plug className="h-3.5 w-3.5" />
+                                  Integração
+                                </span>
                               ) : (
-                                cliente.origem || 'N/A'
+                                formatOrigem(cliente.origem) || 'N/A'
                               )}
                             </span>
                           </div>
@@ -834,7 +874,21 @@ export function ClientesPage() {
                   </div>
                 </div>
               ))}
-            </div>
+              </div>
+              
+              {/* Load More Button */}
+              {hasMore && (
+                <div className="p-6 text-center border-t border-gray-200 dark:border-gray-700">
+                  <Button
+                    variant="outline"
+                    onClick={() => setDisplayLimit(prev => prev + 10)}
+                    className="w-full sm:w-auto"
+                  >
+                    Ver mais 10 clientes ({filteredClientes.length - displayLimit} restantes)
+                  </Button>
+                </div>
+              )}
+            </>
           )}
         </div>
       )}
