@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react'
-import { Plus, Pencil, Trash, Eye, Package, X, ChevronLeft, ChevronRight, Upload, Image } from 'lucide-react'
+import { useState, useMemo, useEffect } from 'react'
+import { Plus, Pencil, Trash, Eye, Package, X, Upload, Image } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -39,9 +39,8 @@ export function ProdutosPage() {
   const [uploadingImage, setUploadingImage] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [selectedStatus, setSelectedStatus] = useState<string>('all')
-  const [currentPage, setCurrentPage] = useState(1)
+  const [displayLimit, setDisplayLimit] = useState(10) // Show 10 products initially
   const [productToDelete, setProductToDelete] = useState<string | null>(null)
-  const itemsPerPage = 12
 
   // Hooks
   const { data: produtos = [], isLoading } = useProdutos()
@@ -121,11 +120,14 @@ export function ProdutosPage() {
     }
   }, [produtos])
 
-  // Pagination
-  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage)
-  const startIndex = (currentPage - 1) * itemsPerPage
-  const endIndex = startIndex + itemsPerPage
-  const currentProducts = filteredProducts.slice(startIndex, endIndex)
+  // Pagination with "Load More"
+  const displayedProducts = filteredProducts.slice(0, displayLimit)
+  const hasMore = filteredProducts.length > displayLimit
+
+  // Reset display limit when filters change
+  useEffect(() => {
+    setDisplayLimit(10)
+  }, [searchTerm, selectedCategory, selectedStatus])
 
   // Handlers
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -420,13 +422,13 @@ export function ProdutosPage() {
         </div>
       )}
 
-      {/* Products Grid */}
-      <div className="w-full grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6">
-        {currentProducts.map((product) => (
-          <Card key={product.id} className="group hover:shadow-lg transition-shadow duration-200 flex flex-col dark:bg-gray-800">
-            <CardContent className="p-0 flex flex-col flex-1">
+      {/* Products List */}
+      <div className="w-full space-y-4">
+        {displayedProducts.map((product) => (
+          <Card key={product.id} className="group hover:shadow-lg transition-shadow duration-200 dark:bg-gray-800">
+            <CardContent className="p-0 flex flex-row">
               {/* Product Image */}
-              <div className="relative aspect-[4/3] overflow-hidden rounded-t-lg">
+              <div className="relative w-48 h-48 flex-shrink-0 overflow-hidden rounded-l-lg">
                 {product.imagem_principal ? (
                   <img
                     src={product.imagem_principal}
@@ -482,14 +484,14 @@ export function ProdutosPage() {
                   </div>
 
                   {/* Price and Category */}
-                  <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-6">
                     <div>
                       <p className="text-xl font-bold text-primary">
                         R$ {product.valor_unitario?.toFixed(2) || '0.00'}
                       </p>
                       <p className="text-xs text-gray-500">por {product.unidade}</p>
                     </div>
-                    <div className="text-right">
+                    <div className="text-center">
                       <p className="text-sm font-medium text-gray-700">
                         {product.categoria?.nome || 'Sem categoria'}
                       </p>
@@ -523,8 +525,8 @@ export function ProdutosPage() {
                   </div>
                 </div>
 
-                {/* Action Buttons - Always at bottom */}
-                <div className="flex gap-2 pt-3 mt-auto border-t border-gray-100">
+                {/* Action Buttons - Centered */}
+                <div className="flex justify-center gap-2 pt-3 mt-auto border-t border-gray-100">
                   <Button
                     size="sm"
                     onClick={(e) => {
@@ -532,7 +534,7 @@ export function ProdutosPage() {
                       e.stopPropagation()
                       handleViewProduct(product)
                     }}
-                    className="flex-1 text-xs h-8 bg-blue-200 hover:bg-blue-300 text-blue-800"
+                    className="text-xs h-8 px-4 bg-blue-200 hover:bg-blue-300 text-blue-800"
                   >
                     <Eye className="w-3 h-3 mr-1" />
                     Ver
@@ -568,10 +570,23 @@ export function ProdutosPage() {
             </CardContent>
           </Card>
         ))}
+        
+        {/* Load More Button */}
+        {hasMore && (
+          <div className="text-center py-6">
+            <Button
+              variant="outline"
+              onClick={() => setDisplayLimit(prev => prev + 10)}
+              className="w-full sm:w-auto"
+            >
+              Ver mais 10 produtos ({filteredProducts.length - displayLimit} restantes)
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Empty State */}
-      {currentProducts.length === 0 && (
+      {displayedProducts.length === 0 && (
         <Card>
           <CardContent className="p-12 text-center">
             <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
@@ -592,36 +607,6 @@ export function ProdutosPage() {
       )}
 
       {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex justify-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-            disabled={currentPage === 1}
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </Button>
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-            <Button
-              key={page}
-              variant={currentPage === page ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setCurrentPage(page)}
-            >
-              {page}
-            </Button>
-          ))}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-            disabled={currentPage === totalPages}
-          >
-            <ChevronRight className="w-4 h-4" />
-          </Button>
-        </div>
-      )}
 
       {/* Create Product Modal */}
       <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
@@ -952,58 +937,72 @@ export function ProdutosPage() {
                 </div>
               )}
 
-              <div className="grid grid-cols-2 gap-6">
-                <div className="space-y-3">
-                  <h4 className="font-semibold">Especificações</h4>
-                  {selectedProduto.especificacoes && (
-                    <div>
-                      <Label className="text-sm font-medium">Especificações Técnicas:</Label>
-                      <p className="text-sm whitespace-pre-wrap">
-                        {typeof selectedProduto.especificacoes === 'string' 
-                          ? selectedProduto.especificacoes 
-                          : JSON.stringify(selectedProduto.especificacoes, null, 2)
-                        }
-                      </p>
-                    </div>
-                  )}
-                  {selectedProduto.material && (
-                    <div>
-                      <Label className="text-sm font-medium">Material:</Label>
-                      <p className="text-sm">{selectedProduto.material}</p>
-                    </div>
-                  )}
-                  {selectedProduto.dimensoes && (
-                    <div>
-                      <Label className="text-sm font-medium">Dimensões:</Label>
-                      <p className="text-sm">{selectedProduto.dimensoes}</p>
-                    </div>
-                  )}
-                  {selectedProduto.peso && (
-                    <div>
-                      <Label className="text-sm font-medium">Peso:</Label>
-                      <p className="text-sm">{selectedProduto.peso}</p>
-                    </div>
-                  )}
-                </div>
+              {(() => {
+                const specs = selectedProduto.especificacoes
+                const hasSpecs = specs && 
+                  (typeof specs === 'string' ? (specs.trim() !== '' && specs !== '{}') : Object.keys(specs).length > 0)
+                const hasMaterial = selectedProduto.material
+                const hasDimensoes = selectedProduto.dimensoes
+                const hasPeso = selectedProduto.peso
+                const hasAnySpec = hasSpecs || hasMaterial || hasDimensoes || hasPeso
                 
-                <div className="space-y-3">
-                  <h4 className="font-semibold">Informações Comerciais</h4>
-                  <div>
-                    <Label className="text-sm font-medium">Prazo de Entrega:</Label>
-                    <p className="text-sm">{selectedProduto.prazo_entrega || '-'}</p>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium">Pedido Mínimo:</Label>
-                    <p className="text-sm">{selectedProduto.minimo_pedido || 1} {selectedProduto.unidade}</p>
-                  </div>
-                  {selectedProduto.controla_estoque && (
-                    <div>
-                      <Label className="text-sm font-medium">Estoque:</Label>
-                      <p className="text-sm">{selectedProduto.estoque_atual} unidades</p>
+                return (
+                  <div className={hasAnySpec ? "grid grid-cols-2 gap-6" : "flex justify-center"}>
+                    {hasAnySpec && (
+                      <div className="space-y-3">
+                        <h4 className="font-semibold">Especificações</h4>
+                        {hasSpecs && (
+                          <div>
+                            <Label className="text-sm font-medium">Especificações Técnicas:</Label>
+                            <p className="text-sm whitespace-pre-wrap">
+                              {typeof specs === 'string' 
+                                ? specs 
+                                : JSON.stringify(specs, null, 2)
+                              }
+                            </p>
+                          </div>
+                        )}
+                        {hasMaterial && (
+                          <div>
+                            <Label className="text-sm font-medium">Material:</Label>
+                            <p className="text-sm">{selectedProduto.material}</p>
+                          </div>
+                        )}
+                        {hasDimensoes && (
+                          <div>
+                            <Label className="text-sm font-medium">Dimensões:</Label>
+                            <p className="text-sm">{selectedProduto.dimensoes}</p>
+                          </div>
+                        )}
+                        {hasPeso && (
+                          <div>
+                            <Label className="text-sm font-medium">Peso:</Label>
+                            <p className="text-sm">{selectedProduto.peso}</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    
+                    <div className="space-y-3">
+                      <h4 className="font-semibold">Informações Comerciais</h4>
+                      <div>
+                        <Label className="text-sm font-medium">Prazo de Entrega:</Label>
+                        <p className="text-sm">{selectedProduto.prazo_entrega || '-'}</p>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium">Pedido Mínimo:</Label>
+                        <p className="text-sm">{selectedProduto.minimo_pedido || 1} {selectedProduto.unidade}</p>
+                      </div>
+                      {selectedProduto.controla_estoque && (
+                        <div>
+                          <Label className="text-sm font-medium">Estoque:</Label>
+                          <p className="text-sm">{selectedProduto.estoque_atual} unidades</p>
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              </div>
+                  </div>
+                )
+              })()}
             </div>
           )}
           <DialogFooter>

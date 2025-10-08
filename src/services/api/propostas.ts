@@ -446,6 +446,19 @@ export const propostasService = {
     // Buscar dados da proposta antes de deletar
     const proposta = await this.getById(id)
     
+    // Primeiro, deletar apenas os itens da proposta (proposta_itens)
+    // NÃO deletar produtos da tabela produtos
+    const { error: itensError } = await supabase
+      .from('proposta_itens')
+      .delete()
+      .eq('proposta_id', id)
+
+    if (itensError) {
+      console.error('Erro ao deletar itens da proposta:', itensError)
+      throw new Error(`Erro ao deletar itens da proposta: ${itensError.message}`)
+    }
+
+    // Depois, deletar a proposta
     const { error } = await supabase
       .from('propostas')
       .delete()

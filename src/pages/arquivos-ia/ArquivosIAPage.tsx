@@ -286,8 +286,47 @@ export default function ArquivosIAPage() {
     }
   }
 
-  const handleDownload = (arquivo: ArquivoIA) => {
-    window.open(arquivo.url, '_blank')
+  const handleDownload = async (arquivo: ArquivoIA) => {
+    try {
+      // Use nome_original if available, otherwise use nome with extension
+      let fileName = arquivo.nome_original || arquivo.nome
+      
+      // If fileName doesn't have extension, add it from arquivo.extensao
+      if (arquivo.extensao && !fileName.includes('.')) {
+        fileName = `${fileName}.${arquivo.extensao}`
+      }
+      
+      // Use URL field from database
+      const downloadUrl = arquivo.url || arquivo.caminho_storage
+      
+      // Fetch the file as blob to ensure proper download
+      const response = await fetch(downloadUrl)
+      
+      if (!response.ok) {
+        throw new Error('Erro ao buscar arquivo')
+      }
+      
+      const blob = await response.blob()
+      
+      // Create blob URL and download
+      const blobUrl = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = blobUrl
+      link.download = fileName
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      
+      // Clean up blob URL
+      setTimeout(() => {
+        window.URL.revokeObjectURL(blobUrl)
+      }, 100)
+      
+      toast.success('Download iniciado com sucesso')
+    } catch (error) {
+      console.error('Erro ao fazer download:', error)
+      toast.error('Erro ao fazer download do arquivo')
+    }
   }
 
   const handleUpload = async () => {
@@ -570,9 +609,18 @@ export default function ArquivosIAPage() {
                   </div>
                   
                   {/* Action buttons positioned at bottom right with proper z-index */}
-                  <div className="absolute top-2 right-2 flex space-x-1 opacity-0 group-hover:opacity-100 transition-all duration-200 z-10">
+                  <div className="absolute bottom-2 right-2 flex space-x-1 opacity-0 group-hover:opacity-100 transition-all duration-200 z-10">
                     <Button size="sm" variant="ghost" className="hover:bg-blue-100 hover:text-blue-700 bg-white/90 backdrop-blur-sm shadow-sm" onClick={() => handleViewFile(arquivo)}>
                       <Eye className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="ghost" 
+                      className="hover:bg-purple-100 hover:text-purple-700 bg-white/90 backdrop-blur-sm shadow-sm" 
+                      onClick={() => handleDownload(arquivo)}
+                      title="Download"
+                    >
+                      <Download className="h-4 w-4" />
                     </Button>
                     <Button size="sm" variant="ghost" className="hover:bg-green-100 hover:text-green-700 bg-white/90 backdrop-blur-sm shadow-sm" onClick={() => handleEditFile(arquivo)}>
                       <Edit className="h-4 w-4" />

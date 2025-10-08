@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
@@ -73,6 +73,7 @@ const initialPropostaState: PropostaCreateData = {
 export function PropostasPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [filterStatus, setFilterStatus] = useState<string>('todos')
+  const [displayLimit, setDisplayLimit] = useState(10) // Show 10 propostas initially
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isViewModalOpen, setIsViewModalOpen] = useState(false)
@@ -126,6 +127,15 @@ export function PropostasPage() {
     
     return matchesSearch && matchesStatus
   })
+
+  // Pagination with "Load More"
+  const displayedPropostas = filteredPropostas.slice(0, displayLimit)
+  const hasMore = filteredPropostas.length > displayLimit
+
+  // Reset display limit when filters change
+  useEffect(() => {
+    setDisplayLimit(10)
+  }, [searchTerm, filterStatus])
 
   const statusOptions = [
     { value: 'todos', label: 'Todos', count: propostas.length },
@@ -316,7 +326,8 @@ export function PropostasPage() {
             <p className="text-gray-400 text-sm mt-1">Tente ajustar os filtros ou criar uma nova proposta</p>
           </div>
         ) : (
-          filteredPropostas.map((proposta) => (
+          <>
+          {displayedPropostas.map((proposta) => (
             <Card key={proposta.id} className="group hover:shadow-xl transition-all duration-300 border-0 bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-800 dark:to-gray-900/50 overflow-hidden">
               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400"></div>
               
@@ -488,7 +499,21 @@ export function PropostasPage() {
                 </div>
               </CardContent>
             </Card>
-          ))
+          ))}
+          
+          {/* Load More Button */}
+          {hasMore && (
+            <div className="col-span-full text-center py-6">
+              <Button
+                variant="outline"
+                onClick={() => setDisplayLimit(prev => prev + 10)}
+                className="w-full sm:w-auto"
+              >
+                Ver mais 10 propostas ({filteredPropostas.length - displayLimit} restantes)
+              </Button>
+            </div>
+          )}
+          </>
         )}
       </div>
 
