@@ -271,12 +271,11 @@ export function ClientesPage() {
         cnpj: data.documento_tipo === 'cnpj' ? data.documento_numero : null,
         
         // Pipeline e classificação
-        etapa_pipeline: data.etapa_pipeline || 'novo',
-        classificacao: data.classificacao || 'frio',
-        origem: data.origem || 'manual',
+        etapa_pipeline: data.etapa_pipeline,
+        classificacao: data.classificacao,
+        origem: data.origem,
         
         // Campos de negócio
-        segmento_cliente: data.segmento_cliente || null,
         vendedor_id: data.vendedor_id || null,
         
         // Observações e contexto
@@ -1650,7 +1649,7 @@ export function ClientesPage() {
                       { key: 'documento', label: 'CNPJ ou CPF', value: cliente.cpf || cliente.cnpj },
                       { key: 'whatsapp', label: 'WhatsApp', value: cliente.whatsapp },
                       { key: 'email', label: 'E-mail', value: cliente.email },
-                      { key: 'contexto_cliente', label: 'Contexto', value: cliente.contexto_cliente },
+                      { key: 'contexto_cliente', label: 'Contexto', value: cliente.analise_cliente },
                       { key: 'motivacao', label: 'Motivação', value: cliente.motivacao },
                       { key: 'endereco_completo', label: 'Endereço', value: [cliente.endereco, cliente.numero, cliente.cidade, cliente.estado, cliente.cep].filter(Boolean).join(', ') },
                     ]
@@ -2008,7 +2007,7 @@ export function ClientesPage() {
                   {/* Contexto */}
                   {selectedCliente.analise_cliente && (
                     <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 p-6 rounded-xl border border-blue-200 dark:border-blue-700 shadow-sm">
-                      <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-100 mb-4">Análise do Cliente</h3>
+                      <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-100 mb-4">Contexto do Cliente</h3>
                       <div className="bg-white dark:bg-blue-900/30 p-4 rounded-lg border border-blue-200 dark:border-blue-600">
                         <p className="text-blue-800 dark:text-blue-200 text-sm whitespace-pre-wrap leading-relaxed">
                           {selectedCliente.analise_cliente}
