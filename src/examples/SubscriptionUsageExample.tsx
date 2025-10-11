@@ -34,7 +34,7 @@ export function ClientesPage() {
         <ProtectedButton
           action="create"
           feature="cliente"
-          onClick={() => console.log('Criar cliente')}
+          onClick={() => {}}
           className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center"
         >
           <Plus className="h-4 w-4 mr-2" />
@@ -51,7 +51,7 @@ export function ClientesPage() {
             {/* Botão de exportar protegido */}
             <ProtectedButton
               action="export"
-              onClick={() => console.log('Exportar clientes')}
+              onClick={() => {}}
               className="text-gray-600 hover:text-gray-900 flex items-center text-sm"
             >
               <Download className="h-4 w-4 mr-1" />
@@ -72,7 +72,7 @@ export function ClientesPage() {
               {/* Botão de editar sempre permitido para planos ativos */}
               <ProtectedButton
                 action="update"
-                onClick={() => console.log('Editar cliente')}
+                onClick={() => {}}
                 className="text-blue-600 hover:text-blue-900 p-1"
               >
                 <Edit className="h-4 w-4" />
@@ -82,7 +82,7 @@ export function ClientesPage() {
               <ProtectedButton
                 action="delete"
                 feature="cliente"
-                onClick={() => console.log('Excluir cliente')}
+                onClick={() => {}}
                 className="text-red-600 hover:text-red-900 p-1"
               >
                 <Trash2 className="h-4 w-4" />
@@ -175,7 +175,6 @@ export function ClienteFormModal({ isOpen, onClose }: { isOpen: boolean; onClose
               <ProtectedButton
                 action="create"
                 onClick={() => {
-                  console.log('Salvar cliente');
                   onClose();
                 }}
                 className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"

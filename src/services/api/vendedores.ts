@@ -249,18 +249,13 @@ export const vendedoresService = {
 
   async create(vendedorData: VendedorCreateData): Promise<Vendedor> {
     try {
-      console.log('🚀 Iniciando criação de vendedor via Edge Function:', vendedorData.nome)
-      
       // Get current admin's profile ID
       const { data: { user: currentUser } } = await supabase.auth.getUser()
       if (!currentUser) {
         throw new Error('Usuário não autenticado')
       }
 
-      console.log('👤 Admin atual:', currentUser.id)
-
       // Use Edge Function create-vendedor
-      console.log('🚀 Chamando Edge Function create-vendedor...')
       const response = await fetch(`${supabase.supabaseUrl}/functions/v1/create-vendedor`, {
         method: 'POST',
         headers: {
@@ -280,13 +275,11 @@ export const vendedoresService = {
       }
 
       const result = await response.json()
-      console.log('✅ Edge Function executada com sucesso:', result)
 
       // Return the vendedor data from Edge Function response
       const vendedorResult = result.vendedor
 
       // Registrar atividade
-      console.log('📋 Registrando atividade...')
       try {
         await AtividadeService.criar(
           'vendedor',
@@ -294,12 +287,9 @@ export const vendedoresService = {
           vendedorResult,
           `Vendedor criado: ${vendedorResult.nome || vendedorData.nome} (${vendedorResult.email || vendedorData.email})`
         )
-        console.log('✅ Atividade registrada com sucesso')
       } catch (atividadeError) {
         console.error('⚠️ Erro ao registrar atividade (não crítico):', atividadeError)
       }
-
-      console.log('🎉 Processo de criação de vendedor concluído com sucesso!')
       return vendedorResult
 
     } catch (error) {
@@ -341,16 +331,12 @@ export const vendedoresService = {
 
   async delete(id: string): Promise<void> {
     try {
-      console.log('🗑️ Iniciando processo de deleção do vendedor:', id)
-      
       // Buscar dados do vendedor antes de deletar
       const vendedorCompleto = await this.getById(id)
       
       if (!vendedorCompleto) {
         throw new Error('Vendedor não encontrado')
       }
-
-      console.log('📋 Dados do vendedor encontrados:', vendedorCompleto.nome)
 
       // Buscar o vendedor para obter o user_id
       const { data: vendedor } = await supabase
@@ -360,10 +346,8 @@ export const vendedoresService = {
         .single()
 
       const userId = vendedor?.user_id
-      console.log('👤 User ID encontrado:', userId)
 
       if (!userId) {
-        console.log('⚠️ Vendedor sem user_id, deletando apenas da tabela vendedores')
         
         // Se não tem user_id, deletar apenas da tabela vendedores
         const { error: vendedorError } = await supabase
@@ -376,10 +360,7 @@ export const vendedoresService = {
           throw new Error(`Erro ao deletar vendedor: ${vendedorError.message}`)
         }
       } else {
-        console.log('🔄 Usando Edge Function delete-vendedor para deleção completa')
-        
         // Step 1: Primeiro, remover a referência vendedor_id do profile para evitar constraint
-        console.log('🔗 Removendo referência vendedor_id do profile...')
         const { error: updateProfileError } = await supabaseAdmin
           .from('profiles')
           .update({ vendedor_id: null })
@@ -387,12 +368,9 @@ export const vendedoresService = {
 
         if (updateProfileError) {
           console.error('⚠️ Erro ao remover referência vendedor_id (continuando):', updateProfileError)
-        } else {
-          console.log('✅ Referência vendedor_id removida do profile')
         }
 
         // Step 2: Deletar da tabela vendedores
-        console.log('🗑️ Deletando da tabela vendedores...')
         const { error: vendedorError } = await supabase
           .from('vendedores')
           .delete()
@@ -402,10 +380,7 @@ export const vendedoresService = {
           console.error('❌ Erro ao deletar vendedor:', vendedorError)
           throw new Error(`Erro ao deletar vendedor: ${vendedorError.message}`)
         }
-        console.log('✅ Vendedor deletado da tabela vendedores')
-
         // Step 3: Usar Edge Function para deletar profile e auth user
-        console.log('🚀 Chamando Edge Function delete-vendedor...')
         try {
           const response = await fetch(`${supabase.supabaseUrl}/functions/v1/delete-vendedor`, {
             method: 'POST',
@@ -423,7 +398,6 @@ export const vendedoresService = {
           }
 
           const result = await response.json()
-          console.log('✅ Edge Function executada com sucesso:', result.message)
         } catch (edgeFunctionError) {
           console.error('⚠️ Erro na Edge Function (não crítico):', edgeFunctionError)
           // Não falhar aqui, pois o vendedor já foi deletado da tabela principal
@@ -431,7 +405,6 @@ export const vendedoresService = {
       }
 
       // Registrar atividade
-      console.log('📝 Registrando atividade...')
       try {
         await AtividadeService.deletar(
           'vendedor',
@@ -439,12 +412,9 @@ export const vendedoresService = {
           vendedorCompleto,
           `Vendedor deletado completamente: ${vendedorCompleto.nome} (${vendedorCompleto.email}) - Removido do sistema, perfil e autenticação`
         )
-        console.log('✅ Atividade registrada com sucesso')
       } catch (atividadeError) {
         console.error('⚠️ Erro ao registrar atividade (não crítico):', atividadeError)
       }
-
-      console.log('🎉 Processo de deleção concluído com sucesso!')
 
     } catch (error) {
       console.error('❌ Erro ao deletar vendedor completamente:', error)

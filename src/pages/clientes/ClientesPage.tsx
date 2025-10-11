@@ -290,8 +290,6 @@ export function ClientesPage() {
         expectativa: data.expectativa || null,
       }
 
-      console.log('📤 Enviando dados para criação:', clienteData)
-      
       const result = await createCliente.mutateAsync(clienteData)
       
       setIsCreateModalOpen(false)
@@ -365,8 +363,6 @@ export function ClientesPage() {
         expectativa: data.expectativa || null,
       }
 
-      console.log('📤 Enviando dados para atualização:', clienteData)
-      
       await updateCliente.mutateAsync({
         id: selectedCliente.id,
         data: clienteData

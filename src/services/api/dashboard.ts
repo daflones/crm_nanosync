@@ -424,8 +424,6 @@ export const getRecentProposals = async (limit: number = 5, vendedorId?: string 
     // Determine company profile ID for filtering
     const adminId = currentProfile.admin_profile_id || currentProfile.id
 
-    console.log('=== BUSCANDO PROPOSTAS RECENTES ===')
-    
     // Buscar propostas com filtro multi-tenant
     let propostasQuery = supabase
       .from('propostas')
@@ -455,16 +453,12 @@ export const getRecentProposals = async (limit: number = 5, vendedorId?: string 
       return []
     }
 
-    console.log('Propostas encontradas:', propostas?.length || 0)
-
     if (!propostas || propostas.length === 0) {
-      console.log('Nenhuma proposta encontrada')
       return []
     }
 
     // Buscar clientes separadamente com filtro multi-tenant
     const clienteIds = [...new Set(propostas.map((p: any) => p.cliente_id).filter(Boolean))]
-    console.log('IDs de clientes para buscar:', clienteIds)
     
     const { data: clientes } = await supabase
       .from('clientes')
@@ -472,12 +466,8 @@ export const getRecentProposals = async (limit: number = 5, vendedorId?: string 
       .eq('profile', adminId)
       .in('id', clienteIds)
 
-    console.log('Clientes encontrados:', clientes?.length || 0)
-    console.log('Dados dos clientes:', clientes)
-
     // Buscar vendedores separadamente com filtro multi-tenant
     const vendedorIds = [...new Set(propostas.map((p: any) => p.vendedor_id).filter(Boolean))]
-    console.log('IDs de vendedores para buscar:', vendedorIds)
     
     const { data: vendedores } = await supabase
       .from('vendedores')
@@ -485,18 +475,12 @@ export const getRecentProposals = async (limit: number = 5, vendedorId?: string 
       .eq('profile', adminId)
       .in('id', vendedorIds)
 
-    console.log('Vendedores encontrados:', vendedores?.length || 0)
-    console.log('Dados dos vendedores:', vendedores)
-
     // Criar mapas para acesso rápido
     const clientesMap = new Map(clientes?.map((c: any) => [c.id, {
       nome_contato: c.nome_contato,
       nome_empresa: c.nome_empresa
     }]) || [])
     const vendedoresMap = new Map(vendedores?.map((v: any) => [v.id, v.nome]) || [])
-    
-    console.log('Mapa de clientes:', Array.from(clientesMap.entries()))
-    console.log('Mapa de vendedores:', Array.from(vendedoresMap.entries()))
 
     const result = propostas.map((proposta: any) => {
       const clienteData = clientesMap.get(proposta.cliente_id) || {} as any
@@ -517,12 +501,6 @@ export const getRecentProposals = async (limit: number = 5, vendedorId?: string 
         }
       }
       
-      console.log(`Proposta ${proposta.numero_proposta}:`)
-      console.log(`  - cliente_id: ${proposta.cliente_id}`)
-      console.log(`  - vendedor_id: ${proposta.vendedor_id}`)
-      console.log(`  - cliente_nome formatado: ${clienteNome}`)
-      console.log(`  - vendedor_nome encontrado: ${vendedorNome}`)
-      
       return {
         id: proposta.id,
         numero_proposta: proposta.titulo || proposta.numero_proposta || `PROP-${proposta.id.slice(0, 8)}`,
@@ -534,7 +512,6 @@ export const getRecentProposals = async (limit: number = 5, vendedorId?: string 
       }
     })
 
-    console.log('Resultado final:', result)
     return result
 
   } catch (error) {

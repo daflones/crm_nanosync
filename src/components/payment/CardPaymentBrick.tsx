@@ -37,7 +37,7 @@ export function CardPaymentBrick({ amount, onSubmit, onReady, onError }: CardPay
       try {
         window.cardPaymentBrickController.unmount()
       } catch (e) {
-        console.log('Erro ao desmontar brick anterior:', e)
+        // Brick unmount error
       }
     }
 
@@ -48,14 +48,10 @@ export function CardPaymentBrick({ amount, onSubmit, onReady, onError }: CardPay
       try {
         setIsInitialized(true)
         
-        console.log('Inicializando Mercado Pago com Public Key:', publicKey?.substring(0, 20) + '...')
-        
         // Inicializar Mercado Pago
         const mp = new window.MercadoPago(publicKey, {
           locale: 'pt-BR'
         })
-        
-        console.log('Mercado Pago inicializado com sucesso')
 
         // Criar bricks builder
         const bricksBuilder = mp.bricks()
@@ -72,12 +68,6 @@ export function CardPaymentBrick({ amount, onSubmit, onReady, onError }: CardPay
             },
             onSubmit: async (formData: any, additionalData: any) => {
               try {
-                console.log('Dados do formulário recebidos:', {
-                  payment_method_id: formData.payment_method_id,
-                  transaction_amount: formData.transaction_amount,
-                  installments: formData.installments,
-                  has_token: !!formData.token
-                })
                 await onSubmit(formData, additionalData)
               } catch (error) {
                 console.error('Erro ao processar pagamento:', error)
@@ -155,7 +145,7 @@ export function CardPaymentBrick({ amount, onSubmit, onReady, onError }: CardPay
         try {
           window.cardPaymentBrickController.unmount()
         } catch (e) {
-          console.log('Erro ao desmontar:', e)
+          // Unmount error
         }
       }
     }

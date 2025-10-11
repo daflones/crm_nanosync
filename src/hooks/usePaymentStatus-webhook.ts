@@ -20,8 +20,6 @@ export function usePaymentStatus(): PaymentStatusHook {
     if (!user?.id) return false;
 
     try {
-      console.log('🔍 Verificando status do plano_ativo no banco...');
-      
       const { data, error } = await supabase
         .from('profiles')
         .select('plano_ativo')
@@ -33,10 +31,7 @@ export function usePaymentStatus(): PaymentStatusHook {
         return false;
       }
 
-      console.log('📊 Status atual do plano_ativo:', data?.plano_ativo);
-      
       if (data?.plano_ativo === true) {
-        console.log('✅ Plano já está ativo!');
         setIsPaymentApproved(true);
         setIsLoading(false);
         return true;
@@ -51,7 +46,6 @@ export function usePaymentStatus(): PaymentStatusHook {
 
   // Função para iniciar listener do plano_ativo na tabela profiles
   const startRealtimeListener = (paymentId: string) => {
-    console.log('🚀 Iniciando verificação de plano_ativo para pagamento:', paymentId);
     setIsLoading(true);
     setError(null);
     
@@ -86,10 +80,7 @@ export function usePaymentStatus(): PaymentStatusHook {
           filter: `id=eq.${user.id}`
         },
         (payload: any) => {
-          console.log('📡 Atualização recebida na tabela profiles:', payload);
-          
           if (payload.new && payload.new.plano_ativo === true) {
-            console.log('✅ Plano ativado via Realtime!');
             setIsPaymentApproved(true);
             setIsLoading(false);
             clearInterval(pollInterval);
@@ -98,12 +89,9 @@ export function usePaymentStatus(): PaymentStatusHook {
         }
       )
       .subscribe();
-
-    console.log('👂 Polling e Realtime listener ativos para plano_ativo');
       
     // Cleanup function
     return () => {
-      console.log('🛑 Parando verificação de plano_ativo');
       clearInterval(pollInterval);
       channel.unsubscribe();
       setIsLoading(false);

@@ -284,24 +284,18 @@ export default function VendedoresPage() {
   }
 
   const handleCreateVendedor = async () => {
-    console.log('=== INICIANDO VALIDAÇÕES ===')
-    console.log('Dados do formulário:', formData)
-    
     // Validações básicas - apenas campos obrigatórios
     if (!formData.nome.trim()) {
-      console.log('❌ Erro: Nome vazio')
       toast.error('Nome é obrigatório')
       return
     }
     
     if (!formData.whatsapp.trim()) {
-      console.log('❌ Erro: WhatsApp vazio')
       toast.error('WhatsApp é obrigatório')
       return
     }
     
     if (!formData.email.trim()) {
-      console.log('❌ Erro: Email vazio')
       toast.error('Email é obrigatório')
       return
     }
@@ -309,46 +303,36 @@ export default function VendedoresPage() {
     // Validar formato do email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(formData.email.trim())) {
-      console.log('❌ Erro: Email inválido:', formData.email)
       toast.error('Email deve ter um formato válido')
       return
     }
     
     if (!formData.senha.trim()) {
-      console.log('❌ Erro: Senha vazia')
       toast.error('Senha é obrigatória')
       return
     }
     
     if (formData.senha.length < 6) {
-      console.log('❌ Erro: Senha muito curta:', formData.senha.length)
       toast.error('Senha deve ter pelo menos 6 caracteres')
       return
     }
 
     if (formData.segmentos_principais.length === 0) {
-      console.log('❌ Erro: Nenhum segmento principal selecionado')
       toast.error('Selecione pelo menos um segmento principal')
       return
     }
 
     if (formData.regioes_atendimento.length === 0) {
-      console.log('❌ Erro: Nenhuma região selecionada')
       toast.error('Selecione pelo menos uma região de atendimento')
       return
     }
 
-    console.log('✅ Todas as validações passaram')
-
     // Verificar se email já existe
     const emailExists = vendedores.some(v => v.email?.toLowerCase() === formData.email.toLowerCase())
     if (emailExists) {
-      console.log('❌ Erro: Email já existe:', formData.email)
       toast.error('Este email já está sendo usado por outro vendedor')
       return
     }
-
-    console.log('✅ Email disponível')
 
     try {
       const vendedorData = {
@@ -374,11 +358,7 @@ export default function VendedoresPage() {
         horarios_vendedor: formData.horarios_vendedor
       }
 
-      console.log('Dados sendo enviados:', vendedorData)
-
       const newVendedor = await createVendedor.mutateAsync(vendedorData)
-      
-      console.log('Vendedor criado:', newVendedor)
 
       // Create notification
       try {
@@ -432,9 +412,6 @@ export default function VendedoresPage() {
   }
 
   const handleEditVendedor = (vendedor: Vendedor) => {
-    console.log('=== DEBUG EDIT VENDEDOR ===');
-    console.log('Vendedor completo:', vendedor);
-    console.log('horarios_vendedor:', vendedor.horarios_vendedor);
     setSelectedVendedor(vendedor)
     setFormData({
       nome: vendedor.nome || '',

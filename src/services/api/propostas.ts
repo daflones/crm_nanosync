@@ -423,8 +423,6 @@ export const propostasService = {
       cleanedUpdates.titulo = propostaAnterior.titulo
     }
 
-    console.log('Dados sendo enviados para atualização:', cleanedUpdates)
-
     // Atualizar proposta
     const { data, error } = await supabase
       .from('propostas')

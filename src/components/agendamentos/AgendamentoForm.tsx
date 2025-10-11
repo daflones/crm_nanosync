@@ -261,24 +261,14 @@ export function AgendamentoForm({ agendamento, clientes, vendedores, onSubmit, o
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     
-    console.log('=== FORM SUBMIT DEBUG ===')
-    console.log('Form data:', formData)
-    console.log('cliente_id:', formData.cliente_id)
-    console.log('vendedor_id:', formData.vendedor_id)
-    console.log('titulo:', formData.titulo)
-    console.log('data_inicio:', formData.data_inicio)
-    console.log('data_fim:', formData.data_fim)
-    
     // Validações básicas
     if (!formData.cliente_id || !formData.vendedor_id || !formData.titulo || !formData.data_inicio || !formData.data_fim) {
-      console.log('Validation failed - missing required fields')
       toast.error('Preencha todos os campos obrigatórios')
       return
     }
 
     // Validar se data_fim é posterior a data_inicio
     if (new Date(formData.data_fim) <= new Date(formData.data_inicio)) {
-      console.log('Validation failed - end date before start date')
       toast.error('A data/hora de fim deve ser posterior à data/hora de início')
       return
     }
@@ -313,10 +303,8 @@ export function AgendamentoForm({ agendamento, clientes, vendedores, onSubmit, o
       user_id: formData.user_id || ''
     }
 
-    console.log('Calling onSubmit with cleaned data:', cleanFormData)
     try {
       onSubmit(cleanFormData)
-      console.log('onSubmit called successfully')
     } catch (error) {
       console.error('Error calling onSubmit:', error)
     }

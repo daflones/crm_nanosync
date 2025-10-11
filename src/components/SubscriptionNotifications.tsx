@@ -26,13 +26,11 @@ export function SubscriptionNotifications() {
   useEffect(() => {
     // Aguardar carregamento do plano ativo
     if (planoLoading) {
-      console.log('SubscriptionNotifications: Aguardando carregamento do plano...');
       return;
     }
     
     // Se o usuário tem plano ativo, não mostrar nenhum popup
     if (planoAtivo) {
-      console.log('✅ SubscriptionNotifications: Usuário tem plano ativo, ocultando popups');
       // Garantir que os popups estejam fechados
       setNotifications(prev => ({
         ...prev,
@@ -43,19 +41,8 @@ export function SubscriptionNotifications() {
     }
 
     if (subscription.isLoading) {
-      console.log('SubscriptionNotifications: Aguardando carregamento da subscription...');
       return;
     }
-
-    console.log('🔍 SubscriptionNotifications: Verificando condições', {
-      planoAtivo,
-      subscriptionStatus: subscription.status,
-      planId: subscription.planId,
-      expiresAt: subscription.expiresAt,
-      isActive: subscription.isActive,
-      dismissedInactive: notifications.dismissedInactive,
-      dismissedExpired: notifications.dismissedExpired
-    });
 
     const now = new Date();
     const hasExpiredPlan = subscription.expiresAt && new Date(subscription.expiresAt) < now;
@@ -63,38 +50,23 @@ export function SubscriptionNotifications() {
     // Condições mais flexíveis para usuários sem plano
     const hasNeverSubscribed = !subscription.planId && subscription.status === 'inactive';
     const hasInactivePlan = !subscription.isActive && !planoAtivo;
-    
-    console.log('📊 SubscriptionNotifications: Análise das condições', {
-      hasExpiredPlan,
-      hasNeverSubscribed,
-      hasInactivePlan,
-      dismissedInactive: notifications.dismissedInactive,
-      dismissedExpired: notifications.dismissedExpired,
-      shouldShowInactive: (hasNeverSubscribed || hasInactivePlan) && !notifications.dismissedInactive,
-      shouldShowExpired: hasExpiredPlan && !notifications.dismissedExpired
-    });
 
     // Mostrar popup para usuários que nunca assinaram OU que têm plano inativo
     if ((hasNeverSubscribed || hasInactivePlan) && !notifications.dismissedInactive) {
-      console.log('SubscriptionNotifications: Agendando popup de plano inativo em 3 segundos');
       setTimeout(() => {
-        console.log('SubscriptionNotifications: Mostrando popup de plano inativo');
         setNotifications(prev => ({ ...prev, showInactivePopup: true }));
       }, 3000); // Mostrar após 3 segundos
     }
 
     // Mostrar popup para usuários com assinatura expirada
     if (hasExpiredPlan && !notifications.dismissedExpired) {
-      console.log('SubscriptionNotifications: Agendando popup de plano expirado em 2 segundos');
       setTimeout(() => {
-        console.log('SubscriptionNotifications: Mostrando popup de plano expirado');
         setNotifications(prev => ({ ...prev, showExpiredPopup: true }));
       }, 2000); // Mostrar após 2 segundos
     }
   }, [subscription, notifications.dismissedInactive, notifications.dismissedExpired, planoAtivo, planoLoading]);
 
   const dismissInactivePopup = () => {
-    console.log('❌ SubscriptionNotifications: Dispensando popup de plano inativo');
     setNotifications(prev => ({
       ...prev,
       showInactivePopup: false,
@@ -133,13 +105,6 @@ export function SubscriptionNotifications() {
       }
     }
     
-    console.log('💾 SubscriptionNotifications: Estado do localStorage', {
-      dismissedInactive,
-      dismissedExpired,
-      dismissedInactiveTime,
-      timeRemaining: dismissedInactiveTime ? Math.max(0, parseInt(dismissedInactiveTime) - new Date().getTime()) : 0
-    });
-    
     setNotifications(prev => ({
       ...prev,
       dismissedInactive,
@@ -160,7 +125,7 @@ export function SubscriptionNotifications() {
         showInactivePopup: false,
         showExpiredPopup: false
       }));
-      console.log('SubscriptionNotifications: Popups resetados!');
+      // Popups resetados
     };
   }, []);
 

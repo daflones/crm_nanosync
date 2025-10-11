@@ -349,8 +349,6 @@ export const produtosService = {
   },
 
   async delete(id: string): Promise<void> {
-    console.log('Deletando produto com ID:', id)
-    
     // Buscar dados do produto antes de deletar
     const produto = await this.getById(id)
     
@@ -395,7 +393,5 @@ export const produtosService = {
         `Produto deletado: ${produto.nome} (${produto.codigo})`
       )
     }
-    
-    console.log('Produto deletado com sucesso:', id)
   }
 }

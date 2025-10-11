@@ -47,15 +47,6 @@ export const useArquivosStats = () => {
         const maxStorage = 500 * 1024 * 1024 * 1024 // 500GB in bytes
         const availableSpace = maxStorage - totalSize
         
-        console.log('Storage calculation:', {
-          maxStorage,
-          totalSize,
-          availableSpace,
-          maxStorageFormatted: `${maxStorage / (1024 * 1024 * 1024)} GB`,
-          totalSizeFormatted: `${totalSize / (1024 * 1024)} MB`,
-          availableSpaceFormatted: `${availableSpace / (1024 * 1024 * 1024)} GB`
-        })
-        
         // Calculate today's downloads from downloaded_at column
         const today = new Date().toISOString().split('T')[0]
         const todayDownloads = allFiles.filter(file => 

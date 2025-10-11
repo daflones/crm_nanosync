@@ -192,8 +192,6 @@ export function useDisconnectWhatsApp() {
 export function useDeleteWhatsAppInstance() {
   return useMutation({
     mutationFn: async (instanceName: string) => {
-      console.log('Iniciando processo de remoção da instância:', instanceName)
-      
       // 1. Deletar registro do Supabase primeiro
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
@@ -217,13 +215,11 @@ export function useDeleteWhatsAppInstance() {
             .eq('id', adminId)
             
           if (error) throw new Error('Erro ao limpar dados do Supabase')
-          console.log('✅ Dados removidos do Supabase')
         }
       }
       
       // 2. Deletar instância da Evolution API
       await whatsappService.deleteInstance(instanceName)
-      console.log('✅ Instância removida da Evolution API')
       
       // 3. Verificar se foi realmente deletada
       const instance = await whatsappService.getInstanceByName(instanceName)
@@ -235,7 +231,6 @@ export function useDeleteWhatsAppInstance() {
     },
     onSuccess: async () => {
       toast.success('Instância WhatsApp removida com sucesso!')
-      console.log('🔄 Recarregando página...')
       
       // Recarregar página após deletar
       setTimeout(() => {

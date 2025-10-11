@@ -244,8 +244,6 @@ export const clientesService = {
       updated_at: new Date().toISOString()
     }
 
-    console.log('🔄 Inserindo cliente no banco:', insertData)
-
     const { data, error } = await supabase
       .from('clientes')
       .insert(insertData)

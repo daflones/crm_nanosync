@@ -233,7 +233,6 @@ function Planos() {
   useEffect(() => {
     // Se saiu da página de payment-status, parar verificação
     if (currentStep !== 'payment-status' && cleanupFunction) {
-      console.log('🛑 Saindo da página PIX - parando verificação de status');
       cleanupFunction();
       setCleanupFunction(null);
     }
@@ -363,9 +362,6 @@ function Planos() {
       // Chamar API do Mercado Pago diretamente
       const accessToken = import.meta.env.VITE_MERCADOPAGO_ACCESS_TOKEN;
       
-      console.log('Verificando token:', accessToken ? 'Token encontrado' : 'Token não encontrado');
-      console.log('Variáveis de ambiente disponíveis:', Object.keys(import.meta.env).filter(key => key.includes('MERCADO')));
-      
       if (!accessToken) {
         throw new Error('Token do Mercado Pago não configurado. Verifique VITE_MERCADOPAGO_ACCESS_TOKEN no arquivo .env');
       }
@@ -387,11 +383,6 @@ function Planos() {
         }
       };
 
-      console.log('CPF enviado para Mercado Pago:', cleanDocument);
-      console.log('Dados do pagador:', mercadoPagoPayload.payer);
-
-      console.log('Enviando para função Supabase:', mercadoPagoPayload);
-
       const response = await supabase.functions.invoke('create-payment', {
         body: {
           paymentData: mercadoPagoPayload,
@@ -409,8 +400,6 @@ function Planos() {
       if (!data) {
         throw new Error('Resposta vazia da função');
       }
-
-      console.log('Resposta PIX Mercado Pago:', data);
 
       // Usar QR Code em base64 diretamente da resposta do Mercado Pago
       const qrCodeBase64 = data.point_of_interaction?.transaction_data?.qr_code_base64;
@@ -744,7 +733,7 @@ function Planos() {
                           }
                         }}
                         onReady={() => {
-                          console.log('Formulário de pagamento pronto')
+                          // Formulário pronto
                         }}
                         onError={(error) => {
                           console.error('Erro no formulário:', error)

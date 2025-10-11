@@ -71,8 +71,6 @@ export function usePaymentStatus(): PaymentStatusHook {
 
       // Função para iniciar listener do Supabase Realtime
       const startRealtimeListener = (paymentId: string) => {
-        console.log('Iniciando listener Realtime para payment ID:', paymentId);
-        
         // Configurar listener para mudanças na tabela pagamentos
         const channel = supabase
           .channel('payment-updates')
@@ -85,8 +83,6 @@ export function usePaymentStatus(): PaymentStatusHook {
               filter: `mercadopago_payment_id=eq.${paymentId}`
             },
             (payload: any) => {
-              console.log('Atualização recebida via Realtime:', payload);
-              
               if (payload.new) {
                 const newPayment = payload.new as any;
                 setPayment({
@@ -101,7 +97,6 @@ export function usePaymentStatus(): PaymentStatusHook {
                 });
                 
                 if (newPayment.status === 'approved') {
-                  console.log('Pagamento aprovado via webhook!');
                   // Cleanup do listener
                   channel.unsubscribe();
                 }
@@ -202,8 +197,6 @@ export function usePaymentStatus(): PaymentStatusHook {
           filter: `mercadopago_payment_id=eq.${paymentId}`
         },
         (payload: any) => {
-          console.log('Atualização recebida via Realtime:', payload);
-          
           if (payload.new) {
             const newPayment = payload.new as any;
             setPayment({
@@ -218,7 +211,6 @@ export function usePaymentStatus(): PaymentStatusHook {
             });
             
             if (newPayment.status === 'approved') {
-              console.log('Pagamento aprovado via webhook!');
               // Cleanup do listener
               channel.unsubscribe();
             }
@@ -247,7 +239,6 @@ export function usePaymentStatus(): PaymentStatusHook {
           filter: `user_id=eq.${user.id}`
         },
         (payload: any) => {
-          console.log('Pagamento atualizado via realtime:', payload);
           const updatedPayment = payload.new;
           setPayment({
             id: updatedPayment.id,

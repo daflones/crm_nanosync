@@ -55,11 +55,9 @@ function AppContent() {
   // Initialize real-time notifications
   const { isConnected } = useNotificacoesRealTime()
   
-  // Log connection status
+  // Connection status tracking
   React.useEffect(() => {
-    if (isConnected) {
-      console.log('✅ Notificações em tempo real conectadas')
-    }
+    // Notifications connected
   }, [isConnected])
 
   // Timeout para evitar loading infinito (baseado no exemplo)

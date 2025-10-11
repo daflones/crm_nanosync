@@ -172,9 +172,6 @@ export const verifyCurrentPassword = async (email: string, currentPassword: stri
 // Atualizar perfil
 export const updateProfile = async (userId: string, profile: any) => {
   try {
-    console.log('Atualizando perfil para userId:', userId)
-    console.log('Dados do perfil:', profile)
-    
     const updateData: any = {
       full_name: profile.full_name,
       cargo: profile.cargo,
@@ -185,8 +182,6 @@ export const updateProfile = async (userId: string, profile: any) => {
     if (profile.phone && profile.phone.trim()) {
       updateData.telefone = profile.phone
     }
-    
-    console.log('Dados para update:', updateData)
     
     const { data, error } = await supabase
       .from('profiles')
@@ -199,7 +194,6 @@ export const updateProfile = async (userId: string, profile: any) => {
       console.error('Erro do Supabase:', error)
     }
     
-    console.log('Resultado:', { data, error })
     return { data, error }
   } catch (error) {
     console.error('Erro ao atualizar perfil:', error)

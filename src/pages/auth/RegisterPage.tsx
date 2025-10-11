@@ -50,9 +50,7 @@ export function RegisterPage() {
     if (!validateForm()) return
 
     try {
-      console.log('Iniciando processo de cadastro...')
       await signUp(formData.email, formData.password, formData.fullName)
-      console.log('Cadastro finalizado, redirecionando...')
       toast.success('Conta criada com sucesso! Verifique seu e-mail para confirmar sua conta antes de fazer login.')
       navigate('/login')
     } catch (error: any) {

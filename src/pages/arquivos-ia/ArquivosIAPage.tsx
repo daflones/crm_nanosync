@@ -504,7 +504,7 @@ export default function ArquivosIAPage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos</SelectItem>
-            {(clientes as any[]).map((cliente: any) => (
+            {Array.isArray(clientes) && clientes.map((cliente: any) => (
               <SelectItem key={cliente.id} value={cliente.id}>
                 {cliente.nome_empresa || cliente.nome_contato || 'Cliente'}
               </SelectItem>
@@ -878,7 +878,7 @@ export default function ArquivosIAPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">Nenhum cliente</SelectItem>
-                    {(clientes as any[]).map((cliente: any) => (
+                    {Array.isArray(clientes) && clientes.map((cliente: any) => (
                       <SelectItem key={cliente.id} value={cliente.id}>
                         {cliente.nome_contato || cliente.nome_empresa}
                       </SelectItem>

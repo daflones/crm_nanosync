@@ -129,7 +129,7 @@ export function NotificationProvider({ children }: NotificationProviderProps) {
 
   const playSound = (type: 'success' | 'error' | 'warning' | 'info') => {
     if (sounds[type]) {
-      sounds[type].play().catch(err => console.log('Erro ao tocar som:', err))
+      sounds[type].play().catch(() => {})
     }
   }
 

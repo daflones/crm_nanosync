@@ -184,7 +184,6 @@ export function useSubscriptionStatus(): SubscriptionStatus {
           filter: `id=eq.${user.id}`,
         },
         (payload: any) => {
-          console.log('Mudança detectada no plano:', payload);
           checkSubscriptionStatus();
         }
       )
