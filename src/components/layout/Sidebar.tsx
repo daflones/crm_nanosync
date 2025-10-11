@@ -135,15 +135,7 @@ export function Sidebar() {
 
   const handleDashboardClick = (e: React.MouseEvent) => {
     e.preventDefault()
-    
-    if (location.pathname === '/app/dashboard') {
-      window.location.reload()
-    } else {
-      navigate('/app/dashboard')
-      setTimeout(() => {
-        window.location.reload()
-      }, 100)
-    }
+    navigate('/app/dashboard')
   }
 
   const isAdmin = user?.role === 'admin'

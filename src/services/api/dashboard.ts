@@ -102,93 +102,113 @@ export const getDashboardStats = async (vendedorId?: string | null, isAdmin?: bo
     const tomorrow = new Date(today)
     tomorrow.setDate(tomorrow.getDate() + 1)
 
-    // Buscar dados das tabelas com filtros multi-tenant
-    let clientesQuery = supabase.from('clientes').select('*').eq('profile', adminId)
-    let propostasQuery = supabase.from('propostas').select('*').eq('profile', adminId)
-    let agendamentosQuery = supabase.from('agendamentos').select('*').eq('profile', adminId)
+    // OTIMIZADO: Usar contagens diretas do Supabase (muito mais rápido)
     
-    // Se não for admin, filtrar também por vendedor
-    if (!isAdmin && vendedorId) {
-      clientesQuery = clientesQuery.eq('vendedor_id', vendedorId)
-      propostasQuery = propostasQuery.eq('vendedor_id', vendedorId)
-      agendamentosQuery = agendamentosQuery.eq('vendedor_id', vendedorId)
-    }
+    // Contagens de clientes
+    let clientesBaseQuery = supabase.from('clientes').select('*', { count: 'exact', head: true }).eq('profile', adminId)
+    if (!isAdmin && vendedorId) clientesBaseQuery = clientesBaseQuery.eq('vendedor_id', vendedorId)
     
-    const { data: clientesData } = await clientesQuery
-    const { data: propostasData } = await propostasQuery
-    const { data: agendamentosData } = await agendamentosQuery
+    const [
+      { count: totalClientes },
+      { count: clientesAtivos },
+      { count: clientesNovos }
+    ] = await Promise.all([
+      clientesBaseQuery,
+      supabase.from('clientes').select('*', { count: 'exact', head: true })
+        .eq('profile', adminId)
+        .not('etapa_pipeline', 'in', '(perdido,inativo)')
+        .then(r => !isAdmin && vendedorId ? supabase.from('clientes').select('*', { count: 'exact', head: true }).eq('profile', adminId).eq('vendedor_id', vendedorId).not('etapa_pipeline', 'in', '(perdido,inativo)') : r),
+      supabase.from('clientes').select('*', { count: 'exact', head: true })
+        .eq('profile', adminId)
+        .gte('created_at', startOfMonth.toISOString())
+        .then(r => !isAdmin && vendedorId ? supabase.from('clientes').select('*', { count: 'exact', head: true }).eq('profile', adminId).eq('vendedor_id', vendedorId).gte('created_at', startOfMonth.toISOString()) : r)
+    ])
 
-    const { data: produtosData } = await supabase
-      .from('produtos')
-      .select('*')
+    // Contagens de propostas
+    let propostasBaseQuery = supabase.from('propostas').select('*', { count: 'exact', head: true }).eq('profile', adminId)
+    if (!isAdmin && vendedorId) propostasBaseQuery = propostasBaseQuery.eq('vendedor_id', vendedorId)
+    
+    const [
+      { count: propostasAbertas },
+      { count: propostasEnviadas },
+      { count: propostasGanhas },
+      { count: propostasPerdidas }
+    ] = await Promise.all([
+      supabase.from('propostas').select('*', { count: 'exact', head: true })
+        .eq('profile', adminId)
+        .in('status', ['rascunho', 'revisao', 'aprovada_interna', 'enviada', 'visualizada', 'em_negociacao'])
+        .then(r => !isAdmin && vendedorId ? supabase.from('propostas').select('*', { count: 'exact', head: true }).eq('profile', adminId).eq('vendedor_id', vendedorId).in('status', ['rascunho', 'revisao', 'aprovada_interna', 'enviada', 'visualizada', 'em_negociacao']) : r),
+      supabase.from('propostas').select('*', { count: 'exact', head: true })
+        .eq('profile', adminId)
+        .eq('status', 'enviada')
+        .then(r => !isAdmin && vendedorId ? supabase.from('propostas').select('*', { count: 'exact', head: true }).eq('profile', adminId).eq('vendedor_id', vendedorId).eq('status', 'enviada') : r),
+      supabase.from('propostas').select('*', { count: 'exact', head: true })
+        .eq('profile', adminId)
+        .eq('status', 'aprovada')
+        .then(r => !isAdmin && vendedorId ? supabase.from('propostas').select('*', { count: 'exact', head: true }).eq('profile', adminId).eq('vendedor_id', vendedorId).eq('status', 'aprovada') : r),
+      supabase.from('propostas').select('*', { count: 'exact', head: true })
+        .eq('profile', adminId)
+        .in('status', ['rejeitada', 'vencida'])
+        .then(r => !isAdmin && vendedorId ? supabase.from('propostas').select('*', { count: 'exact', head: true }).eq('profile', adminId).eq('vendedor_id', vendedorId).in('status', ['rejeitada', 'vencida']) : r)
+    ])
+
+    // Contagens de agendamentos
+    const [
+      { count: agendamentosHoje },
+      { count: agendamentosConfirmados },
+      { count: agendamentosPendentes }
+    ] = await Promise.all([
+      supabase.from('agendamentos').select('*', { count: 'exact', head: true })
+        .eq('profile', adminId)
+        .gte('data_inicio', today.toISOString())
+        .lt('data_inicio', tomorrow.toISOString())
+        .then(r => !isAdmin && vendedorId ? supabase.from('agendamentos').select('*', { count: 'exact', head: true }).eq('profile', adminId).eq('vendedor_id', vendedorId).gte('data_inicio', today.toISOString()).lt('data_inicio', tomorrow.toISOString()) : r),
+      supabase.from('agendamentos').select('*', { count: 'exact', head: true })
+        .eq('profile', adminId)
+        .eq('status', 'confirmado')
+        .then(r => !isAdmin && vendedorId ? supabase.from('agendamentos').select('*', { count: 'exact', head: true }).eq('profile', adminId).eq('vendedor_id', vendedorId).eq('status', 'confirmado') : r),
+      supabase.from('agendamentos').select('*', { count: 'exact', head: true })
+        .eq('profile', adminId)
+        .eq('status', 'agendado')
+        .then(r => !isAdmin && vendedorId ? supabase.from('agendamentos').select('*', { count: 'exact', head: true }).eq('profile', adminId).eq('vendedor_id', vendedorId).eq('status', 'agendado') : r)
+    ])
+
+    // Faturamento (buscar apenas propostas aprovadas com valores)
+    let faturamentoQuery = supabase.from('propostas')
+      .select('valor_total, data_aprovacao_interna, updated_at')
       .eq('profile', adminId)
-
-    const { data: vendedoresData } = await supabase
-      .from('vendedores')
-      .select('*')
-      .eq('profile', adminId)
-
-    // Calcular estatísticas dos clientes (baseado na página de clientes)
-    const totalClientes = clientesData?.length || 0
-    const clientesAtivos = clientesData?.filter((c: any) => 
-      !['perdido', 'inativo'].includes(c.etapa_pipeline || '')
-    ).length || 0
-    const clientesNovos = clientesData?.filter((c: any) => 
-      new Date(c.created_at) >= startOfMonth
-    ).length || 0
-
-    // Calcular estatísticas das propostas (baseado na página de propostas)
-    const propostasAbertas = propostasData?.filter((p: any) => 
-      ['rascunho', 'revisao', 'aprovada_interna', 'enviada', 'visualizada', 'em_negociacao'].includes(p.status)
-    ).length || 0
+      .eq('status', 'aprovada')
     
-    const propostasEnviadas = propostasData?.filter((p: any) => p.status === 'enviada').length || 0
-    const propostasGanhas = propostasData?.filter((p: any) => p.status === 'aprovada').length || 0
-    const propostasPerdidas = propostasData?.filter((p: any) => 
-      ['rejeitada', 'vencida'].includes(p.status)
-    ).length || 0
-
-    // Calcular estatísticas dos agendamentos (baseado na página de agendamentos)
-    const agendamentosHoje = agendamentosData?.filter((a: any) => {
-      const agendamentoDate = new Date(a.data_inicio)
-      return agendamentoDate >= today && agendamentoDate < tomorrow
-    }).length || 0
+    if (!isAdmin && vendedorId) faturamentoQuery = faturamentoQuery.eq('vendedor_id', vendedorId)
     
-    const agendamentosConfirmados = agendamentosData?.filter((a: any) => a.status === 'confirmado').length || 0
-    const agendamentosPendentes = agendamentosData?.filter((a: any) => a.status === 'agendado').length || 0
-
-    // Calcular faturamento mensal (propostas aprovadas no mês atual)
-    const propostasAprovadasMes = propostasData?.filter((p: any) => {
-      if (p.status !== 'aprovada') return false
-      // Usar data_aprovacao_interna se disponível, senão updated_at
+    const { data: propostasAprovadas } = await faturamentoQuery
+    
+    const propostasAprovadasMes = propostasAprovadas?.filter((p: any) => {
       const dataAprovacao = p.data_aprovacao_interna || p.updated_at
       return new Date(dataAprovacao) >= startOfMonth
     }) || []
     
-    const faturamentoMensal = propostasAprovadasMes
-      .reduce((sum: number, p: any) => sum + (p.valor_total || 0), 0)
-    
-    // Faturamento anual
-    const propostasAprovadasAno = propostasData?.filter((p: any) => {
-      if (p.status !== 'aprovada') return false
+    const propostasAprovadasAno = propostasAprovadas?.filter((p: any) => {
       const dataAprovacao = p.data_aprovacao_interna || p.updated_at
       return new Date(dataAprovacao) >= startOfYear
     }) || []
     
-    const faturamentoAnual = propostasAprovadasAno
-      .reduce((sum: number, p: any) => sum + (p.valor_total || 0), 0)
+    const faturamentoMensal = propostasAprovadasMes.reduce((sum: number, p: any) => sum + (p.valor_total || 0), 0)
+    const faturamentoAnual = propostasAprovadasAno.reduce((sum: number, p: any) => sum + (p.valor_total || 0), 0)
+    const ticketMedio = propostasAprovadasAno.length > 0 ? faturamentoAnual / propostasAprovadasAno.length : 0
 
-    const ticketMedio = propostasAprovadasAno.length > 0 
-      ? faturamentoAnual / propostasAprovadasAno.length 
-      : 0
-
-    // Calcular estatísticas dos produtos
-    const totalProdutos = produtosData?.length || 0
-    const produtosAtivos = produtosData?.filter((p: any) => p.status === 'ativo').length || 0
-
-    // Calcular estatísticas dos vendedores
-    const totalVendedores = vendedoresData?.length || 0
-    const vendedoresAtivos = vendedoresData?.filter((v: any) => v.status === 'ativo').length || 0
+    // Contagens de produtos e vendedores
+    const [
+      { count: totalProdutos },
+      { count: produtosAtivos },
+      { count: totalVendedores },
+      { count: vendedoresAtivos }
+    ] = await Promise.all([
+      supabase.from('produtos').select('*', { count: 'exact', head: true }).eq('profile', adminId),
+      supabase.from('produtos').select('*', { count: 'exact', head: true }).eq('profile', adminId).eq('status', 'ativo'),
+      supabase.from('vendedores').select('*', { count: 'exact', head: true }).eq('profile', adminId),
+      supabase.from('vendedores').select('*', { count: 'exact', head: true }).eq('profile', adminId).eq('status', 'ativo')
+    ])
 
     return {
       totalClientes,

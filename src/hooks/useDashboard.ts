@@ -32,7 +32,10 @@ export const useDashboardStats = () => {
     },
     enabled: !!user && !!currentUser,
     staleTime: 5 * 60 * 1000, // 5 minutos
-    refetchInterval: 10 * 60 * 1000, // Refetch a cada 10 minutos
+    gcTime: 10 * 60 * 1000, // 10 minutos cache
+    refetchInterval: false, // Desabilitar auto-refetch
+    refetchOnWindowFocus: false, // Não refetch ao focar janela
+    refetchOnReconnect: true, // Apenas ao reconectar
   })
 }
 
@@ -51,8 +54,11 @@ export const useRecentActivities = (limit: number = 10) => {
       return getRecentActivities(limit)
     },
     enabled: !!user && !!currentUser,
-    staleTime: 2 * 60 * 1000, // 2 minutos
-    refetchInterval: 5 * 60 * 1000, // Refetch a cada 5 minutos
+    staleTime: 5 * 60 * 1000, // 5 minutos
+    gcTime: 10 * 60 * 1000, // 10 minutos cache
+    refetchInterval: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: true,
   })
 }
 
@@ -73,8 +79,11 @@ export const useRecentProposals = (limit: number = 5) => {
       return getRecentProposals(limit, currentVendedorId, isAdmin)
     },
     enabled: !!user && !!currentUser,
-    staleTime: 2 * 60 * 1000, // 2 minutos
-    refetchInterval: 5 * 60 * 1000, // Refetch a cada 5 minutos
+    staleTime: 5 * 60 * 1000, // 5 minutos
+    gcTime: 10 * 60 * 1000, // 10 minutos cache
+    refetchInterval: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: true,
   })
 }
 
@@ -96,7 +105,10 @@ export const useSalesConversion = () => {
     },
     enabled: !!user && !!currentUser,
     staleTime: 5 * 60 * 1000, // 5 minutos
-    refetchInterval: 10 * 60 * 1000, // Refetch a cada 10 minutos
+    gcTime: 10 * 60 * 1000, // 10 minutos cache
+    refetchInterval: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: true,
   })
 }
 
@@ -118,7 +130,10 @@ export const useSalesPipeline = () => {
     },
     enabled: !!user && !!currentUser,
     staleTime: 5 * 60 * 1000, // 5 minutos
-    refetchInterval: 10 * 60 * 1000, // Refetch a cada 10 minutos
+    gcTime: 10 * 60 * 1000, // 10 minutos cache
+    refetchInterval: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: true,
   })
 }
 

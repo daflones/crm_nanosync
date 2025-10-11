@@ -53,18 +53,9 @@ export function MobileNav({ open, onClose }: MobileNavProps) {
   const isAdmin = user?.role === 'admin'
 
   // Handler para navegar para o dashboard com refresh
-  const handleDashboardClick = (e: React.MouseEvent) => {
-    e.preventDefault()
+  const handleDashboardClick = () => {
     onClose() // Fechar o menu mobile
-    
-    if (location.pathname === '/app/dashboard') {
-      window.location.reload()
-    } else {
-      navigate('/app/dashboard')
-      setTimeout(() => {
-        window.location.reload()
-      }, 100)
-    }
+    navigate('/app/dashboard')
   }
 
   const filteredMenuItems = menuItems.filter(item => {
