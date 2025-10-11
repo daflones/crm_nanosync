@@ -8,9 +8,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Calendar, Plus, Search, Filter, Eye, Edit, Trash2, List, CalendarDays, Users, Presentation, Phone, Wrench, GraduationCap, HeadphonesIcon, Heart, MapPin } from 'lucide-react'
-import { agendamentosService, type Agendamento, type AgendamentoCreateData } from '@/services/api/agendamentos'
-import { clientesService, type Cliente } from '@/services/api/clientes'
-import { vendedoresService, type Vendedor } from '@/services/api/vendedores'
+import { useAgendamentos, useAgendamentosStatusStats } from '@/hooks/useAgendamentos'
+import { useClientes } from '@/hooks/useClientes'
+import { useVendedores } from '@/hooks/useVendedores'
+import { type Agendamento, type AgendamentoCreateData } from '@/services/api/agendamentos'
+import { type Cliente } from '@/services/api/clientes'
+import { type Vendedor } from '@/services/api/vendedores'
 import { AgendamentoForm } from '@/components/agendamentos/AgendamentoForm'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
 import { usePlanoAtivoAction } from '@/components/PlanoAtivoGuard'
@@ -21,12 +24,26 @@ export function AgendamentosPage() {
   // Use current user hook for better user data management
   const { data: currentUser } = useCurrentUser()
   const { executeAction: executePlanoAtivoAction } = usePlanoAtivoAction()
-  const [agendamentos, setAgendamentos] = useState<Agendamento[]>([])
-  const [clientes, setClientes] = useState<Cliente[]>([])
-  const [vendedores, setVendedores] = useState<Vendedor[]>([])
-  const [loading, setLoading] = useState(true)
+  const [page, setPage] = useState(1)
+  const [limit] = useState(50) // 50 agendamentos por página
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('todos')
+  
+  // Hooks com paginação
+  const { data: agendamentos = [], count: totalAgendamentosFiltered = 0, isLoading: loading } = useAgendamentos({
+    page,
+    limit,
+    status: statusFilter === 'todos' ? undefined : statusFilter
+  })
+  
+  // Total geral (sempre fixo)
+  const { count: totalAgendamentos = 0 } = useAgendamentos({ page: 1, limit: 1 })
+  
+  // Stats por status
+  const { data: statusStats = {} } = useAgendamentosStatusStats()
+  
+  const { data: clientes = [] } = useClientes()
+  const { data: vendedores = [] } = useVendedores()
   const [selectedAgendamento, setSelectedAgendamento] = useState<Agendamento | null>(null)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
@@ -37,42 +54,35 @@ export function AgendamentosPage() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
   const [prefilledData, setPrefilledData] = useState<Partial<AgendamentoCreateData> | null>(null)
 
-  // Carregar dados iniciais
-  useEffect(() => {
-    loadData()
-  }, [])
+  // Paginação
+  const totalPages = Math.ceil(totalAgendamentosFiltered / limit)
+  const hasMore = page < totalPages
+  const showingFrom = (page - 1) * limit + 1
+  const showingTo = Math.min(page * limit, totalAgendamentosFiltered)
 
-  const loadData = async () => {
-    try {
-      setLoading(true)
-      const [agendamentosData, clientesData, vendedoresData] = await Promise.all([
-        agendamentosService.getAll(), // Remove user filtering from service call
-        clientesService.getAll(),
-        vendedoresService.getAll()
-      ])
-      setAgendamentos(agendamentosData)
-      setClientes(clientesData)
-      setVendedores(vendedoresData)
-    } catch (error) {
-      toast.error('Erro ao carregar dados')
-    } finally {
-      setLoading(false)
-    }
+  // Reset page when filters change
+  useEffect(() => {
+    setPage(1)
+  }, [searchTerm, statusFilter])
+
+  const handleLoadMore = () => {
+    setPage(prev => prev + 1)
   }
 
-  // Filter agendamentos based on user role and permissions, then apply search/status filters
+  // Filtro de busca local (apenas busca, status é no backend)
   const filteredAgendamentos = useMemo(() => {
     // First filter by user permissions
     const userFilteredAgendamentos = filterAgendamentosByUser(agendamentos, currentUser)
     
-    // Then apply search and status filters
+    // Then apply search filter
+    if (!searchTerm) return userFilteredAgendamentos
+    
     return userFilteredAgendamentos.filter(agendamento => {
-      const matchesSearch = agendamento.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           getClienteName(agendamento.cliente_id).toLowerCase().includes(searchTerm.toLowerCase())
-      const matchesStatus = statusFilter === 'todos' || agendamento.status === statusFilter
-      return matchesSearch && matchesStatus
+      const searchLower = searchTerm.toLowerCase()
+      return agendamento.titulo.toLowerCase().includes(searchLower) ||
+             getClienteName(agendamento.cliente_id).toLowerCase().includes(searchLower)
     })
-  }, [agendamentos, currentUser, searchTerm, statusFilter])
+  }, [agendamentos, currentUser, searchTerm])
 
   // Helper functions
   const getClienteName = (clienteId: string) => {

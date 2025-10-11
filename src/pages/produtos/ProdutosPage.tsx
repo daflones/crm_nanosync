@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Textarea } from '@/components/ui/textarea'
-import { useProdutos, useCreateProduto, useUpdateProduto, useDeleteProduto } from '@/hooks/useProdutos'
+import { useProdutos, useProdutosStatusStats, useCreateProduto, useUpdateProduto, useDeleteProduto } from '@/hooks/useProdutos'
 import { useCategorias } from '@/hooks/useCategorias'
 import { useSegmentos } from '@/hooks/useSegmentos'
 import { useIsAdmin } from '@/hooks/useAuth'
@@ -39,11 +39,22 @@ export function ProdutosPage() {
   const [uploadingImage, setUploadingImage] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [selectedStatus, setSelectedStatus] = useState<string>('all')
-  const [displayLimit, setDisplayLimit] = useState(10) // Show 10 products initially
+  const [page, setPage] = useState(1)
+  const [limit] = useState(50) // 50 produtos por página
   const [productToDelete, setProductToDelete] = useState<string | null>(null)
 
-  // Hooks
-  const { data: produtos = [], isLoading } = useProdutos()
+  // Hooks com paginação
+  const { data: produtos = [], count: totalProdutosFiltered = 0, isLoading } = useProdutos({
+    page,
+    limit,
+    status: selectedStatus === 'all' ? undefined : selectedStatus
+  })
+  
+  // Total geral (sempre fixo)
+  const { count: totalProdutos = 0 } = useProdutos({ page: 1, limit: 1 })
+  
+  // Stats por status
+  const { data: statusStats = {} } = useProdutosStatusStats()
   const { data: categorias = [] } = useCategorias()
   const { data: segmentos = [] } = useSegmentos()
   const createProduto = useCreateProduto()
@@ -92,20 +103,20 @@ export function ProdutosPage() {
   const [newProduct, setNewProduct] = useState<ProdutoCreateData>(initialProductState)
   const [editProduct, setEditProduct] = useState<ProdutoUpdateData>(initialProductState)
 
-  // Filter products
-  const filteredProducts = produtos.filter(product => {
-    const matchesSearch = product.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         product.codigo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         product.material?.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesCategory = selectedCategory === 'all' || product.categoria_id === selectedCategory
-    const matchesStatus = selectedStatus === 'all' || product.status === selectedStatus
-    return matchesSearch && matchesCategory && matchesStatus
-  })
+  // Filtro de busca local (apenas busca, status é no backend)
+  const filteredProducts = searchTerm
+    ? produtos.filter(product => {
+        const searchLower = searchTerm.toLowerCase()
+        return product.nome.toLowerCase().includes(searchLower) ||
+               product.codigo?.toLowerCase().includes(searchLower) ||
+               product.material?.toLowerCase().includes(searchLower)
+      })
+    : produtos
 
-  // Calculate stats
+  // Calculate stats (usando dados do banco)
   const stats = useMemo(() => {
-    const total = produtos.length
-    const ativos = produtos.filter(p => p.status === 'ativo').length
+    const total = totalProdutos
+    const ativos = statusStats['ativo'] || 0
     const baixo_estoque = produtos.filter(p => 
       p.controla_estoque && 
       (p.estoque_atual ?? 0) <= (p.estoque_minimo ?? 0)
@@ -118,16 +129,22 @@ export function ProdutosPage() {
       baixo_estoque,
       em_destaque
     }
-  }, [produtos])
+  }, [produtos, totalProdutos, statusStats])
 
-  // Pagination with "Load More"
-  const displayedProducts = filteredProducts.slice(0, displayLimit)
-  const hasMore = filteredProducts.length > displayLimit
+  // Paginação
+  const totalPages = Math.ceil(totalProdutosFiltered / limit)
+  const hasMore = page < totalPages
+  const showingFrom = (page - 1) * limit + 1
+  const showingTo = Math.min(page * limit, totalProdutosFiltered)
 
-  // Reset display limit when filters change
+  // Reset page when filters change
   useEffect(() => {
-    setDisplayLimit(10)
+    setPage(1)
   }, [searchTerm, selectedCategory, selectedStatus])
+
+  const handleLoadMore = () => {
+    setPage(prev => prev + 1)
+  }
 
   // Handlers
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -424,7 +441,7 @@ export function ProdutosPage() {
 
       {/* Products List */}
       <div className="w-full space-y-4">
-        {displayedProducts.map((product) => (
+        {filteredProducts.map((product) => (
           <Card key={product.id} className="group hover:shadow-lg transition-shadow duration-200 dark:bg-gray-800">
             <CardContent className="p-0 flex flex-row">
               {/* Product Image */}
@@ -573,20 +590,29 @@ export function ProdutosPage() {
         
         {/* Load More Button */}
         {hasMore && (
-          <div className="text-center py-6">
-            <Button
-              variant="outline"
-              onClick={() => setDisplayLimit(prev => prev + 10)}
-              className="w-full sm:w-auto"
-            >
-              Ver mais 10 produtos ({filteredProducts.length - displayLimit} restantes)
-            </Button>
+          <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                Mostrando <span className="font-semibold">{showingFrom}</span> a <span className="font-semibold">{showingTo}</span> de <span className="font-semibold">{totalProdutosFiltered}</span> produtos
+                {selectedStatus !== 'all' && <span className="ml-1">({selectedStatus})</span>}
+              </div>
+              {hasMore && (
+                <Button
+                  variant="outline"
+                  onClick={handleLoadMore}
+                  className="w-full sm:w-auto"
+                  disabled={isLoading}
+                >
+                  {isLoading ? 'Carregando...' : `Carregar mais (${totalProdutosFiltered - showingTo} restantes)`}
+                </Button>
+              )}
+            </div>
           </div>
         )}
       </div>
 
       {/* Empty State */}
-      {displayedProducts.length === 0 && (
+      {filteredProducts.length === 0 && (
         <Card>
           <CardContent className="p-12 text-center">
             <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />

@@ -20,7 +20,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { format, formatDistanceToNow } from 'date-fns'
+import { format, formatDistanceToNow, subHours } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { 
   useNotificacoes,
@@ -320,13 +320,13 @@ export function NotificationCenter({ open, onOpenChange }: NotificationCenterPro
                               
                               <div className="flex items-center gap-4 text-xs text-muted-foreground">
                                 <span>
-                                  {format(new Date(notificacao.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
+                                  {notificacao.created_at ? format(subHours(new Date(notificacao.created_at), 3), 'dd/MM/yyyy HH:mm', { locale: ptBR }) : 'Data desconhecida'}
                                 </span>
                                 <span>
-                                  {formatDistanceToNow(new Date(notificacao.created_at), {
+                                  {notificacao.created_at ? formatDistanceToNow(subHours(new Date(notificacao.created_at), 3), {
                                     addSuffix: true,
                                     locale: ptBR
-                                  })}
+                                  }) : 'Data desconhecida'}
                                 </span>
                                 <Badge variant="outline" className="text-xs">
                                   {notificacao.categoria}

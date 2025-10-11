@@ -10,6 +10,8 @@ interface UseClientesOptions {
   origem?: string
   classificacao?: string
   search?: string
+  page?: number
+  limit?: number
 }
 
 export function useClientes(options: UseClientesOptions = {}) {
@@ -19,28 +21,30 @@ export function useClientes(options: UseClientesOptions = {}) {
   const query = useQuery({
     queryKey: ['clientes', options],
     queryFn: () => clientesService.getAll(options),
-    staleTime: 1000 * 30, // 30 seconds for real-time updates
-    refetchInterval: 1000 * 60, // Refetch every minute
-    refetchOnWindowFocus: true, // Habilitado - React Query nativo gerencia refresh
+    staleTime: 1000 * 60 * 5, // 5 minutes - Reduced refetching for better performance
+    gcTime: 1000 * 60 * 10, // 10 minutes cache
+    refetchInterval: false, // Disabled auto-refetch - only manual refresh
+    refetchOnWindowFocus: false, // Disabled - Prevents unnecessary refetches
     refetchOnReconnect: true,
   })
 
   // Filter clients based on user role
   const filteredData = useMemo(() => {
-    if (!query.data) return []
+    if (!query.data?.data) return []
     
     // Admins see all clients
-    if (isAdmin) return query.data
+    if (isAdmin) return query.data.data
     
     // Vendedores only see clients assigned to them
-    return query.data.filter(cliente => 
+    return query.data.data.filter(cliente => 
       cliente.vendedor_id === currentVendedorId && cliente.vendedor_id !== null
     )
   }, [query.data, isAdmin, currentVendedorId])
 
   return {
     ...query,
-    data: filteredData
+    data: filteredData,
+    count: query.data?.count || 0
   }
 }
 
@@ -49,9 +53,32 @@ export function useCliente(id: string) {
     queryKey: ['clientes', id],
     queryFn: () => clientesService.getById(id),
     enabled: !!id,
-    staleTime: 1000 * 30, // 30 seconds for real-time updates
-    refetchOnWindowFocus: true, // Habilitado - React Query nativo gerencia refresh
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    gcTime: 1000 * 60 * 10, // 10 minutes cache
+    refetchOnWindowFocus: false,
     refetchOnReconnect: true,
+  })
+}
+
+export function useClientesStageStats() {
+  return useQuery({
+    queryKey: ['clientes-stage-stats'],
+    queryFn: async () => {
+      const { supabase } = await import('@/lib/supabase')
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Não autenticado')
+      
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('id, admin_profile_id')
+        .eq('id', user.id)
+        .single()
+      
+      const adminId = profile?.admin_profile_id || profile?.id
+      return clientesService.getStageStats(adminId)
+    },
+    staleTime: 1000 * 60 * 2, // 2 minutes
+    refetchOnWindowFocus: false,
   })
 }
 
@@ -130,8 +157,9 @@ export function useClientesByVendedor(vendedorId: string) {
     queryKey: ['clientes', 'vendedor', vendedorId],
     queryFn: () => clientesService.getAll({ vendedorId }),
     enabled: !!vendedorId,
-    staleTime: 1000 * 30, // 30 seconds for real-time updates
-    refetchOnWindowFocus: true,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    gcTime: 1000 * 60 * 10, // 10 minutes cache
+    refetchOnWindowFocus: false,
     refetchOnReconnect: true,
   })
 }

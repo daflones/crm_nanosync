@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
@@ -21,7 +21,7 @@ import {
   Edit,
   Trash2
 } from 'lucide-react'
-import { usePropostas, useCreateProposta, useUpdateProposta, useDeleteProposta } from '@/hooks/usePropostas'
+import { usePropostas, usePropostasStatusStats, usePropostasValorStats, useCreateProposta, useUpdateProposta, useDeleteProposta } from '@/hooks/usePropostas'
 import { useClientes } from '@/hooks/useClientes'
 import { useVendedores } from '@/hooks/useVendedores'
 import { useProdutos } from '@/hooks/useProdutos'
@@ -73,7 +73,8 @@ const initialPropostaState: PropostaCreateData = {
 export function PropostasPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [filterStatus, setFilterStatus] = useState<string>('todos')
-  const [displayLimit, setDisplayLimit] = useState(10) // Show 10 propostas initially
+  const [page, setPage] = useState(1)
+  const [limit] = useState(30) // 30 propostas por página
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isViewModalOpen, setIsViewModalOpen] = useState(false)
@@ -82,8 +83,22 @@ export function PropostasPage() {
   const [editProposta, setEditProposta] = useState<PropostaCreateData>(initialPropostaState)
   const [propostaToDelete, setPropostaToDelete] = useState<string | null>(null)
 
-  // Hooks
-  const { data: propostas = [], isLoading } = usePropostas()
+  // Hooks com paginação e filtro
+  const { data: propostas = [], count: totalPropostasFiltered = 0, isLoading } = usePropostas({
+    page,
+    limit,
+    status: filterStatus === 'todos' ? undefined : filterStatus
+  })
+  
+  // Total geral (sempre fixo)
+  const { count: totalPropostas = 0 } = usePropostas({ page: 1, limit: 1 })
+  
+  // Stats por status
+  const { data: statusStats = {} } = usePropostasStatusStats()
+  
+  // Stats de valores
+  const { data: valorStats } = usePropostasValorStats()
+  
   const { data: clientes = [] } = useClientes()
   const { data: vendedores = [] } = useVendedores()
   const { data: produtos = [] } = useProdutos()
@@ -116,45 +131,48 @@ export function PropostasPage() {
     return { valorProdutos, valorServicos }
   }
 
-  // Filter propostas based on search and status
-  const filteredPropostas = propostas.filter(proposta => {
-    const matchesSearch = searchTerm === '' || 
-      proposta.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      proposta.numero_proposta.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      getClienteName(proposta.cliente_id).toLowerCase().includes(searchTerm.toLowerCase())
-    
-    const matchesStatus = filterStatus === 'todos' || proposta.status === filterStatus
-    
-    return matchesSearch && matchesStatus
-  })
+  // Filtro de busca local (apenas busca, status é no backend)
+  const filteredPropostas = searchTerm
+    ? propostas.filter(proposta => {
+        const searchLower = searchTerm.toLowerCase()
+        return proposta.titulo.toLowerCase().includes(searchLower) ||
+               proposta.numero_proposta.toLowerCase().includes(searchLower) ||
+               getClienteName(proposta.cliente_id).toLowerCase().includes(searchLower)
+      })
+    : propostas
 
-  // Pagination with "Load More"
-  const displayedPropostas = filteredPropostas.slice(0, displayLimit)
-  const hasMore = filteredPropostas.length > displayLimit
+  // Paginação
+  const totalPages = Math.ceil(totalPropostasFiltered / limit)
+  const hasMore = page < totalPages
+  const showingFrom = (page - 1) * limit + 1
+  const showingTo = Math.min(page * limit, totalPropostasFiltered)
 
-  // Reset display limit when filters change
+  // Reset page when filters change
   useEffect(() => {
-    setDisplayLimit(10)
+    setPage(1)
   }, [searchTerm, filterStatus])
 
+  const handleLoadMore = () => {
+    setPage(prev => prev + 1)
+  }
+
   const statusOptions = [
-    { value: 'todos', label: 'Todos', count: propostas.length },
-    { value: 'enviada', label: 'Enviada', count: propostas.filter(p => p.status === 'enviada').length, color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400' },
-    { value: 'aprovada', label: 'Aprovada', count: propostas.filter(p => p.status === 'aprovada').length, color: 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400' },
-    { value: 'rejeitada', label: 'Rejeitada', count: propostas.filter(p => p.status === 'rejeitada').length, color: 'bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400' },
-    { value: 'vencida', label: 'Vencida', count: propostas.filter(p => p.status === 'vencida').length, color: 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-500' },
+    { value: 'todos', label: 'Todos', count: totalPropostas },
+    { value: 'enviada', label: 'Enviada', count: statusStats['enviada'] || 0, color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400' },
+    { value: 'aprovada', label: 'Aprovada', count: statusStats['aprovada'] || 0, color: 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400' },
+    { value: 'rejeitada', label: 'Rejeitada', count: statusStats['rejeitada'] || 0, color: 'bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400' },
+    { value: 'vencida', label: 'Vencida', count: statusStats['vencida'] || 0, color: 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-500' },
   ]
 
-  // Calculate real stats from data
-  const propostasAtivas = propostas.filter(p => ['enviada', 'em_negociacao', 'visualizada', 'aprovada_interna'].includes(p.status))
-  const propostasAprovadas = propostas.filter(p => p.status === 'aprovada')
-  const propostasEmAndamento = propostas.filter(p => !['aprovada', 'rejeitada', 'vencida'].includes(p.status))
-  const valorTotalAbertas = propostasEmAndamento.reduce((sum, p) => sum + (p.valor_total || 0), 0)
-  const valorTotalAprovadas = propostasAprovadas.reduce((sum, p) => sum + (p.valor_total || 0), 0)
+  // Stats do banco (valores reais)
+  const valorTotalAbertas = valorStats?.valorTotalAbertas || 0
+  const valorTotalAprovadas = valorStats?.valorTotalAprovadas || 0
+  const totalAprovadas = valorStats?.totalAprovadas || 0
+  const totalFinalizadas = valorStats?.totalFinalizadas || 0
+  const taxaConversao = totalFinalizadas > 0 ? Math.round((totalAprovadas / totalFinalizadas) * 100) : 0
   
-  // Taxa de conversão baseada em propostas finalizadas (aprovadas vs rejeitadas/vencidas)
-  const propostasFinalizadas = propostas.filter(p => ['aprovada', 'rejeitada', 'vencida'].includes(p.status))
-  const taxaConversao = propostasFinalizadas.length > 0 ? Math.round((propostasAprovadas.length / propostasFinalizadas.length) * 100) : 0
+  // Stats locais (apenas para exibição)
+  const propostasAtivas = propostas.filter(p => ['enviada', 'em_negociacao', 'visualizada', 'aprovada_interna'].includes(p.status))
   
 
   const stats = [
@@ -170,16 +188,16 @@ export function PropostasPage() {
     {
       title: 'Taxa de Conversão',
       value: `${taxaConversao}%`,
-      description: `${propostasAprovadas.length} de ${propostasFinalizadas.length} finalizadas`,
+      description: `${totalAprovadas} aprovadas de ${totalFinalizadas} finalizadas`,
       icon: CheckCircle,
-      trend: propostasAprovadas.length > 0 ? `${propostasAprovadas.length} aprovadas` : 'Nenhuma aprovada',
+      trend: totalAprovadas > 0 ? `${totalAprovadas} aprovadas` : 'Nenhuma aprovada',
       color: 'text-green-600',
       bgColor: 'bg-green-100 dark:bg-green-900/20'
     },
     {
       title: 'Valor Total Pendente',
       value: `R$ ${valorTotalAbertas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
-      description: `Em ${propostasEmAndamento.length} propostas abertas`,
+      description: `R$ ${valorTotalAbertas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} aprovado Em 0 propostas abertas`,
       icon: FileText,
       trend: valorTotalAprovadas > 0 ? `R$ ${valorTotalAprovadas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} aprovado` : 'R$ 0 aprovado',
       color: 'text-purple-600',
@@ -188,7 +206,7 @@ export function PropostasPage() {
     {
       title: 'Valor Total Aprovado',
       value: `R$ ${valorTotalAprovadas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
-      description: `Em ${propostasAprovadas.length} propostas aprovadas`,
+      description: `Em ${totalAprovadas} propostas aprovadas`,
       icon: CheckCircle,
       trend: '',
       color: 'text-green-600',
@@ -327,7 +345,7 @@ export function PropostasPage() {
           </div>
         ) : (
           <>
-          {displayedPropostas.map((proposta) => (
+          {filteredPropostas.map((proposta) => (
             <Card key={proposta.id} className="group hover:shadow-xl transition-all duration-300 border-0 bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-800 dark:to-gray-900/50 overflow-hidden">
               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400"></div>
               
@@ -501,18 +519,25 @@ export function PropostasPage() {
             </Card>
           ))}
           
-          {/* Load More Button */}
-          {hasMore && (
-            <div className="col-span-full text-center py-6">
-              <Button
-                variant="outline"
-                onClick={() => setDisplayLimit(prev => prev + 10)}
-                className="w-full sm:w-auto"
-              >
-                Ver mais 10 propostas ({filteredPropostas.length - displayLimit} restantes)
-              </Button>
+          {/* Pagination Info and Load More */}
+          <div className="col-span-full border-t border-gray-200 dark:border-gray-700 pt-6">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                Mostrando <span className="font-semibold">{showingFrom}</span> a <span className="font-semibold">{showingTo}</span> de <span className="font-semibold">{totalPropostasFiltered}</span> propostas
+                {filterStatus !== 'todos' && <span className="ml-1">({statusOptions.find(s => s.value === filterStatus)?.label})</span>}
+              </div>
+              {hasMore && (
+                <Button
+                  variant="outline"
+                  onClick={handleLoadMore}
+                  className="w-full sm:w-auto"
+                  disabled={isLoading}
+                >
+                  {isLoading ? 'Carregando...' : `Carregar mais (${totalPropostasFiltered - showingTo} restantes)`}
+                </Button>
+              )}
             </div>
-          )}
+          </div>
           </>
         )}
       </div>

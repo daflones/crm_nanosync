@@ -160,6 +160,9 @@ export function Sidebar() {
     // Ocultar Arquivos IA se envia_documento não for explicitamente true
     if (item.href === '/arquivos-ia' && iaConfigData?.envia_documento !== true) return false
     
+    // Ocultar WhatsApp se não tiver plano ativo
+    if (item.href === '/whatsapp' && !planoAtivo) return false
+    
     return true
   })
 

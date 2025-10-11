@@ -106,7 +106,9 @@ export const agendamentosService = {
     data_fim?: string
     user_id?: string
     user_role?: string
-  }): Promise<Agendamento[]> {
+    page?: number
+    limit?: number
+  }): Promise<{ data: Agendamento[], count: number }> {
     // Obter usuário atual e perfil para filtro multi-tenant
     const { data: { user: currentUser } } = await supabase.auth.getUser()
     if (!currentUser) {
@@ -126,11 +128,16 @@ export const agendamentosService = {
     // Determinar o ID da empresa (admin_profile_id ou próprio ID se for admin)
     const adminId = currentProfile.admin_profile_id || currentProfile.id
 
+    const page = filters?.page || 1
+    const limit = filters?.limit || 50
+    const offset = (page - 1) * limit
+
     let query = supabase
       .from('agendamentos')
-      .select('*')
+      .select('*', { count: 'exact' })
       .eq('profile', adminId)
       .order('data_inicio', { ascending: true })
+      .range(offset, offset + limit - 1)
 
     // Filtro adicional por role: vendedores só veem seus próprios agendamentos
     if (currentProfile.role === 'vendedor') {
@@ -156,14 +163,36 @@ export const agendamentosService = {
       query = query.lte('data_fim', filters.data_fim)
     }
 
-    const { data, error } = await query
+    const { data, error, count } = await query
 
     if (error) {
       console.error('Erro ao buscar agendamentos:', error)
       throw new Error(`Erro ao buscar agendamentos: ${error.message}`)
     }
 
-    return data || []
+    return { data: data || [], count: count || 0 }
+  },
+
+  async getStatusStats(adminId: string): Promise<Record<string, number>> {
+    const statuses = ['agendado', 'confirmado', 'realizado', 'cancelado', 'reagendado']
+    const stats: Record<string, number> = {}
+
+    const promises = statuses.map(async (status) => {
+      const { count } = await supabase
+        .from('agendamentos')
+        .select('*', { count: 'exact', head: true })
+        .eq('profile', adminId)
+        .eq('status', status)
+      
+      return { status, count: count || 0 }
+    })
+
+    const results = await Promise.all(promises)
+    results.forEach(({ status, count }) => {
+      stats[status] = count
+    })
+
+    return stats
   },
 
   async getById(id: string): Promise<Agendamento | null> {

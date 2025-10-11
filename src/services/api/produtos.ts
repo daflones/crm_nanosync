@@ -88,7 +88,9 @@ export const produtosService = {
     categoria_id?: string
     status?: string
     search?: string
-  }): Promise<Produto[]> {
+    page?: number
+    limit?: number
+  }): Promise<{ data: Produto[], count: number }> {
     // Get current user's profile to filter by company
     const { data: { user: currentUser } } = await supabase.auth.getUser()
     if (!currentUser) {
@@ -108,15 +110,20 @@ export const produtosService = {
     // Use admin_profile_id to filter produtos
     const adminId = currentProfile.admin_profile_id || currentProfile.id
 
+    const page = filters?.page || 1
+    const limit = filters?.limit || 50
+    const offset = (page - 1) * limit
+
     let query = supabase
       .from('produtos')
       .select(`
         *,
         categoria:categorias(nome),
         segmento:segmentos(nome)
-      `)
+      `, { count: 'exact' })
       .eq('profile', adminId) // Filter by company
       .order('nome', { ascending: true })
+      .range(offset, offset + limit - 1)
 
     if (filters?.categoria_id) {
       query = query.eq('categoria_id', filters.categoria_id)
@@ -128,14 +135,36 @@ export const produtosService = {
       query = query.or(`nome.ilike.%${filters.search}%,descricao.ilike.%${filters.search}%,codigo.ilike.%${filters.search}%`)
     }
 
-    const { data, error } = await query
+    const { data, error, count } = await query
 
     if (error) {
       console.error('Erro ao buscar produtos:', error)
       throw new Error(`Erro ao buscar produtos: ${error.message}`)
     }
 
-    return data || []
+    return { data: data || [], count: count || 0 }
+  },
+
+  async getStatusStats(adminId: string): Promise<Record<string, number>> {
+    const statuses = ['ativo', 'inativo', 'descontinuado']
+    const stats: Record<string, number> = {}
+
+    const promises = statuses.map(async (status) => {
+      const { count } = await supabase
+        .from('produtos')
+        .select('*', { count: 'exact', head: true })
+        .eq('profile', adminId)
+        .eq('status', status)
+      
+      return { status, count: count || 0 }
+    })
+
+    const results = await Promise.all(promises)
+    results.forEach(({ status, count }) => {
+      stats[status] = count
+    })
+
+    return stats
   },
 
   async getStats(): Promise<{

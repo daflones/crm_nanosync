@@ -20,7 +20,7 @@ import {
   UserPlus,
   Plug
 } from 'lucide-react'
-import { useClientes, useCreateCliente, useUpdateCliente, useDeleteCliente, useUpdatePipelineStage } from '@/hooks/useClientes'
+import { useClientes, useClientesStageStats, useCreateCliente, useUpdateCliente, useDeleteCliente, useUpdatePipelineStage } from '@/hooks/useClientes'
 import { useVendedores } from '@/hooks/useVendedores'
 import { useIsAdmin, useCurrentVendedorId } from '@/hooks/useAuth'
 import { VendedorSelector } from '@/components/VendedorSelector'
@@ -114,10 +114,22 @@ export function ClientesPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [selectedCliente, setSelectedCliente] = useState<any>(null)
   const [viewMode, setViewMode] = useState<'grid' | 'list' | 'kanban'>('grid')
-  const [displayLimit, setDisplayLimit] = useState(10) // Show 10 clients initially
+  const [page, setPage] = useState(1)
+  const [limit] = useState(50) // 50 clientes por página
 
-  // Load all clients without search filter (search will be done on frontend)
-  const { data: clientes = [], isLoading } = useClientes()
+  // Load clients with pagination and stage filter
+  const { data: clientes = [], count: totalClientesFiltered = 0, isLoading } = useClientes({ 
+    page, 
+    limit,
+    etapa: selectedStage === 'todos' ? undefined : selectedStage
+  })
+  const { data: stageStats = {} } = useClientesStageStats()
+  
+  // Total geral de clientes (sempre fixo)
+  const { data: allClientes = [], count: totalClientes = 0 } = useClientes({ 
+    page: 1, 
+    limit: 1 // Só precisamos do count, não dos dados
+  })
   const { data: _vendedores = [] } = useVendedores()
   const createCliente = useCreateCliente()
   const updateCliente = useUpdateCliente()
@@ -176,40 +188,38 @@ export function ClientesPage() {
     return clientes.filter((cliente: any) => cliente.etapa_pipeline === stageId).length
   }
 
-  // Filter by stage and search term (frontend filtering for instant results)
-  const filteredClientes = clientes.filter((cliente: any) => {
-    const matchesStage = selectedStage === 'todos' || cliente.etapa_pipeline === selectedStage
-    
-    // Instant search - match on any character
-    if (searchTerm) {
-      const searchLower = searchTerm.toLowerCase()
-      const searchNumbers = searchTerm.replace(/\D/g, '') // Remove non-digits for phone/CPF/CNPJ
-      
-      const matchesName = cliente.nome_contato?.toLowerCase().includes(searchLower)
-      const matchesCompany = cliente.nome_empresa?.toLowerCase().includes(searchLower)
-      const matchesEmail = cliente.email?.toLowerCase().includes(searchLower)
-      const matchesPhone = cliente.whatsapp?.replace(/\D/g, '').includes(searchNumbers)
-      const matchesPhoneCompany = cliente.telefone_empresa?.replace(/\D/g, '').includes(searchNumbers)
-      const matchesCPF = cliente.cpf?.replace(/\D/g, '').includes(searchNumbers)
-      const matchesCNPJ = cliente.cnpj?.replace(/\D/g, '').includes(searchNumbers)
-      
-      const matchesSearch = matchesName || matchesCompany || matchesEmail || 
-                           matchesPhone || matchesPhoneCompany || matchesCPF || matchesCNPJ
-      
-      return matchesStage && matchesSearch
-    }
-    
-    return matchesStage
-  })
+  // Filtro de busca local (apenas para busca instantânea, stage filter é no backend)
+  const filteredClientes = searchTerm 
+    ? clientes.filter((cliente: any) => {
+        const searchLower = searchTerm.toLowerCase()
+        const searchNumbers = searchTerm.replace(/\D/g, '')
+        
+        const matchesName = (cliente.nome_contato || '').toLowerCase().includes(searchLower)
+        const matchesCompany = (cliente.nome_empresa || '').toLowerCase().includes(searchLower)
+        const matchesEmail = (cliente.email || '').toLowerCase().includes(searchLower)
+        const matchesPhone = searchNumbers ? (cliente.whatsapp || '').replace(/\D/g, '').includes(searchNumbers) : false
+        const matchesPhoneCompany = searchNumbers ? (cliente.telefone_empresa || '').replace(/\D/g, '').includes(searchNumbers) : false
+        const matchesCPF = searchNumbers ? (cliente.cpf || '').replace(/\D/g, '').includes(searchNumbers) : false
+        const matchesCNPJ = searchNumbers ? (cliente.cnpj || '').replace(/\D/g, '').includes(searchNumbers) : false
+        
+        return matchesName || matchesCompany || matchesEmail || matchesPhone || matchesPhoneCompany || matchesCPF || matchesCNPJ
+      })
+    : clientes
 
-  // Apply display limit for pagination
-  const displayedClientes = filteredClientes.slice(0, displayLimit)
-  const hasMore = filteredClientes.length > displayLimit
+  // Pagination info (usa totalClientesFiltered para a categoria selecionada)
+  const totalPages = Math.ceil(totalClientesFiltered / limit)
+  const hasMore = page < totalPages
+  const showingFrom = (page - 1) * limit + 1
+  const showingTo = Math.min(page * limit, totalClientesFiltered)
 
-  // Reset display limit when filters change
+  // Reset page when filters change
   useEffect(() => {
-    setDisplayLimit(10)
+    setPage(1)
   }, [searchTerm, selectedStage])
+
+  const handleLoadMore = () => {
+    setPage(prev => prev + 1)
+  }
 
   // Update form when editing a client
   useEffect(() => {
@@ -624,7 +634,7 @@ export function ClientesPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Todos</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{clientes.length}</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{totalClientes}</p>
               </div>
               <Users className="h-8 w-8 text-gray-400 dark:text-gray-500" />
             </div>
@@ -642,7 +652,7 @@ export function ClientesPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600 dark:text-gray-300">{stage.name}</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{getStageCount(stage.id)}</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{stageStats[stage.id] || 0}</p>
                 </div>
                 <div className={`w-3 h-3 rounded-full ${stage.color}`} />
               </div>
@@ -705,7 +715,7 @@ export function ClientesPage() {
           ) : (
             <>
               <div className="divide-y divide-gray-200 dark:divide-gray-700 discrete-scroll max-h-[600px] overflow-y-auto">
-                {displayedClientes.map((cliente: any) => (
+                {filteredClientes.map((cliente: any) => (
                 <div key={cliente.id} className="p-6 hover:bg-gray-50 dark:hover:bg-gray-700 border-l-4 border-l-transparent hover:border-l-primary-500 transition-all duration-200">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
@@ -887,18 +897,25 @@ export function ClientesPage() {
               ))}
               </div>
               
-              {/* Load More Button */}
-              {hasMore && (
-                <div className="p-6 text-center border-t border-gray-200 dark:border-gray-700">
-                  <Button
-                    variant="outline"
-                    onClick={() => setDisplayLimit(prev => prev + 10)}
-                    className="w-full sm:w-auto"
-                  >
-                    Ver mais 10 clientes ({filteredClientes.length - displayLimit} restantes)
-                  </Button>
+              {/* Pagination Info and Load More Button */}
+              <div className="p-6 border-t border-gray-200 dark:border-gray-700">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div className="text-sm text-gray-600 dark:text-gray-400">
+                    Mostrando <span className="font-semibold">{showingFrom}</span> a <span className="font-semibold">{showingTo}</span> de <span className="font-semibold">{totalClientesFiltered}</span> clientes
+                    {selectedStage !== 'todos' && <span className="ml-1">({pipelineStages.find(s => s.id === selectedStage)?.name})</span>}
+                  </div>
+                  {hasMore && (
+                    <Button
+                      variant="outline"
+                      onClick={handleLoadMore}
+                      className="w-full sm:w-auto"
+                      disabled={isLoading}
+                    >
+                      {isLoading ? 'Carregando...' : `Carregar mais (${totalClientesFiltered - showingTo} restantes)`}
+                    </Button>
+                  )}
                 </div>
-              )}
+              </div>
             </>
           )}
         </div>
@@ -1990,16 +2007,15 @@ export function ClientesPage() {
               )}
 
               {/* Contexto, Dores e Motivação */}
-              {(selectedCliente.contexto_cliente || selectedCliente.dores_atuais || selectedCliente.motivacao || selectedCliente.expectativa) && (
+              {(selectedCliente.analise_cliente || selectedCliente.dores_atuais || selectedCliente.motivacao || selectedCliente.expectativa) && (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  
                   {/* Contexto */}
-                  {selectedCliente.contexto_cliente && (
+                  {selectedCliente.analise_cliente && (
                     <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 p-6 rounded-xl border border-blue-200 dark:border-blue-700 shadow-sm">
-                      <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-100 mb-4">Contexto do Cliente</h3>
+                      <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-100 mb-4">Análise do Cliente</h3>
                       <div className="bg-white dark:bg-blue-900/30 p-4 rounded-lg border border-blue-200 dark:border-blue-600">
                         <p className="text-blue-800 dark:text-blue-200 text-sm whitespace-pre-wrap leading-relaxed">
-                          {selectedCliente.contexto_cliente}
+                          {selectedCliente.analise_cliente}
                         </p>
                       </div>
                     </div>
@@ -2008,7 +2024,6 @@ export function ClientesPage() {
                   {/* Dores Atuais */}
                   {selectedCliente.dores_atuais && (
                     <div className="bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 p-6 rounded-xl border border-red-200 dark:border-red-700 shadow-sm">
-                      <h3 className="text-lg font-semibold text-red-900 dark:text-red-100 mb-4">Dores Atuais</h3>
                       <div className="bg-white dark:bg-red-900/30 p-4 rounded-lg border border-red-200 dark:border-red-600">
                         <p className="text-red-800 dark:text-red-200 text-sm whitespace-pre-wrap leading-relaxed">
                           {selectedCliente.dores_atuais}

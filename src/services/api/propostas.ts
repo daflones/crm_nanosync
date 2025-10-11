@@ -128,7 +128,9 @@ export const propostasService = {
     status?: string
     data_inicio?: string
     data_fim?: string
-  }): Promise<Proposta[]> {
+    page?: number
+    limit?: number
+  }): Promise<{ data: Proposta[], count: number }> {
     // Obter usuário atual e perfil para filtro multi-tenant
     const { data: { user: currentUser } } = await supabase.auth.getUser()
     if (!currentUser) {
@@ -148,11 +150,16 @@ export const propostasService = {
     // Determinar o ID da empresa (admin_profile_id ou próprio ID se for admin)
     const adminId = currentProfile.admin_profile_id || currentProfile.id
 
+    const page = filters?.page || 1
+    const limit = filters?.limit || 30
+    const offset = (page - 1) * limit
+
     let query = supabase
       .from('propostas')
-      .select('*, itens:proposta_itens(*)')
+      .select('*, itens:proposta_itens(*)', { count: 'exact' })
       .eq('profile', adminId)
       .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1)
 
     // Filtro adicional por role: vendedores só veem suas próprias propostas
     if (currentProfile.role === 'vendedor') {
@@ -175,14 +182,77 @@ export const propostasService = {
       query = query.lte('created_at', filters.data_fim)
     }
 
-    const { data, error } = await query
+    const { data, error, count } = await query
 
     if (error) {
       console.error('Erro ao buscar propostas:', error)
       throw new Error(`Erro ao buscar propostas: ${error.message}`)
     }
 
-    return data || []
+    return { data: data || [], count: count || 0 }
+  },
+
+  async getStatusStats(adminId: string): Promise<Record<string, number>> {
+    const statuses = ['enviada', 'aprovada', 'rejeitada', 'vencida', 'em_negociacao', 'rascunho']
+    const stats: Record<string, number> = {}
+
+    // Buscar contagem de cada status em paralelo
+    const promises = statuses.map(async (status) => {
+      const { count } = await supabase
+        .from('propostas')
+        .select('*', { count: 'exact', head: true })
+        .eq('profile', adminId)
+        .eq('status', status)
+      
+      return { status, count: count || 0 }
+    })
+
+    const results = await Promise.all(promises)
+    results.forEach(({ status, count }) => {
+      stats[status] = count
+    })
+
+    return stats
+  },
+
+  async getValorStats(adminId: string): Promise<{
+    valorTotalAprovadas: number
+    valorTotalAbertas: number
+    totalAprovadas: number
+    totalFinalizadas: number
+  }> {
+    // Buscar valor total de propostas aprovadas
+    const { data: aprovadas } = await supabase
+      .from('propostas')
+      .select('valor_total')
+      .eq('profile', adminId)
+      .eq('status', 'aprovada')
+
+    const valorTotalAprovadas = aprovadas?.reduce((sum, p) => sum + (p.valor_total || 0), 0) || 0
+    const totalAprovadas = aprovadas?.length || 0
+
+    // Buscar valor total de propostas abertas (não finalizadas)
+    const { data: abertas } = await supabase
+      .from('propostas')
+      .select('valor_total')
+      .eq('profile', adminId)
+      .not('status', 'in', '(aprovada,rejeitada,vencida)')
+
+    const valorTotalAbertas = abertas?.reduce((sum, p) => sum + (p.valor_total || 0), 0) || 0
+
+    // Total de finalizadas para taxa de conversão
+    const { count: totalFinalizadas } = await supabase
+      .from('propostas')
+      .select('*', { count: 'exact', head: true })
+      .eq('profile', adminId)
+      .in('status', ['aprovada', 'rejeitada', 'vencida'])
+
+    return {
+      valorTotalAprovadas,
+      valorTotalAbertas,
+      totalAprovadas,
+      totalFinalizadas: totalFinalizadas || 0
+    }
   },
 
   async getById(id: string): Promise<Proposta | null> {

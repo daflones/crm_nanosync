@@ -8,17 +8,23 @@ export const usePropostas = (filters?: {
   status?: string
   data_inicio?: string
   data_fim?: string
+  page?: number
+  limit?: number
 }) => {
-  const query = useQuery<Proposta[]>({
+  const query = useQuery({
     queryKey: ['propostas', filters],
     queryFn: () => propostasService.getAll(filters),
-    staleTime: 1000 * 30, // 30 seconds for real-time updates
-    refetchInterval: 1000 * 60, // Refetch every minute
-    refetchOnWindowFocus: true,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    refetchInterval: false,
+    refetchOnWindowFocus: false,
     refetchOnReconnect: true,
   })
 
-  return query
+  return {
+    ...query,
+    data: query.data?.data || [],
+    count: query.data?.count || 0
+  }
 }
 
 export const useProposta = (id: string) => {
@@ -26,9 +32,53 @@ export const useProposta = (id: string) => {
     queryKey: ['propostas', id],
     queryFn: () => propostasService.getById(id),
     enabled: !!id,
-    staleTime: 1000 * 30, // 30 seconds for real-time updates
-    refetchOnWindowFocus: true,
+    staleTime: 1000 * 60 * 5,
+    refetchOnWindowFocus: false,
     refetchOnReconnect: true,
+  })
+}
+
+export function usePropostasStatusStats() {
+  return useQuery({
+    queryKey: ['propostas-status-stats'],
+    queryFn: async () => {
+      const { supabase } = await import('@/lib/supabase')
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Não autenticado')
+      
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('id, admin_profile_id')
+        .eq('id', user.id)
+        .single()
+      
+      const adminId = profile?.admin_profile_id || profile?.id
+      return propostasService.getStatusStats(adminId)
+    },
+    staleTime: 1000 * 60 * 2,
+    refetchOnWindowFocus: false,
+  })
+}
+
+export function usePropostasValorStats() {
+  return useQuery({
+    queryKey: ['propostas-valor-stats'],
+    queryFn: async () => {
+      const { supabase } = await import('@/lib/supabase')
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Não autenticado')
+      
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('id, admin_profile_id')
+        .eq('id', user.id)
+        .single()
+      
+      const adminId = profile?.admin_profile_id || profile?.id
+      return propostasService.getValorStats(adminId)
+    },
+    staleTime: 1000 * 60 * 2,
+    refetchOnWindowFocus: false,
   })
 }
 

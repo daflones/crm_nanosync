@@ -74,7 +74,9 @@ export const clientesService = {
     origem?: string
     classificacao?: string
     search?: string
-  }): Promise<Cliente[]> {
+    page?: number
+    limit?: number
+  }): Promise<{ data: Cliente[], count: number }> {
     // Get current user's profile to filter by company
     const { data: { user: currentUser } } = await supabase.auth.getUser()
     if (!currentUser) {
@@ -94,12 +96,16 @@ export const clientesService = {
     // Use admin_profile_id to filter clientes
     const adminId = currentProfile.admin_profile_id || currentProfile.id
 
+    const page = filters?.page || 1
+    const limit = filters?.limit || 50
+    const offset = (page - 1) * limit
+
     let query = supabase
       .from('clientes')
       .select('*', { count: 'exact' })
       .eq('profile', adminId) // Filter by company
       .order('created_at', { ascending: false })
-      .limit(10000) // Increase limit to 10000 to avoid default 1000 limit
+      .range(offset, offset + limit - 1)
 
     if (filters?.vendedorId) {
       query = query.eq('vendedor_id', filters.vendedorId)
@@ -119,14 +125,37 @@ export const clientesService = {
       query = query.or(`nome_contato.ilike.%${filters.search}%,nome_empresa.ilike.%${filters.search}%,email.ilike.%${filters.search}%,whatsapp.ilike.%${searchTerm}%,telefone_empresa.ilike.%${searchTerm}%,cpf.ilike.%${searchTerm}%,cnpj.ilike.%${searchTerm}%`)
     }
 
-    const { data, error } = await query
+    const { data, error, count } = await query
 
     if (error) {
       console.error('Erro ao buscar clientes:', error)
       throw new Error(`Erro ao buscar clientes: ${error.message}`)
     }
 
-    return data || []
+    return { data: data || [], count: count || 0 }
+  },
+
+  async getStageStats(adminId: string): Promise<Record<string, number>> {
+    const stages = ['novo', 'contactado', 'qualificado', 'proposta', 'negociacao', 'fechado', 'perdido']
+    const stats: Record<string, number> = {}
+
+    // Buscar contagem de cada etapa em paralelo
+    const promises = stages.map(async (stage) => {
+      const { count } = await supabase
+        .from('clientes')
+        .select('*', { count: 'exact', head: true })
+        .eq('profile', adminId)
+        .eq('etapa_pipeline', stage)
+      
+      return { stage, count: count || 0 }
+    })
+
+    const results = await Promise.all(promises)
+    results.forEach(({ stage, count }) => {
+      stats[stage] = count
+    })
+
+    return stats
   },
 
   async getById(id: string): Promise<Cliente | null> {

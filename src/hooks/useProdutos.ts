@@ -5,18 +5,49 @@ import { toast } from 'sonner'
 export const useProdutos = (filters?: {
   categoria_id?: string
   segmento_id?: string
-  status?: 'ativo' | 'inativo'
+  status?: string
   destaque?: boolean
   mais_vendido?: boolean
   novidade?: boolean
+  page?: number
+  limit?: number
 }) => {
-  return useQuery<Produto[]>({
+  const query = useQuery({
     queryKey: ['produtos', filters],
     queryFn: () => produtosService.getAll(filters),
-    staleTime: 1000 * 30, // 30 seconds for real-time updates
-    refetchInterval: 1000 * 60, // Refetch every minute
-    refetchOnWindowFocus: true,
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 10,
+    refetchInterval: false,
+    refetchOnWindowFocus: false,
     refetchOnReconnect: true,
+  })
+
+  return {
+    ...query,
+    data: query.data?.data || [],
+    count: query.data?.count || 0
+  }
+}
+
+export function useProdutosStatusStats() {
+  return useQuery({
+    queryKey: ['produtos-status-stats'],
+    queryFn: async () => {
+      const { supabase } = await import('@/lib/supabase')
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Não autenticado')
+      
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('id, admin_profile_id')
+        .eq('id', user.id)
+        .single()
+      
+      const adminId = profile?.admin_profile_id || profile?.id
+      return produtosService.getStatusStats(adminId)
+    },
+    staleTime: 1000 * 60 * 2,
+    refetchOnWindowFocus: false,
   })
 }
 
@@ -24,9 +55,10 @@ export const useProdutosStats = () => {
   return useQuery({
     queryKey: ['produtos', 'stats'],
     queryFn: produtosService.getStats,
-    staleTime: 1000 * 30, // 30 seconds for real-time updates
-    refetchInterval: 1000 * 60, // Refetch every minute
-    refetchOnWindowFocus: true,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    gcTime: 1000 * 60 * 10, // 10 minutes cache
+    refetchInterval: false,
+    refetchOnWindowFocus: false,
     refetchOnReconnect: true,
   })
 }
@@ -36,6 +68,8 @@ export const useProduto = (id: string) => {
     queryKey: ['produtos', id],
     queryFn: () => produtosService.getById(id),
     enabled: !!id,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    gcTime: 1000 * 60 * 10, // 10 minutes cache
   })
 }
 
@@ -45,9 +79,8 @@ export const useCreateProduto = () => {
   return useMutation({
     mutationFn: (data: ProdutoCreateData) => produtosService.create(data),
     onSuccess: () => {
-      // Immediately refetch data for real-time updates
+      // Only invalidate, let React Query handle refetch on demand
       queryClient.invalidateQueries({ queryKey: ['produtos'] })
-      queryClient.refetchQueries({ queryKey: ['produtos'] })
       toast.success('Produto criado com sucesso!')
     },
     onError: (error: Error) => {
@@ -65,9 +98,8 @@ export const useUpdateProduto = () => {
     mutationFn: ({ id, data }: { id: string; data: ProdutoUpdateData }) =>
       produtosService.update(id, data),
     onSuccess: () => {
-      // Immediately refetch data for real-time updates
+      // Only invalidate, let React Query handle refetch on demand
       queryClient.invalidateQueries({ queryKey: ['produtos'] })
-      queryClient.refetchQueries({ queryKey: ['produtos'] })
       toast.success('Produto atualizado com sucesso!')
     },
     onError: (error: Error) => {
@@ -84,9 +116,8 @@ export const useDeleteProduto = () => {
   return useMutation({
     mutationFn: (id: string) => produtosService.delete(id),
     onSuccess: () => {
-      // Immediately refetch data for real-time updates
+      // Only invalidate, let React Query handle refetch on demand
       queryClient.invalidateQueries({ queryKey: ['produtos'] })
-      queryClient.refetchQueries({ queryKey: ['produtos'] })
       toast.success('Produto excluído com sucesso!')
     },
     onError: (error: Error) => {

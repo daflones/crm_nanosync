@@ -6,6 +6,7 @@ import { NotificationProvider } from './contexts/NotificationContext'
 import { usePerformanceOptimization } from './hooks/usePerformanceOptimization'
 import { useAuthStore } from '@/stores/authStore'
 import { PWAInstallPrompt } from './components/PWAInstallPrompt'
+import { useNotificacoesRealTime } from './hooks/useNotificacoes'
 import './styles/globals.css'
 
 // Global flag to prevent double initialization in React StrictMode
@@ -50,6 +51,16 @@ function AppContent() {
   
   // Initialize performance optimization only after auth is ready
   usePerformanceOptimization()
+  
+  // Initialize real-time notifications
+  const { isConnected } = useNotificacoesRealTime()
+  
+  // Log connection status
+  React.useEffect(() => {
+    if (isConnected) {
+      console.log('✅ Notificações em tempo real conectadas')
+    }
+  }, [isConnected])
 
   // Timeout para evitar loading infinito (baseado no exemplo)
   React.useEffect(() => {

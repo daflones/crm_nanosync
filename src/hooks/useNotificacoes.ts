@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { NotificacaoService, type Notificacao, type NotificacaoCreateData, type NotificacaoFilters } from '@/services/api/notificacoes'
 import { useAuthStore } from '@/stores/authStore'
 import { toast } from 'sonner'
+import { supabase } from '@/lib/supabase'
 
 // Hook para buscar notificações
 export function useNotificacoes(
@@ -28,7 +29,8 @@ export function useNotificacoesNaoLidas() {
     queryKey: ['notificacoes-nao-lidas', user?.id],
     queryFn: () => NotificacaoService.contarNaoLidas(user!.id),
     enabled: !!user?.id,
-    refetchInterval: 1000 * 30, // Atualizar a cada 30 segundos
+    refetchInterval: false, // Desabilitado - usa realtime
+    staleTime: 1000 * 60 * 5, // 5 minutos
   })
 }
 
@@ -40,7 +42,8 @@ export function useNotificacoesRecentes() {
     queryKey: ['notificacoes-recentes', user?.id],
     queryFn: () => NotificacaoService.buscarRecentes(user!.id),
     enabled: !!user?.id,
-    refetchInterval: 1000 * 60, // Atualizar a cada minuto
+    refetchInterval: false, // Desabilitado - usa realtime
+    staleTime: 1000 * 60 * 5, // 5 minutos
   })
 }
 
@@ -187,8 +190,6 @@ export function useNotificacoesRealTime() {
     if (!user?.id) return
 
     // Configurar listener para notificações em tempo real
-    const { supabase } = require('@/lib/supabase')
-    
     const channel = supabase
       .channel('notificacoes-realtime')
       .on('postgres_changes', {
