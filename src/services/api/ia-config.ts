@@ -3,16 +3,12 @@ import { supabase } from '@/lib/supabase'
 export interface IAConfig {
   id?: string
   user_id: string
-  profile: string // Campo para filtro multi-tenant
+  profile?: string // Campo para filtro multi-tenant
   // Nome do agente de IA
   nome_agente?: string
-  // Contexto e personalidade da IA
-  contexto_ia: string | null
-  tom_fala: 'profissional' | 'casual' | 'formal' | 'amigavel' | 'tecnico'
-  // Regras e comportamentos
-  regras_especificas: string
-  regras_adicionais?: string
+  nome_empresa?: string
   // Configurações de texto
+  tom_fala: 'profissional' | 'casual' | 'formal' | 'amigavel' | 'tecnico'
   tamanho_textos: 'curto' | 'medio' | 'longo' | 'detalhado'
   usar_emojis: boolean
   // Horários de funcionamento
@@ -26,14 +22,7 @@ export interface IAConfig {
   // Configurações de agendamento
   agendamento_ia?: boolean
   regras_agendamento?: string
-  horarios_agendamento?: {
-    [key: string]: {
-      inicio: string
-      fim: string
-      ativo: boolean
-    }
-  }
-  // Detalhes da empresa
+  // Detalhes da empresa (JSONB)
   detalhes_empresa: {
     // Informações básicas da empresa
     sobre_empresa: string
@@ -51,7 +40,7 @@ export interface IAConfig {
     argumentos_venda_por_perfil: string
     objecoes_comuns_respostas: string
     
-    // Contatos (mantendo compatibilidade)
+    // Contatos
     contatos: {
       telefone: string
       email: string
@@ -59,7 +48,7 @@ export interface IAConfig {
       endereco: string
     }
     
-    // Redes sociais (mantendo compatibilidade)
+    // Redes sociais
     redes_sociais: {
       website: string
       instagram: string
@@ -110,10 +99,7 @@ export const getIAConfig = async (userId: string) => {
         user_id: userId,
         profile: adminId,
         nome_agente: '',
-        contexto_ia: null,
         tom_fala: 'profissional',
-        regras_especificas: 'Sempre confirme informações importantes antes de prosseguir. Seja claro e objetivo nas respostas.',
-        regras_adicionais: '',
         tamanho_textos: 'medio',
         usar_emojis: true,
         horarios_funcionamento: {
@@ -151,15 +137,6 @@ export const getIAConfig = async (userId: string) => {
         },
         agendamento_ia: false,
         regras_agendamento: '',
-        horarios_agendamento: {
-          segunda: { inicio: '08:00', fim: '18:00', ativo: false },
-          terca: { inicio: '08:00', fim: '18:00', ativo: false },
-          quarta: { inicio: '08:00', fim: '18:00', ativo: false },
-          quinta: { inicio: '08:00', fim: '18:00', ativo: false },
-          sexta: { inicio: '08:00', fim: '18:00', ativo: false },
-          sabado: { inicio: '08:00', fim: '12:00', ativo: false },
-          domingo: { inicio: '08:00', fim: '12:00', ativo: false }
-        },
         tempo_resposta_ms: 2000,
         mensagem_ausencia: 'No momento estou fora do horário de atendimento. Deixe sua mensagem que retornarei assim que possível.',
         envia_documento: false

@@ -19,7 +19,6 @@ export function IAConfigPage() {
 
   const [iaConfig, setIaConfig] = useState<Partial<IAConfig>>({
     nome_agente: '',
-    contexto_ia: null,
     tom_fala: 'profissional',
     tamanho_textos: 'medio',
     usar_emojis: false,
@@ -36,15 +35,6 @@ export function IAConfigPage() {
     },
     agendamento_ia: false,
     regras_agendamento: '',
-    horarios_agendamento: {
-      segunda: { ativo: false, inicio: '08:00', fim: '18:00' },
-      terca: { ativo: false, inicio: '08:00', fim: '18:00' },
-      quarta: { ativo: false, inicio: '08:00', fim: '18:00' },
-      quinta: { ativo: false, inicio: '08:00', fim: '18:00' },
-      sexta: { ativo: false, inicio: '08:00', fim: '18:00' },
-      sabado: { ativo: false, inicio: '08:00', fim: '12:00' },
-      domingo: { ativo: false, inicio: '08:00', fim: '12:00' }
-    },
     detalhes_empresa: {
       sobre_empresa: '',
       diferenciais_competitivos: '',
