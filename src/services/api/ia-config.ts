@@ -21,7 +21,6 @@ export interface IAConfig {
   }
   // Configurações de agendamento
   agendamento_ia?: boolean
-  regras_agendamento?: string
   // Detalhes da empresa (JSONB)
   detalhes_empresa: {
     // Informações básicas da empresa
@@ -136,7 +135,6 @@ export const getIAConfig = async (userId: string) => {
           }
         },
         agendamento_ia: false,
-        regras_agendamento: '',
         tempo_resposta_ms: 2000,
         mensagem_ausencia: 'No momento estou fora do horário de atendimento. Deixe sua mensagem que retornarei assim que possível.',
         envia_documento: false

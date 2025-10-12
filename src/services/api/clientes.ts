@@ -267,23 +267,31 @@ export const clientesService = {
   },
 
   async update(id: string, updates: ClienteUpdateData): Promise<Cliente> {
+    console.log('🔵 [Service] Iniciando update do cliente...', { id, updates })
+    
     // Buscar dados anteriores para o log
     const clienteAnterior = await clientesService.getById(id)
+    console.log('🔵 [Service] Cliente anterior encontrado:', clienteAnterior)
+    
+    const updateData = {
+      ...updates,
+      updated_at: new Date().toISOString()
+    }
+    console.log('🔵 [Service] Dados para update:', updateData)
     
     const { data, error } = await supabase
       .from('clientes')
-      .update({
-        ...updates,
-        updated_at: new Date().toISOString()
-      })
+      .update(updateData)
       .eq('id', id)
       .select()
       .single()
 
     if (error) {
-      console.error('Erro ao atualizar cliente:', error)
+      console.error('❌ [Service] Erro ao atualizar cliente:', error)
       throw new Error(`Erro ao atualizar cliente: ${error.message}`)
     }
+
+    console.log('✅ [Service] Cliente atualizado com sucesso:', data)
 
     // Registrar atividade
     await AtividadeService.editar(

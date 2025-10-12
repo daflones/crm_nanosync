@@ -63,44 +63,47 @@ import { KanbanBoard } from '@/components/kanban/KanbanBoard'
 
 // Validation schema - aligned with database structure
 const clienteSchema = z.object({
-  // CAMPOS OBRIGATÓRIOS - apenas nome e WhatsApp
-  nome_contato: z.string().min(1, 'Nome do contato é obrigatório'),
-  ddd: z.string().min(2, 'DDD é obrigatório'),
-  telefone: z.string().min(8, 'WhatsApp é obrigatório'),
+  // Todos os campos são opcionais para permitir edição parcial
+  nome_contato: z.string().nullable().optional().or(z.literal('')),
+  ddd: z.string().nullable().optional().or(z.literal('')),
+  telefone: z.string().nullable().optional().or(z.literal('')),
   
   // CAMPOS OPCIONAIS - Informações básicas
-  email: z.string().email('Email deve ter um formato válido').optional().or(z.literal('')),
-  nome_empresa: z.string().optional().or(z.literal('')),
-  segmento_cliente: z.string().optional().or(z.literal('')),
-  razao_social: z.string().optional().or(z.literal('')),
-  cargo: z.string().optional().or(z.literal('')),
-  inscricao_estadual: z.string().optional().or(z.literal('')),
+  email: z.string().nullable().optional().or(z.literal('')).refine(
+    (val) => !val || val === '' || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val),
+    { message: 'Email deve ter um formato válido' }
+  ),
+  nome_empresa: z.string().nullable().optional().or(z.literal('')),
+  segmento_cliente: z.string().nullable().optional().or(z.literal('')),
+  razao_social: z.string().nullable().optional().or(z.literal('')),
+  cargo: z.string().nullable().optional().or(z.literal('')),
+  inscricao_estadual: z.string().nullable().optional().or(z.literal('')),
   
   // CAMPOS OPCIONAIS - Documentos (COMPLETAMENTE OPCIONAIS)
   documento_tipo: z.enum(['cpf', 'cnpj']).optional().nullable(),
-  documento_numero: z.string().optional().or(z.literal('')),
-  telefone_empresa: z.string().optional().or(z.literal('')),
+  documento_numero: z.string().nullable().optional().or(z.literal('')),
+  telefone_empresa: z.string().nullable().optional().or(z.literal('')),
   
   // CAMPOS OPCIONAIS - Endereço
-  endereco: z.string().optional().or(z.literal('')),
-  numero: z.string().optional().or(z.literal('')),
-  cidade: z.string().optional().or(z.literal('')),
-  estado: z.string().optional().or(z.literal('')),
-  cep: z.string().optional().or(z.literal('')),
+  endereco: z.string().nullable().optional().or(z.literal('')),
+  numero: z.string().nullable().optional().or(z.literal('')),
+  cidade: z.string().nullable().optional().or(z.literal('')),
+  estado: z.string().nullable().optional().or(z.literal('')),
+  cep: z.string().nullable().optional().or(z.literal('')),
   
   // CAMPOS OPCIONAIS - Pipeline e negócio
   etapa_pipeline: z.string().default('novo'),
   classificacao: z.string().default('frio'),
   origem: z.string().default('manual'),
-  vendedor_id: z.string().optional().or(z.literal('')),
+  vendedor_id: z.string().nullable().optional().or(z.literal('')),
   
   // CAMPOS OPCIONAIS - Observações e contexto
-  observacoes: z.string().optional().or(z.literal('')),
-  produtos_interesse: z.string().optional().or(z.literal('')),
-  contexto_cliente: z.string().optional().or(z.literal('')),
-  dores_atuais: z.string().optional().or(z.literal('')),
-  motivacao: z.string().optional().or(z.literal('')),
-  expectativa: z.string().optional().or(z.literal('')),
+  observacoes: z.string().nullable().optional().or(z.literal('')),
+  produtos_interesse: z.string().nullable().optional().or(z.literal('')),
+  analise_cliente: z.string().nullable().optional().or(z.literal('')),
+  dores_atuais: z.string().nullable().optional().or(z.literal('')),
+  motivacao: z.string().nullable().optional().or(z.literal('')),
+  expectativa: z.string().nullable().optional().or(z.literal('')),
 })
 
 type ClienteFormData = z.infer<typeof clienteSchema>
@@ -144,6 +147,7 @@ export function ClientesPage() {
   // React Hook Form
   const form = useForm<ClienteFormData>({
     resolver: zodResolver(clienteSchema),
+    mode: 'onSubmit',
     defaultValues: {
       etapa_pipeline: 'novo',
       classificacao: 'frio',
@@ -151,6 +155,13 @@ export function ClientesPage() {
     }
   })
   const { register, handleSubmit, formState: { errors }, reset, setValue, watch } = form
+  
+  // Log de erros de validação
+  useEffect(() => {
+    if (Object.keys(errors).length > 0) {
+      console.log('❌ [Form] Erros de validação:', errors)
+    }
+  }, [errors])
 
   const pipelineStages = [
     { id: 'novo', name: 'Novo', color: 'bg-gray-500' },
@@ -229,7 +240,10 @@ export function ClientesPage() {
         ...selectedCliente,
         ddd: selectedCliente.whatsapp ? selectedCliente.whatsapp.replace(/\D/g, '').substring(0, 2) : '',
         telefone: selectedCliente.whatsapp ? selectedCliente.whatsapp.replace(/\D/g, '').substring(2) : '',
-        produtos_interesse: selectedCliente.produtos_interesse ? selectedCliente.produtos_interesse.join(', ') : '',
+        produtos_interesse: Array.isArray(selectedCliente.produtos_interesse) 
+          ? selectedCliente.produtos_interesse.join(', ') 
+          : (selectedCliente.produtos_interesse || ''),
+        analise_cliente: selectedCliente.analise_cliente || '',
         origem: selectedCliente.origem || 'manual',
         etapa_pipeline: selectedCliente.etapa_pipeline || 'novo',
         classificacao: selectedCliente.classificacao || 'frio'
@@ -283,12 +297,14 @@ export function ClientesPage() {
         produtos_interesse: data.produtos_interesse 
           ? data.produtos_interesse.split(',').map(p => p.trim()).filter(p => p.length > 0)
           : null,
-        contexto_cliente: data.contexto_cliente || null,
+        analise_cliente: data.analise_cliente || null,
         dores_atuais: data.dores_atuais || null,
         motivacao: data.motivacao || null,
         expectativa: data.expectativa || null,
       }
 
+      console.log('📤 Enviando dados para criação:', clienteData)
+      
       const result = await createCliente.mutateAsync(clienteData)
       
       setIsCreateModalOpen(false)
@@ -312,7 +328,12 @@ export function ClientesPage() {
   }
 
   const handleUpdateCliente = async (data: ClienteFormData) => {
-    if (!selectedCliente) return
+    console.log('🟡 [Cliente] handleUpdateCliente chamado', { data, selectedCliente })
+    
+    if (!selectedCliente) {
+      console.error('❌ [Cliente] selectedCliente não encontrado')
+      return
+    }
     
     try {
       // Preparar dados para atualização no banco de dados
@@ -356,21 +377,24 @@ export function ClientesPage() {
         produtos_interesse: data.produtos_interesse 
           ? data.produtos_interesse.split(',').map(p => p.trim()).filter(p => p.length > 0)
           : null,
-        contexto_cliente: data.contexto_cliente || null,
+        analise_cliente: data.analise_cliente || null,
         dores_atuais: data.dores_atuais || null,
         motivacao: data.motivacao || null,
         expectativa: data.expectativa || null,
       }
 
+      console.log('🔵 [Cliente] Iniciando atualização...', { id: selectedCliente.id, clienteData })
+      
       await updateCliente.mutateAsync({
         id: selectedCliente.id,
         data: clienteData
       })
       
+      console.log('✅ [Cliente] Atualização bem-sucedida')
+      
       setIsEditModalOpen(false)
       setSelectedCliente(null)
       reset()
-      toast.success('Cliente atualizado com sucesso!')
       
       // Criar notificação no banco
       await createDatabaseNotification({
@@ -383,8 +407,8 @@ export function ClientesPage() {
         prioridade: 'normal'
       })
     } catch (error) {
-      console.error('❌ Erro ao atualizar cliente:', error)
-      toast.error('Erro ao atualizar cliente')
+      console.error('❌ [Cliente] Erro ao atualizar:', error)
+      toast.error(`Erro ao atualizar cliente: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
     }
   }
 
@@ -469,8 +493,8 @@ export function ClientesPage() {
     setValue('classificacao', cliente.classificacao || 'frio')
     setValue('origem', cliente.origem || 'manual')
     setValue('observacoes', cliente.observacoes || '')
-    setValue('produtos_interesse', cliente.produtos_interesse ? cliente.produtos_interesse.join(', ') : '')
-    setValue('contexto_cliente', cliente.contexto_cliente || '')
+    setValue('produtos_interesse', Array.isArray(cliente.produtos_interesse) ? cliente.produtos_interesse.join(', ') : (cliente.produtos_interesse || ''))
+    setValue('analise_cliente', cliente.analise_cliente || '')
     setValue('dores_atuais', cliente.dores_atuais || '')
     setValue('motivacao', cliente.motivacao || '')
     setValue('expectativa', cliente.expectativa || '')
@@ -1271,10 +1295,10 @@ export function ClientesPage() {
               </div>
 
               <div>
-                <Label htmlFor="contexto_cliente">Contexto do Cliente</Label>
+                <Label htmlFor="analise_cliente">Análise do Cliente</Label>
                 <Textarea
-                  id="contexto_cliente"
-                  {...register('contexto_cliente')}
+                  id="analise_cliente"
+                  {...register('analise_cliente')}
                   placeholder="Resumo completo do cliente, histórico, preferências, etc..."
                   rows={4}
                 />
@@ -1336,7 +1360,7 @@ export function ClientesPage() {
             <div className="grid gap-4 py-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="edit-nome_contato">Nome do Contato <span className="text-red-500">*</span></Label>
+                  <Label htmlFor="edit-nome_contato">Nome do Contato</Label>
                   <Input
                     id="edit-nome_contato"
                     {...register('nome_contato')}
@@ -1427,7 +1451,7 @@ export function ClientesPage() {
                   )}
                 </div>
                 <div>
-                  <Label>WhatsApp <span className="text-red-500">*</span></Label>
+                  <Label>WhatsApp</Label>
                   <div className="grid grid-cols-3 gap-2">
                     <Input 
                       id="edit-ddd" 
@@ -1538,7 +1562,7 @@ export function ClientesPage() {
                   </Select>
                 </div>
                 <div>
-                  <Label htmlFor="edit-segmento_cliente">Segmento <span className="text-red-500">*</span></Label>
+                  <Label htmlFor="edit-segmento_cliente">Segmento</Label>
                   <Input 
                     id="edit-segmento_cliente" 
                     {...register('segmento_cliente')} 
@@ -1553,7 +1577,7 @@ export function ClientesPage() {
               <VendedorSelector
                 value={form.watch('vendedor_id')}
                 onValueChange={(value) => setValue('vendedor_id', value)}
-                required={true}
+                required={false}
               />
 
 
@@ -1572,10 +1596,10 @@ export function ClientesPage() {
               </div>
 
               <div>
-                <Label htmlFor="edit-contexto_cliente">Contexto do Cliente</Label>
+                <Label htmlFor="edit-analise_cliente">Análise do Cliente</Label>
                 <Textarea
-                  id="edit-contexto_cliente"
-                  {...register('contexto_cliente')}
+                  id="edit-analise_cliente"
+                  {...register('analise_cliente')}
                   placeholder="Resumo completo do cliente, histórico, preferências, etc..."
                   rows={4}
                 />

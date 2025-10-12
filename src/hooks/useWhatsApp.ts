@@ -26,8 +26,16 @@ export function useCreateWhatsAppInstance() {
         throw new Error('Já existe uma instância WhatsApp configurada para esta empresa')
       }
 
-      // 1. Criar instância na Evolution API
-      const response = await whatsappService.createInstance(instanceName, number)
+      // Formatar número: remover todos os caracteres especiais, manter apenas dígitos
+      const formattedNumber = number.replace(/\D/g, '')
+      
+      // Validar se o número tem pelo menos 10 dígitos (código país + DDD + número)
+      if (formattedNumber.length < 10) {
+        throw new Error('Número inválido. Insira o número completo com código do país (ex: 5511999999999)')
+      }
+
+      // 1. Criar instância na Evolution API com número formatado
+      const response = await whatsappService.createInstance(instanceName, formattedNumber)
       
       // 2. Salvar no Supabase imediatamente
       await whatsappService.saveInstanceToProfile({
@@ -44,7 +52,16 @@ export function useCreateWhatsAppInstance() {
       toast.success('Instância WhatsApp criada com sucesso!')
     },
     onError: (error: Error) => {
-      toast.error(`Erro ao criar instância: ${error.message}`)
+      // Tratar erros específicos da Evolution API
+      let errorMessage = error.message
+      
+      if (errorMessage.includes('does not match pattern') || errorMessage.includes('number does not match')) {
+        errorMessage = 'Número inválido. Use apenas números com código do país (ex: 5511999999999)'
+      } else if (errorMessage.includes('already exists')) {
+        errorMessage = 'Já existe uma instância com este nome'
+      }
+      
+      toast.error(`Erro ao criar instância: ${errorMessage}`)
     }
   })
 }

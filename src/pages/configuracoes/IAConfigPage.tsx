@@ -34,7 +34,6 @@ export function IAConfigPage() {
       domingo: { ativo: false, inicio: '08:00', fim: '12:00' }
     },
     agendamento_ia: false,
-    regras_agendamento: '',
     detalhes_empresa: {
       sobre_empresa: '',
       diferenciais_competitivos: '',
@@ -244,17 +243,6 @@ export function IAConfigPage() {
 
             {iaConfig.agendamento_ia && (
               <>
-                <div className="grid gap-2">
-                  <Label htmlFor="regras-agendamento">Regras de Agendamento</Label>
-                  <Textarea
-                    id="regras-agendamento"
-                    placeholder="Descreva como a IA deve se comportar ao realizar agendamentos...\nEx: Sempre confirmar disponibilidade, perguntar preferência de horário, etc."
-                    value={iaConfig.regras_agendamento || ''}
-                    onChange={(e) => setIaConfig({...iaConfig, regras_agendamento: e.target.value})}
-                    rows={4}
-                  />
-                </div>
-                
                 <div className="space-y-3">
                   <Label>Vendedores e Horários Disponíveis</Label>
                   <p className="text-sm text-gray-500">

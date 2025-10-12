@@ -226,7 +226,7 @@ export default function WhatsAppPage() {
         </Card>
       ) : (
         // Instância configurada
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className={`grid gap-6 ${status?.status === 'open' ? 'md:grid-cols-1' : 'md:grid-cols-2'}`}>
           {/* Status da Instância */}
           <Card>
             <CardHeader>
@@ -242,39 +242,61 @@ export default function WhatsAppPage() {
                 )}
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-sm font-medium">Nome:</span>
-                  <span className="text-sm">{instance.instanceName}</span>
+            <CardContent className="space-y-6">
+              {/* Nome do Perfil */}
+              {status?.profileName && (
+                <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                  <div className="w-12 h-12 rounded-full bg-green-500 flex items-center justify-center text-white font-bold text-lg">
+                    {status.profileName.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Nome</p>
+                    <p className="font-semibold text-gray-900 dark:text-white">{status.profileName}</p>
+                  </div>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-sm font-medium">ID:</span>
-                  <span className="text-sm font-mono">{instance.instanceId || 'N/A'}</span>
+              )}
+
+              {/* Status e Conectado */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Status</p>
+                  <p className="font-semibold text-blue-900 dark:text-blue-100">
+                    {status?.status === 'open' ? 'Ativo' : status?.status === 'connecting' ? 'Conectando' : 'Desconectado'}
+                  </p>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-sm font-medium">Status:</span>
-                  <span className="text-sm">{status?.status || 'Verificando...'}</span>
+                <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Conexão</p>
+                  <p className="font-semibold text-green-900 dark:text-green-100">
+                    {status?.status === 'open' ? 'Conectado' : 'Aguardando'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Informações Adicionais */}
+              <div className="space-y-3 pt-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600 dark:text-gray-400">Nome da Instância</span>
+                  <span className="text-sm font-medium text-gray-900 dark:text-white">{instance.instanceName}</span>
                 </div>
                 {status?.owner && (
-                  <div className="flex justify-between">
-                    <span className="text-sm font-medium">Número:</span>
-                    <span className="text-sm">{status.owner}</span>
-                  </div>
-                )}
-                {status?.profileName && (
-                  <div className="flex justify-between">
-                    <span className="text-sm font-medium">Nome:</span>
-                    <span className="text-sm">{status.profileName}</span>
-                  </div>
+                  <>
+                    <Separator />
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-gray-600 dark:text-gray-400">Número</span>
+                      <span className="text-sm font-medium text-gray-900 dark:text-white">{status.owner}</span>
+                    </div>
+                  </>
                 )}
                 {instance.connectedAt && (
-                  <div className="flex justify-between">
-                    <span className="text-sm font-medium">Conectado em:</span>
-                    <span className="text-sm">
-                      {new Date(instance.connectedAt).toLocaleString('pt-BR')}
-                    </span>
-                  </div>
+                  <>
+                    <Separator />
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-gray-600 dark:text-gray-400">Conectado em</span>
+                      <span className="text-sm font-medium text-gray-900 dark:text-white">
+                        {new Date(instance.connectedAt).toLocaleString('pt-BR')}
+                      </span>
+                    </div>
+                  </>
                 )}
               </div>
 
@@ -298,45 +320,34 @@ export default function WhatsAppPage() {
             </CardContent>
           </Card>
 
-          {/* QR Code */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <QrCode className="w-5 h-5" />
-                Conexão WhatsApp
-              </CardTitle>
-              <CardDescription>
-                {status?.status === 'open' 
-                  ? 'WhatsApp conectado com sucesso!' 
-                  : 'Escaneie o QR Code com seu WhatsApp'
-                }
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {status?.status === 'open' ? (
-                <div className="text-center py-8">
-                  <CheckCircle className="w-16 h-16 text-green-600 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-green-800 mb-2">
-                    WhatsApp Conectado!
-                  </h3>
-                  <p className="text-muted-foreground">
-                    Sua instância está conectada e pronta para receber mensagens.
-                  </p>
-                </div>
-              ) : shouldShowQRCode ? (
-                <QRCodeDisplay 
-                  instanceName={instance.instanceName}
-                  qrCode={qrCode?.base64}
-                  isLoading={qrLoading}
-                />
-              ) : (
-                <div className="text-center py-8">
-                  <RefreshCw className="w-8 h-8 animate-spin text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground">Verificando status da conexão...</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          {/* QR Code - Ocultar quando conectado */}
+          {status?.status !== 'open' && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <QrCode className="w-5 h-5" />
+                  Conexão WhatsApp
+                </CardTitle>
+                <CardDescription>
+                  Escaneie o QR Code com seu WhatsApp
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {shouldShowQRCode ? (
+                  <QRCodeDisplay 
+                    instanceName={instance.instanceName}
+                    qrCode={qrCode?.base64}
+                    isLoading={qrLoading}
+                  />
+                ) : (
+                  <div className="text-center py-8">
+                    <RefreshCw className="w-8 h-8 animate-spin text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">Verificando status da conexão...</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
         </div>
       )}
 
