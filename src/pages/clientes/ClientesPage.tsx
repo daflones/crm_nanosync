@@ -269,8 +269,8 @@ export function ClientesPage() {
         cargo: data.cargo || null,
         inscricao_estadual: data.inscricao_estadual || null,
         
-        // Telefones - IMPORTANTE: telefone do formulário vai para whatsapp no banco
-        whatsapp: data.ddd && data.telefone ? `${data.ddd}${data.telefone}` : null,
+        // Telefones - IMPORTANTE: telefone do formulário vai para whatsapp no banco formatado
+        whatsapp: data.ddd && data.telefone ? `(${data.ddd}) ${data.telefone.length === 9 ? data.telefone.replace(/(\d{5})(\d{4})/, '$1-$2') : data.telefone.replace(/(\d{4})(\d{4})/, '$1-$2')}` : null,
         telefone_empresa: data.telefone_empresa || null,
         
         // Endereço
@@ -348,8 +348,8 @@ export function ClientesPage() {
         cargo: data.cargo || null,
         inscricao_estadual: data.inscricao_estadual || null,
         
-        // Telefones - IMPORTANTE: telefone do formulário vai para whatsapp no banco
-        whatsapp: data.ddd && data.telefone ? `${data.ddd}${data.telefone}` : null,
+        // Telefones - IMPORTANTE: telefone do formulário vai para whatsapp no banco formatado
+        whatsapp: data.ddd && data.telefone ? `(${data.ddd}) ${data.telefone.length === 9 ? data.telefone.replace(/(\d{5})(\d{4})/, '$1-$2') : data.telefone.replace(/(\d{4})(\d{4})/, '$1-$2')}` : null,
         telefone_empresa: data.telefone_empresa || null,
         
         // Endereço
