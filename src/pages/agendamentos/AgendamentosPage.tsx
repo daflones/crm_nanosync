@@ -11,7 +11,7 @@ import { Calendar, Plus, Search, Filter, Eye, Edit, Trash2, List, CalendarDays, 
 import { useAgendamentos, useAgendamentosStatusStats } from '@/hooks/useAgendamentos'
 import { useClientes } from '@/hooks/useClientes'
 import { useVendedores } from '@/hooks/useVendedores'
-import { type Agendamento, type AgendamentoCreateData } from '@/services/api/agendamentos'
+import { type Agendamento, type AgendamentoCreateData, agendamentosService } from '@/services/api/agendamentos'
 import { type Cliente } from '@/services/api/clientes'
 import { type Vendedor } from '@/services/api/vendedores'
 import { AgendamentoForm } from '@/components/agendamentos/AgendamentoForm'
