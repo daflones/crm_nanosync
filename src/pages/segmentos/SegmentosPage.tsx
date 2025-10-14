@@ -246,7 +246,7 @@ export function SegmentosPage() {
           </Card>
         </div>
       ) : (
-        <div className="w-full grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6">
+        <div className="w-full flex flex-wrap gap-6">
           {segmentos
             .filter(seg => 
               seg.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -258,7 +258,7 @@ export function SegmentosPage() {
               const categoryName = getCategoryName(segmento.categoria_id)
               
               return (
-                <Card key={segmento.id} className="group relative overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-800 dark:to-gray-700/50 border-0 shadow-md dark:border-gray-700">
+                <Card key={segmento.id} className="group relative overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-800 dark:to-gray-700/50 border-0 shadow-md dark:border-gray-700 flex-1 min-w-[280px]">
                   {/* Decorative gradient overlay */}
                   <div 
                     className="absolute inset-0 opacity-5 group-hover:opacity-10 transition-opacity duration-300"

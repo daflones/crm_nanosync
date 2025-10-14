@@ -176,13 +176,13 @@ export function CategoriasPage() {
       </div>
 
       {/* Stats */}
-      <div className="w-full grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-7">
+      <div className="w-full flex flex-wrap gap-4">
         {stats.map((stat) => {
           const Icon = stat.icon
           return (
-            <Card key={stat.title} className="dark:bg-gray-800">
+            <Card key={stat.title} className="dark:bg-gray-800 flex-1 min-w-[200px]">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
+                <CardTitle className="text-sm font-medium whitespace-nowrap">
                   {stat.title}
                 </CardTitle>
                 <div className={`p-2 rounded-lg ${stat.bgColor}`}>
@@ -191,7 +191,7 @@ export function CategoriasPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{stat.value}</div>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground whitespace-nowrap">
                   {stat.description}
                 </p>
               </CardContent>
@@ -244,7 +244,7 @@ export function CategoriasPage() {
           </Card>
         </div>
       ) : (
-        <div className="w-full grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6">
+        <div className="w-full flex flex-wrap gap-4">
           {categorias
             .filter(cat => 
               cat.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -255,7 +255,7 @@ export function CategoriasPage() {
               const productCount = getProductCount(categoria.id)
               
               return (
-                <Card key={categoria.id} className="group relative overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-800 dark:to-gray-700/50 border-0 shadow-md dark:border-gray-700">
+                <Card key={categoria.id} className="group relative overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-800 dark:to-gray-700/50 border-0 shadow-md dark:border-gray-700 flex-1 min-w-[280px]">
                   {/* Decorative gradient overlay */}
                   <div 
                     className="absolute inset-0 opacity-5 group-hover:opacity-10 transition-opacity duration-300"
