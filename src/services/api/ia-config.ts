@@ -21,6 +21,27 @@ export interface IAConfig {
   }
   // Configurações de agendamento
   agendamento_ia?: boolean
+  // Regras de qualificação (JSONB)
+  regras_qualificacao?: {
+    // Campos obrigatórios (sempre true, apenas leitura)
+    nome: boolean
+    telefone: boolean
+    produto_interesse: boolean
+    motivacao: boolean
+    expectativa: boolean
+    analise_cliente: boolean
+    // Campos opcionais configuráveis
+    documento: boolean // CPF/CNPJ
+    email: boolean
+    segmento: boolean
+    endereco: {
+      ativo: boolean
+      rua: boolean
+      numero: boolean
+      cidade: boolean
+      cep: boolean
+    }
+  }
   // Detalhes da empresa (JSONB)
   detalhes_empresa: {
     // Informações básicas da empresa
@@ -135,6 +156,26 @@ export const getIAConfig = async (userId: string) => {
           }
         },
         agendamento_ia: false,
+        regras_qualificacao: {
+          // Campos obrigatórios (sempre true)
+          nome: true,
+          telefone: true,
+          produto_interesse: true,
+          motivacao: true,
+          expectativa: true,
+          analise_cliente: true,
+          // Campos opcionais (padrão false)
+          documento: false,
+          email: false,
+          segmento: false,
+          endereco: {
+            ativo: false,
+            rua: false,
+            numero: false,
+            cidade: false,
+            cep: false
+          }
+        },
         tempo_resposta_ms: 2000,
         mensagem_ausencia: 'No momento estou fora do horário de atendimento. Deixe sua mensagem que retornarei assim que possível.',
         envia_documento: false

@@ -34,6 +34,24 @@ export function IAConfigPage() {
       domingo: { ativo: false, inicio: '08:00', fim: '12:00' }
     },
     agendamento_ia: false,
+    regras_qualificacao: {
+      nome: true,
+      telefone: true,
+      produto_interesse: true,
+      motivacao: true,
+      expectativa: true,
+      analise_cliente: true,
+      documento: false,
+      email: false,
+      segmento: false,
+      endereco: {
+        ativo: false,
+        rua: false,
+        numero: false,
+        cidade: false,
+        cep: false
+      }
+    },
     detalhes_empresa: {
       sobre_empresa: '',
       diferenciais_competitivos: '',
@@ -206,12 +224,12 @@ export function IAConfigPage() {
           </CardContent>
         </Card>
 
-        {/* Configurações de Agendamento */}
+        {/* Configurações de Agendamento e Envio de Materiais */}
         <Card>
           <CardHeader>
-            <CardTitle>Configurações de Agendamento</CardTitle>
+            <CardTitle>Configurações de Agendamento e Envio de Materiais</CardTitle>
             <CardDescription>
-              Configure como a IA deve se comportar com agendamentos e os horários disponíveis.
+              Configure como a IA deve se comportar com agendamentos, os horários disponíveis e o envio de documentos aos clientes.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -291,6 +309,211 @@ export function IAConfigPage() {
                 </div>
               </>
             )}
+          </CardContent>
+        </Card>
+
+        {/* Configurações de Qualificação */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Configurações de Qualificação</CardTitle>
+            <CardDescription>
+              Configure quais informações a IA deve coletar para qualificar os leads.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Campos Obrigatórios (Apenas Leitura) */}
+            <div className="space-y-3">
+              <Label className="text-base font-semibold">Campos Obrigatórios</Label>
+              <p className="text-sm text-gray-500">
+                Estes campos são sempre obrigatórios na qualificação de leads.
+              </p>
+              <div className="grid gap-3 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                {[
+                  { label: 'Nome', key: 'nome' },
+                  { label: 'Telefone', key: 'telefone' },
+                  { label: 'Produto de Interesse', key: 'produto_interesse' },
+                  { label: 'Motivação', key: 'motivacao' },
+                  { label: 'Expectativa', key: 'expectativa' },
+                  { label: 'Análise do Cliente', key: 'analise_cliente' }
+                ].map(({ label, key }) => (
+                  <div key={key} className="flex items-center justify-between p-2 bg-white dark:bg-gray-900 rounded border">
+                    <Label className="text-sm">{label}</Label>
+                    <div className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-green-500" />
+                      <span className="text-xs text-gray-500">Obrigatório</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Campos Opcionais Configuráveis */}
+            <div className="space-y-4 pt-4 border-t">
+              <Label className="text-base font-semibold">Campos Opcionais</Label>
+              <p className="text-sm text-gray-500">
+                Configure quais campos adicionais a IA deve coletar.
+              </p>
+
+              {/* CPF/CNPJ */}
+              <div className="flex items-center justify-between p-3 border rounded-lg">
+                <div className="space-y-0.5">
+                  <Label>CPF/CNPJ</Label>
+                  <p className="text-sm text-gray-500">
+                    Solicitar documento (CPF ou CNPJ) do lead.
+                  </p>
+                </div>
+                <Switch
+                  checked={iaConfig.regras_qualificacao?.documento || false}
+                  onCheckedChange={(checked) => setIaConfig({
+                    ...iaConfig,
+                    regras_qualificacao: {
+                      ...iaConfig.regras_qualificacao!,
+                      documento: checked
+                    }
+                  })}
+                />
+              </div>
+
+              {/* Email */}
+              <div className="flex items-center justify-between p-3 border rounded-lg">
+                <div className="space-y-0.5">
+                  <Label>Email</Label>
+                  <p className="text-sm text-gray-500">
+                    Solicitar endereço de email do lead.
+                  </p>
+                </div>
+                <Switch
+                  checked={iaConfig.regras_qualificacao?.email || false}
+                  onCheckedChange={(checked) => setIaConfig({
+                    ...iaConfig,
+                    regras_qualificacao: {
+                      ...iaConfig.regras_qualificacao!,
+                      email: checked
+                    }
+                  })}
+                />
+              </div>
+
+              {/* Segmento */}
+              <div className="flex items-center justify-between p-3 border rounded-lg">
+                <div className="space-y-0.5">
+                  <Label>Segmento</Label>
+                  <p className="text-sm text-gray-500">
+                    Solicitar segmento de atuação do lead.
+                  </p>
+                </div>
+                <Switch
+                  checked={iaConfig.regras_qualificacao?.segmento || false}
+                  onCheckedChange={(checked) => setIaConfig({
+                    ...iaConfig,
+                    regras_qualificacao: {
+                      ...iaConfig.regras_qualificacao!,
+                      segmento: checked
+                    }
+                  })}
+                />
+              </div>
+
+              {/* Endereço */}
+              <div className="space-y-3 p-3 border rounded-lg">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Endereço</Label>
+                    <p className="text-sm text-gray-500">
+                      Solicitar endereço completo do lead.
+                    </p>
+                  </div>
+                  <Switch
+                    checked={iaConfig.regras_qualificacao?.endereco?.ativo || false}
+                    onCheckedChange={(checked) => setIaConfig({
+                      ...iaConfig,
+                      regras_qualificacao: {
+                        ...iaConfig.regras_qualificacao!,
+                        endereco: {
+                          ...iaConfig.regras_qualificacao!.endereco,
+                          ativo: checked
+                        }
+                      }
+                    })}
+                  />
+                </div>
+
+                {/* Sub-campos de Endereço */}
+                {iaConfig.regras_qualificacao?.endereco?.ativo && (
+                  <div className="ml-4 space-y-2 pt-3 border-t">
+                    <p className="text-xs text-gray-500 mb-2">Campos do endereço:</p>
+                    
+                    <div className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded">
+                      <Label className="text-sm">Rua</Label>
+                      <Switch
+                        checked={iaConfig.regras_qualificacao?.endereco?.rua || false}
+                        onCheckedChange={(checked) => setIaConfig({
+                          ...iaConfig,
+                          regras_qualificacao: {
+                            ...iaConfig.regras_qualificacao!,
+                            endereco: {
+                              ...iaConfig.regras_qualificacao!.endereco,
+                              rua: checked
+                            }
+                          }
+                        })}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded">
+                      <Label className="text-sm">Número</Label>
+                      <Switch
+                        checked={iaConfig.regras_qualificacao?.endereco?.numero || false}
+                        onCheckedChange={(checked) => setIaConfig({
+                          ...iaConfig,
+                          regras_qualificacao: {
+                            ...iaConfig.regras_qualificacao!,
+                            endereco: {
+                              ...iaConfig.regras_qualificacao!.endereco,
+                              numero: checked
+                            }
+                          }
+                        })}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded">
+                      <Label className="text-sm">Cidade</Label>
+                      <Switch
+                        checked={iaConfig.regras_qualificacao?.endereco?.cidade || false}
+                        onCheckedChange={(checked) => setIaConfig({
+                          ...iaConfig,
+                          regras_qualificacao: {
+                            ...iaConfig.regras_qualificacao!,
+                            endereco: {
+                              ...iaConfig.regras_qualificacao!.endereco,
+                              cidade: checked
+                            }
+                          }
+                        })}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded">
+                      <Label className="text-sm">CEP</Label>
+                      <Switch
+                        checked={iaConfig.regras_qualificacao?.endereco?.cep || false}
+                        onCheckedChange={(checked) => setIaConfig({
+                          ...iaConfig,
+                          regras_qualificacao: {
+                            ...iaConfig.regras_qualificacao!,
+                            endereco: {
+                              ...iaConfig.regras_qualificacao!.endereco,
+                              cep: checked
+                            }
+                          }
+                        })}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
           </CardContent>
         </Card>
 
