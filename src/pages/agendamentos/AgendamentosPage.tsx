@@ -8,10 +8,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Calendar, Plus, Search, Filter, Eye, Edit, Trash2, List, CalendarDays, Users, Presentation, Phone, Wrench, GraduationCap, HeadphonesIcon, Heart, MapPin } from 'lucide-react'
-import { useAgendamentos, useAgendamentosStatusStats } from '@/hooks/useAgendamentos'
+import { useAgendamentos, useAgendamentosStatusStats, useCreateAgendamento, useUpdateAgendamento, useDeleteAgendamento } from '@/hooks/useAgendamentos'
 import { useClientes } from '@/hooks/useClientes'
 import { useVendedores } from '@/hooks/useVendedores'
-import { type Agendamento, type AgendamentoCreateData, agendamentosService } from '@/services/api/agendamentos'
+import { type Agendamento, type AgendamentoCreateData } from '@/services/api/agendamentos'
 import { type Cliente } from '@/services/api/clientes'
 import { type Vendedor } from '@/services/api/vendedores'
 import { AgendamentoForm } from '@/components/agendamentos/AgendamentoForm'
@@ -44,6 +44,12 @@ export function AgendamentosPage() {
   
   const { data: clientes = [] } = useClientes()
   const { data: vendedores = [] } = useVendedores()
+  
+  // Mutations
+  const createAgendamento = useCreateAgendamento()
+  const updateAgendamento = useUpdateAgendamento()
+  const deleteAgendamento = useDeleteAgendamento()
+  
   const [selectedAgendamento, setSelectedAgendamento] = useState<Agendamento | null>(null)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
@@ -154,10 +160,9 @@ export function AgendamentosPage() {
       }
       
       
-      await agendamentosService.create(agendamentoData)
+      await createAgendamento.mutateAsync(agendamentoData)
       setIsCreateModalOpen(false)
       setPrefilledData(null)
-      loadData()
     } catch (error) {
       toast.error(`Erro ao criar agendamento: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
     }
@@ -166,10 +171,9 @@ export function AgendamentosPage() {
   const handleUpdateAgendamento = async (data: any) => {
     if (!selectedAgendamento) return
     try {
-      await agendamentosService.update(selectedAgendamento.id, data)
+      await updateAgendamento.mutateAsync({ id: selectedAgendamento.id, data })
       setIsEditModalOpen(false)
       setSelectedAgendamento(null)
-      loadData()
     } catch (error) {
       toast.error('Erro ao atualizar agendamento')
     }
@@ -201,8 +205,7 @@ export function AgendamentosPage() {
         return
       }
 
-      await agendamentosService.delete(agendamentoToDelete)
-      loadData()
+      await deleteAgendamento.mutateAsync(agendamentoToDelete)
       
       // Close modal and reset state
       setIsDeleteModalOpen(false)
