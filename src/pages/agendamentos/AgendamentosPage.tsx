@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 import { Input } from '@/components/ui/input'
-import { Card, CardContent } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -135,6 +135,16 @@ export function AgendamentosPage() {
     const minutes = String(date.getMinutes()).padStart(2, '0')
     
     return `${day}/${month}/${year}, ${hours}:${minutes}`
+  }
+
+  const formatTipo = (tipo: string) => {
+    if (!tipo) return ''
+    
+    // Converte underscores em espaços e capitaliza cada palavra
+    return tipo
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ')
   }
 
   // CRUD operations
@@ -556,7 +566,7 @@ export function AgendamentosPage() {
                           <p><strong>Duração:</strong> {agendamento.duracao_minutos} min</p>
                         </div>
                         <div>
-                          <p><strong>Tipo:</strong> {agendamento.tipo}</p>
+                          <p><strong>Tipo:</strong> {formatTipo(agendamento.tipo)}</p>
                           <p><strong>Modalidade:</strong> {agendamento.modalidade}</p>
                         </div>
                       </div>
@@ -749,19 +759,37 @@ export function AgendamentosPage() {
 
       {/* Modal de Visualização */}
       <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Detalhes do Agendamento</DialogTitle>
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader className="border-b pb-4">
+            <DialogTitle className="text-2xl font-bold">Detalhes do Agendamento</DialogTitle>
           </DialogHeader>
           {selectedAgendamento && (
-            <div className="space-y-6">
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <h3 className="text-lg font-semibold">{selectedAgendamento.titulo}</h3>
-                  <div className="flex gap-2 mt-2">
-                    <Badge variant={getStatusVariant(selectedAgendamento.status)}>{selectedAgendamento.status}</Badge>
-                    <Badge variant="outline">{selectedAgendamento.tipo}</Badge>
-                    <Badge variant="secondary">{selectedAgendamento.categoria}</Badge>
+            <div className="space-y-6 pt-2">
+              {/* Header com título e ações */}
+              <div className="flex justify-between items-start">
+                <div className="flex-1">
+                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
+                    {selectedAgendamento.titulo}
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    <Badge 
+                      variant={getStatusVariant(selectedAgendamento.status)}
+                      className="px-3 py-1 text-sm font-medium"
+                    >
+                      {selectedAgendamento.status}
+                    </Badge>
+                    <Badge 
+                      variant="outline" 
+                      className="px-3 py-1 text-sm font-medium border-blue-300 text-blue-700 bg-blue-50 dark:bg-blue-900/20"
+                    >
+                      {formatTipo(selectedAgendamento.tipo)}
+                    </Badge>
+                    <Badge 
+                      variant="secondary" 
+                      className="px-3 py-1 text-sm font-medium bg-purple-100 text-purple-700 dark:bg-purple-900/20"
+                    >
+                      {selectedAgendamento.categoria}
+                    </Badge>
                   </div>
                 </div>
                 <div className="flex gap-2">
@@ -772,6 +800,7 @@ export function AgendamentosPage() {
                       setIsViewModalOpen(false)
                       setIsEditModalOpen(true)
                     }}
+                    className="border-blue-300 text-blue-700 hover:bg-blue-50"
                   >
                     <Edit className="h-4 w-4 mr-2" />
                     Editar
@@ -790,159 +819,259 @@ export function AgendamentosPage() {
                 </div>
               </div>
               
-              <div className="grid grid-cols-2 gap-6">
-                <div>
-                  <h4 className="font-medium mb-3 text-gray-900">Informações Básicas</h4>
-                  <div className="space-y-3 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Cliente:</span>
-                      <span className="font-medium">{getClienteName(selectedAgendamento.cliente_id)}</span>
+              {/* Cards de Informações */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Card Informações Básicas */}
+                <Card className="border-l-4 border-l-blue-500 bg-gradient-to-br from-blue-50 to-white dark:from-blue-900/10 dark:to-gray-900">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg font-semibold text-blue-900 dark:text-blue-100">
+                      Informações Básicas
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex justify-between items-center p-2 bg-white dark:bg-gray-800 rounded-lg">
+                      <span className="text-sm text-gray-600 dark:text-gray-400">Cliente:</span>
+                      <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                        {getClienteName(selectedAgendamento.cliente_id)}
+                      </span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Vendedor:</span>
-                      <span className="font-medium">{getVendedorName(selectedAgendamento.vendedor_id)}</span>
+                    <div className="flex justify-between items-center p-2 bg-white dark:bg-gray-800 rounded-lg">
+                      <span className="text-sm text-gray-600 dark:text-gray-400">Vendedor:</span>
+                      <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                        {getVendedorName(selectedAgendamento.vendedor_id)}
+                      </span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Prioridade:</span>
-                      <Badge variant={selectedAgendamento.prioridade === 'alta' ? 'destructive' : selectedAgendamento.prioridade === 'media' ? 'default' : 'secondary'}>
+                    <div className="flex justify-between items-center p-2 bg-white dark:bg-gray-800 rounded-lg">
+                      <span className="text-sm text-gray-600 dark:text-gray-400">Prioridade:</span>
+                      <Badge 
+                        variant={selectedAgendamento.prioridade === 'alta' ? 'destructive' : selectedAgendamento.prioridade === 'media' ? 'default' : 'secondary'}
+                        className="font-semibold"
+                      >
                         {selectedAgendamento.prioridade}
                       </Badge>
                     </div>
-                  </div>
-                </div>
-                <div>
-                  <h4 className="font-medium mb-3 text-gray-900">Data e Horário</h4>
-                  <div className="space-y-3 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Início:</span>
-                      <span className="font-medium">{formatDateTime(selectedAgendamento.data_inicio)}</span>
+                  </CardContent>
+                </Card>
+
+                {/* Card Data e Horário */}
+                <Card className="border-l-4 border-l-green-500 bg-gradient-to-br from-green-50 to-white dark:from-green-900/10 dark:to-gray-900">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg font-semibold text-green-900 dark:text-green-100">
+                      Data e Horário
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex justify-between items-center p-2 bg-white dark:bg-gray-800 rounded-lg">
+                      <span className="text-sm text-gray-600 dark:text-gray-400">Início:</span>
+                      <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                        {formatDateTime(selectedAgendamento.data_inicio)}
+                      </span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Fim:</span>
-                      <span className="font-medium">{formatDateTime(selectedAgendamento.data_fim)}</span>
+                    <div className="flex justify-between items-center p-2 bg-white dark:bg-gray-800 rounded-lg">
+                      <span className="text-sm text-gray-600 dark:text-gray-400">Fim:</span>
+                      <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                        {formatDateTime(selectedAgendamento.data_fim)}
+                      </span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Duração:</span>
-                      <span className="font-medium">{selectedAgendamento.duracao_minutos} minutos</span>
+                    <div className="flex justify-between items-center p-2 bg-white dark:bg-gray-800 rounded-lg">
+                      <span className="text-sm text-gray-600 dark:text-gray-400">Duração:</span>
+                      <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                        {selectedAgendamento.duracao_minutos} minutos
+                      </span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Modalidade:</span>
-                      <span className="font-medium">{selectedAgendamento.modalidade}</span>
+                    <div className="flex justify-between items-center p-2 bg-white dark:bg-gray-800 rounded-lg">
+                      <span className="text-sm text-gray-600 dark:text-gray-400">Modalidade:</span>
+                      <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200 font-semibold">
+                        {selectedAgendamento.modalidade}
+                      </Badge>
                     </div>
-                  </div>
-                </div>
+                  </CardContent>
+                </Card>
               </div>
               
+              {/* Seções de Conteúdo */}
               <div className="space-y-4">
                 {selectedAgendamento?.descricao && (
-                  <div>
-                    <h4 className="font-medium mb-2 text-gray-900">Descrição</h4>
-                    <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded">{selectedAgendamento.descricao}</p>
-                  </div>
+                  <Card className="border-l-4 border-l-gray-400 bg-gradient-to-br from-gray-50 to-white dark:from-gray-800 dark:to-gray-900">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-base font-semibold text-gray-900 dark:text-white">
+                        Descrição
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                        {selectedAgendamento.descricao}
+                      </p>
+                    </CardContent>
+                  </Card>
                 )}
                 
                 {selectedAgendamento?.objetivo && (
-                  <div>
-                    <h4 className="font-medium mb-2 text-gray-900">Objetivo</h4>
-                    <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded">{selectedAgendamento.objetivo}</p>
-                  </div>
+                  <Card className="border-l-4 border-l-amber-500 bg-gradient-to-br from-amber-50 to-white dark:from-amber-900/10 dark:to-gray-900">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-base font-semibold text-amber-900 dark:text-amber-100">
+                        Objetivo
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                        {selectedAgendamento.objetivo}
+                      </p>
+                    </CardContent>
+                  </Card>
                 )}
                 
                 {selectedAgendamento?.agenda && (
-                  <div>
-                    <h4 className="font-medium mb-2 text-gray-900">Agenda</h4>
-                    <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded whitespace-pre-wrap">{selectedAgendamento.agenda}</p>
-                  </div>
+                  <Card className="border-l-4 border-l-indigo-500 bg-gradient-to-br from-indigo-50 to-white dark:from-indigo-900/10 dark:to-gray-900">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-base font-semibold text-indigo-900 dark:text-indigo-100">
+                        Agenda
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
+                        {selectedAgendamento.agenda}
+                      </p>
+                    </CardContent>
+                  </Card>
                 )}
                 
                 {selectedAgendamento?.resultado && (
-                  <div>
-                    <h4 className="font-medium mb-2 text-gray-900">Resultado</h4>
-                    <p className="text-sm text-gray-600 bg-green-50 p-3 rounded">{selectedAgendamento.resultado}</p>
-                  </div>
+                  <Card className="border-l-4 border-l-green-500 bg-gradient-to-br from-green-50 to-white dark:from-green-900/10 dark:to-gray-900">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-base font-semibold text-green-900 dark:text-green-100">
+                        Resultado
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                        {selectedAgendamento.resultado}
+                      </p>
+                    </CardContent>
+                  </Card>
                 )}
                 
                 {selectedAgendamento?.ata_reuniao && (
-                  <div>
-                    <h4 className="font-medium mb-2 text-gray-900">Ata da Reunião</h4>
-                    <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded whitespace-pre-wrap">{selectedAgendamento.ata_reuniao}</p>
-                  </div>
+                  <Card className="border-l-4 border-l-slate-500 bg-gradient-to-br from-slate-50 to-white dark:from-slate-900/10 dark:to-gray-900">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-base font-semibold text-slate-900 dark:text-slate-100">
+                        Ata da Reunião
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
+                        {selectedAgendamento.ata_reuniao}
+                      </p>
+                    </CardContent>
+                  </Card>
                 )}
                 
                 {selectedAgendamento?.proximos_passos && (
-                  <div>
-                    <h4 className="font-medium mb-2 text-gray-900">Próximos Passos</h4>
-                    <p className="text-sm text-gray-600 bg-blue-50 p-3 rounded">{selectedAgendamento.proximos_passos}</p>
-                  </div>
+                  <Card className="border-l-4 border-l-blue-500 bg-gradient-to-br from-blue-50 to-white dark:from-blue-900/10 dark:to-gray-900">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-base font-semibold text-blue-900 dark:text-blue-100">
+                        Próximos Passos
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                        {selectedAgendamento.proximos_passos}
+                      </p>
+                    </CardContent>
+                  </Card>
                 )}
               </div>
 
 
               {(selectedAgendamento?.link_online || selectedAgendamento?.endereco_reuniao) && (
-                <div>
-                  <h4 className="font-medium mb-3 text-gray-900">Local da Reunião</h4>
-                  <div className="space-y-2">
+                <Card className="border-l-4 border-l-purple-500 bg-gradient-to-br from-purple-50 to-white dark:from-purple-900/10 dark:to-gray-900">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg font-semibold text-purple-900 dark:text-purple-100">
+                      Local da Reunião
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
                     {selectedAgendamento?.endereco_reuniao && (
-                      <div className="flex items-start gap-2">
-                        <MapPin className="h-4 w-4 text-gray-500 mt-0.5" />
-                        <div>
-                          <div className="text-sm font-medium">Endereço</div>
-                          <div className="text-sm text-gray-600">{selectedAgendamento.endereco_reuniao}</div>
+                      <div className="flex items-start gap-3 p-3 bg-white dark:bg-gray-800 rounded-lg border border-purple-200 dark:border-purple-800">
+                        <MapPin className="h-5 w-5 text-purple-600 dark:text-purple-400 mt-0.5 flex-shrink-0" />
+                        <div className="flex-1">
+                          <div className="text-sm font-semibold text-gray-900 dark:text-white mb-1">Endereço</div>
+                          <div className="text-sm text-gray-700 dark:text-gray-300">{selectedAgendamento.endereco_reuniao}</div>
                         </div>
                       </div>
                     )}
                     {selectedAgendamento?.link_online && (
-                      <div className="flex items-start gap-2">
-                        <Calendar className="h-4 w-4 text-gray-500 mt-0.5" />
-                        <div>
-                          <div className="text-sm font-medium">Link Online</div>
-                          <a href={selectedAgendamento.link_online} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline break-all">
+                      <div className="flex items-start gap-3 p-3 bg-white dark:bg-gray-800 rounded-lg border border-purple-200 dark:border-purple-800">
+                        <Calendar className="h-5 w-5 text-purple-600 dark:text-purple-400 mt-0.5 flex-shrink-0" />
+                        <div className="flex-1">
+                          <div className="text-sm font-semibold text-gray-900 dark:text-white mb-1">Link Online</div>
+                          <a 
+                            href={selectedAgendamento.link_online} 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            className="text-sm text-blue-600 dark:text-blue-400 hover:underline break-all"
+                          >
                             {selectedAgendamento.link_online}
                           </a>
                           {selectedAgendamento?.plataforma && (
-                            <div className="text-xs text-gray-500 mt-1">Plataforma: {selectedAgendamento.plataforma}</div>
+                            <div className="text-xs text-gray-600 dark:text-gray-400 mt-2">
+                              <span className="font-medium">Plataforma:</span> {selectedAgendamento.plataforma}
+                            </div>
                           )}
                           {selectedAgendamento?.senha_reuniao && (
-                            <div className="text-xs text-gray-500">Senha: {selectedAgendamento.senha_reuniao}</div>
+                            <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                              <span className="font-medium">Senha:</span> {selectedAgendamento.senha_reuniao}
+                            </div>
                           )}
                         </div>
                       </div>
                     )}
-                  </div>
-                </div>
+                  </CardContent>
+                </Card>
               )}
 
               {(selectedAgendamento?.participantes && Array.isArray(selectedAgendamento.participantes) && selectedAgendamento.participantes.length > 0) || 
                (selectedAgendamento?.participantes_externos && Array.isArray(selectedAgendamento.participantes_externos) && selectedAgendamento.participantes_externos.length > 0) ? (
-                <div>
-                  <h4 className="font-medium mb-3 text-gray-900">Participantes</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {selectedAgendamento?.participantes && Array.isArray(selectedAgendamento.participantes) && selectedAgendamento.participantes.length > 0 && (
-                      <div>
-                        <h5 className="text-sm font-medium text-gray-700 mb-2">Participantes Internos</h5>
-                        <div className="space-y-2">
-                          {selectedAgendamento.participantes.map((participante: any, index: number) => (
-                            <div key={index} className="bg-gray-50 p-2 rounded text-sm">
-                              <div className="font-medium">{participante.nome}</div>
-                              <div className="text-gray-600">{participante.funcao}</div>
-                              <div className="text-gray-500">{participante.email}</div>
-                            </div>
-                          ))}
+                <Card className="border-l-4 border-l-cyan-500 bg-gradient-to-br from-cyan-50 to-white dark:from-cyan-900/10 dark:to-gray-900">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg font-semibold text-cyan-900 dark:text-cyan-100">
+                      Participantes
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {selectedAgendamento?.participantes && Array.isArray(selectedAgendamento.participantes) && selectedAgendamento.participantes.length > 0 && (
+                        <div>
+                          <h5 className="text-sm font-semibold text-cyan-800 dark:text-cyan-200 mb-3">Participantes Internos</h5>
+                          <div className="space-y-2">
+                            {selectedAgendamento.participantes.map((participante: any, index: number) => (
+                              <div key={index} className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-cyan-200 dark:border-cyan-800">
+                                <div className="font-semibold text-gray-900 dark:text-white">{participante.nome}</div>
+                                <div className="text-sm text-gray-600 dark:text-gray-400">{participante.funcao}</div>
+                                <div className="text-xs text-gray-500 dark:text-gray-500">{participante.email}</div>
+                              </div>
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    )}
-                    {selectedAgendamento?.participantes_externos && Array.isArray(selectedAgendamento.participantes_externos) && selectedAgendamento.participantes_externos.length > 0 && (
-                      <div>
-                        <h5 className="text-sm font-medium text-gray-700 mb-2">Participantes Externos</h5>
-                        <div className="flex flex-wrap gap-2">
-                          {selectedAgendamento.participantes_externos.map((participante: string, index: number) => (
-                            <Badge key={index} variant="secondary">{participante}</Badge>
-                          ))}
+                      )}
+                      {selectedAgendamento?.participantes_externos && Array.isArray(selectedAgendamento.participantes_externos) && selectedAgendamento.participantes_externos.length > 0 && (
+                        <div>
+                          <h5 className="text-sm font-semibold text-cyan-800 dark:text-cyan-200 mb-3">Participantes Externos</h5>
+                          <div className="flex flex-wrap gap-2">
+                            {selectedAgendamento.participantes_externos.map((participante: string, index: number) => (
+                              <Badge 
+                                key={index} 
+                                className="bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-200 px-3 py-1"
+                              >
+                                {participante}
+                              </Badge>
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
               ) : null}
             </div>
           )}
