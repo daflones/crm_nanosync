@@ -11,6 +11,20 @@ import { useIAConfig, useUpdateIAConfig, useTestIAConfig } from '@/hooks/useIACo
 import { useVendedores } from '@/hooks/useVendedores'
 import type { IAConfig } from '@/services/api/ia-config'
 
+// Ordem correta dos dias da semana
+const diasDaSemanaOrdem = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado']
+
+// Função para ordenar os dias da semana
+const ordenarDiasDaSemana = (horarios: any) => {
+  if (!horarios) return []
+  
+  return Object.entries(horarios).sort(([diaA], [diaB]) => {
+    const indexA = diasDaSemanaOrdem.indexOf(diaA.toLowerCase())
+    const indexB = diasDaSemanaOrdem.indexOf(diaB.toLowerCase())
+    return indexA - indexB
+  })
+}
+
 export function IAConfigPage() {
   const { data: iaConfigData, isLoading } = useIAConfig()
   const { data: vendedores = [] } = useVendedores()
@@ -235,19 +249,6 @@ export function IAConfigPage() {
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label>Agendamentos com IA?</Label>
-                <p className="text-sm text-gray-500">
-                  Permitir que a IA realize agendamentos automaticamente.
-                </p>
-              </div>
-              <Switch 
-                checked={iaConfig.agendamento_ia || false}
-                onCheckedChange={(checked) => setIaConfig({...iaConfig, agendamento_ia: checked})}
-              />
-            </div>
-            
-            <div className="flex items-center justify-between pt-4 border-t">
-              <div className="space-y-0.5">
                 <Label>IA enviará documentos?</Label>
                 <p className="text-sm text-gray-500">
                   Quando ativado, a área de Arquivos IA ficará visível e funcional.
@@ -256,6 +257,19 @@ export function IAConfigPage() {
               <Switch 
                 checked={iaConfig.envia_documento || false}
                 onCheckedChange={(checked) => setIaConfig({...iaConfig, envia_documento: checked})}
+              />
+            </div>
+            
+            <div className="flex items-center justify-between pt-4 border-t">
+              <div className="space-y-0.5">
+                <Label>Agendamentos com IA?</Label>
+                <p className="text-sm text-gray-500">
+                  Permitir que a IA realize agendamentos automaticamente.
+                </p>
+              </div>
+              <Switch 
+                checked={iaConfig.agendamento_ia || false}
+                onCheckedChange={(checked) => setIaConfig({...iaConfig, agendamento_ia: checked})}
               />
             </div>
 
@@ -273,7 +287,7 @@ export function IAConfigPage() {
                   ) : (
                     vendedores.map((vendedor) => {
                       const horariosAtivos = vendedor.horarios_vendedor ? 
-                        Object.entries(vendedor.horarios_vendedor)
+                        ordenarDiasDaSemana(vendedor.horarios_vendedor)
                           .filter(([_, config]: [string, any]) => config?.ativo === true)
                           .map(([dia, config]: [string, any]) => `${dia.charAt(0).toUpperCase() + dia.slice(1)}: ${config.inicio}-${config.fim}`)
                         : [];

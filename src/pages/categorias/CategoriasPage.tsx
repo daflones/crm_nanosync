@@ -180,7 +180,7 @@ export function CategoriasPage() {
         {stats.map((stat) => {
           const Icon = stat.icon
           return (
-            <Card key={stat.title} className="dark:bg-gray-800 flex-1 min-w-[200px]">
+            <Card key={stat.title} className="dark:bg-gray-800 flex-1 min-w-[200px] max-w-[300px]">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium whitespace-nowrap">
                   {stat.title}
@@ -255,7 +255,7 @@ export function CategoriasPage() {
               const productCount = getProductCount(categoria.id)
               
               return (
-                <Card key={categoria.id} className="group relative overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-800 dark:to-gray-700/50 border-0 shadow-md dark:border-gray-700 flex-1 min-w-[280px]">
+                <Card key={categoria.id} className="group relative overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-800 dark:to-gray-700/50 border-0 shadow-md dark:border-gray-700 flex-grow-0 flex-shrink-0 w-auto min-w-[280px] max-w-[350px]">
                   {/* Decorative gradient overlay */}
                   <div 
                     className="absolute inset-0 opacity-5 group-hover:opacity-10 transition-opacity duration-300"

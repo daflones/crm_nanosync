@@ -23,6 +23,7 @@ import {
 import { useClientes, useClientesStageStats, useCreateCliente, useUpdateCliente, useDeleteCliente, useUpdatePipelineStage } from '@/hooks/useClientes'
 import { useVendedores } from '@/hooks/useVendedores'
 import { useIsAdmin, useCurrentVendedorId } from '@/hooks/useAuth'
+import { useIAConfig } from '@/hooks/useIAConfig'
 import { VendedorSelector } from '@/components/VendedorSelector'
 import { PlanoAtivoButton } from '@/components/PlanoAtivoGuard'
 import { useForm, useWatch } from 'react-hook-form'
@@ -139,6 +140,7 @@ export function ClientesPage() {
   const deleteCliente = useDeleteCliente()
   const updatePipelineStage = useUpdatePipelineStage()
   const { addNotification: _addNotification } = useNotifications()
+  const { data: iaConfigData } = useIAConfig()
   
   // Role-based access control
   const isAdmin = useIsAdmin()
@@ -1665,18 +1667,41 @@ export function ClientesPage() {
                 <h3 className="text-lg font-semibold mb-3">Progresso de Qualificação</h3>
                 {(() => {
                   const getQualificationScore = (cliente: any) => {
+                    const regrasQualificacao = iaConfigData?.regras_qualificacao
+                    
+                    // Campos obrigatórios (sempre presentes)
                     const requiredFields = [
-                      { key: 'produtos_interesse', label: 'Produto de Interesse', value: cliente.produtos_interesse },
-                      { key: 'segmento_cliente', label: 'Segmento', value: cliente.segmento_cliente },
                       { key: 'nome_contato', label: 'Nome do Contato', value: cliente.nome_contato },
-                      { key: 'nome_empresa', label: 'Nome da Empresa', value: cliente.nome_empresa },
-                      { key: 'documento', label: 'CNPJ ou CPF', value: cliente.cpf || cliente.cnpj },
                       { key: 'whatsapp', label: 'WhatsApp', value: cliente.whatsapp },
-                      { key: 'email', label: 'E-mail', value: cliente.email },
-                      { key: 'contexto_cliente', label: 'Contexto', value: cliente.analise_cliente },
+                      { key: 'produtos_interesse', label: 'Produto de Interesse', value: cliente.produtos_interesse },
                       { key: 'motivacao', label: 'Motivação', value: cliente.motivacao },
-                      { key: 'endereco_completo', label: 'Endereço', value: [cliente.endereco, cliente.numero, cliente.cidade, cliente.estado, cliente.cep].filter(Boolean).join(', ') },
+                      { key: 'expectativa', label: 'Expectativa', value: cliente.expectativa },
+                      { key: 'contexto_cliente', label: 'Análise do Cliente', value: cliente.analise_cliente },
                     ]
+                    
+                    // Adicionar campos opcionais baseados nas regras de qualificação
+                    if (regrasQualificacao?.documento) {
+                      requiredFields.push({ key: 'documento', label: 'CPF/CNPJ', value: cliente.cpf || cliente.cnpj })
+                    }
+                    
+                    if (regrasQualificacao?.email) {
+                      requiredFields.push({ key: 'email', label: 'E-mail', value: cliente.email })
+                    }
+                    
+                    if (regrasQualificacao?.segmento) {
+                      requiredFields.push({ key: 'segmento_cliente', label: 'Segmento', value: cliente.segmento_cliente })
+                    }
+                    
+                    if (regrasQualificacao?.endereco?.ativo) {
+                      const enderecoFields = []
+                      if (regrasQualificacao.endereco.rua) enderecoFields.push(cliente.endereco)
+                      if (regrasQualificacao.endereco.numero) enderecoFields.push(cliente.numero)
+                      if (regrasQualificacao.endereco.cidade) enderecoFields.push(cliente.cidade)
+                      if (regrasQualificacao.endereco.cep) enderecoFields.push(cliente.cep)
+                      
+                      const enderecoValue = enderecoFields.filter(Boolean).join(', ')
+                      requiredFields.push({ key: 'endereco_completo', label: 'Endereço', value: enderecoValue })
+                    }
                     
                     const completed = requiredFields.filter(field => field.value && field.value !== '' && field.value !== 0)
                     const missing = requiredFields.filter(field => !field.value || field.value === '' || field.value === 0)

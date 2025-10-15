@@ -27,6 +27,20 @@ import { PlanoAtivoButton } from '@/components/PlanoAtivoGuard'
 import type { Vendedor } from '@/services/api/vendedores'
 import { toast } from 'sonner'
 
+// Ordem correta dos dias da semana
+const diasDaSemanaOrdem = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado']
+
+// Função para ordenar os dias da semana
+const ordenarDiasDaSemana = (horarios: any) => {
+  if (!horarios) return []
+  
+  return Object.entries(horarios).sort(([diaA], [diaB]) => {
+    const indexA = diasDaSemanaOrdem.indexOf(diaA.toLowerCase())
+    const indexB = diasDaSemanaOrdem.indexOf(diaB.toLowerCase())
+    return indexA - indexB
+  })
+}
+
 interface VendedorFormData {
   nome: string
   email: string
@@ -970,7 +984,7 @@ export default function VendedoresPage() {
             <div className="space-y-4">
               <h4 className="text-sm font-medium text-gray-900 dark:text-white border-b pb-2">Horários Disponíveis para Agendamento</h4>
               <div className="space-y-3">
-                {Object.entries(formData.horarios_vendedor || {}).map(([dia, config]: [string, any]) => (
+                {ordenarDiasDaSemana(formData.horarios_vendedor).map(([dia, config]: [string, any]) => (
                   <div key={dia} className="flex items-center gap-4 p-3 border rounded-lg">
                     <div className="w-20">
                       <Label className="capitalize">{dia}</Label>
@@ -1205,7 +1219,7 @@ export default function VendedoresPage() {
                 <div className="border-t pt-4">
                   <h4 className="font-semibold text-gray-900 dark:text-white mb-3">Horários de Atendimento</h4>
                   <div className="space-y-2">
-                    {Object.entries(selectedVendedor.horarios_vendedor).map(([dia, horario]: [string, any]) => (
+                    {ordenarDiasDaSemana(selectedVendedor.horarios_vendedor).map(([dia, horario]: [string, any]) => (
                       <div key={dia} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
                         <div className="flex items-center gap-3">
                           <div className={`w-3 h-3 rounded-full ${horario.ativo ? 'bg-green-500' : 'bg-gray-300'}`} />
@@ -1402,7 +1416,7 @@ export default function VendedoresPage() {
             <div className="space-y-4">
               <h4 className="text-sm font-medium text-gray-900 dark:text-white border-b pb-2">Horários Disponíveis para Agendamento</h4>
               <div className="space-y-3">
-                {Object.entries(formData.horarios_vendedor || {}).map(([dia, config]: [string, any]) => (
+                {ordenarDiasDaSemana(formData.horarios_vendedor).map(([dia, config]: [string, any]) => (
                   <div key={dia} className="flex items-center gap-4 p-3 border rounded-lg">
                     <div className="w-20">
                       <Label className="capitalize">{dia}</Label>
