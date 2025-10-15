@@ -87,6 +87,10 @@ export default function ArquivosIAPage() {
     visibilidade: 'privado'
   })
   
+  // Estado separado para palavras-chave como string
+  const [palavrasChaveUpload, setPalavrasChaveUpload] = useState('')
+  const [palavrasChaveEdit, setPalavrasChaveEdit] = useState('')
+  
   // Edit form state
   const [editData, setEditData] = useState<Partial<CreateArquivoIAData>>({
     categoria: 'catalogo',
@@ -203,7 +207,7 @@ export default function ArquivosIAPage() {
     setIsViewModalOpen(true)
   }
 
-  const handleEditFile = (arquivo: ArquivoIA) => {
+  const handleEdit = (arquivo: ArquivoIA) => {
     setSelectedArquivo(arquivo)
     setEditData({
       nome: arquivo.nome,
@@ -215,10 +219,11 @@ export default function ArquivosIAPage() {
       palavras_chave: arquivo.palavras_chave,
       prioridade: arquivo.prioridade,
       observacoes: arquivo.observacoes,
-      cliente_id: arquivo.cliente_id,
       visibilidade: arquivo.visibilidade,
       disponivel_ia: arquivo.disponivel_ia
     })
+    // Inicializar string de palavras-chave
+    setPalavrasChaveEdit(arquivo.palavras_chave?.join(', ') || '')
     setIsEditModalOpen(true)
   }
 
@@ -228,9 +233,20 @@ export default function ArquivosIAPage() {
       return
     }
 
+    // Processar palavras-chave da string
+    const palavrasChaveArray = palavrasChaveEdit
+      .split(',')
+      .map(k => k.trim())
+      .filter(k => k)
+    
+    const dataToUpdate = {
+      ...editData,
+      palavras_chave: palavrasChaveArray
+    }
+
     try {
       await updateMutation.mutate(
-        { id: selectedArquivo.id, data: editData },
+        { id: selectedArquivo.id, data: dataToUpdate },
         { onSuccess: handleUpdateSuccess }
       )
       
@@ -336,6 +352,12 @@ export default function ArquivosIAPage() {
         return
       }
 
+      // Processar palavras-chave da string
+      const palavrasChaveArray = palavrasChaveUpload
+        .split(',')
+        .map(k => k.trim())
+        .filter(k => k)
+      
       const fileData: CreateArquivoIAData = {
         nome: uploadData.nome,
         nome_original: selectedFile.name,
@@ -346,7 +368,7 @@ export default function ArquivosIAPage() {
         subcategoria: uploadData.subcategoria,
         instrucoes_ia: uploadData.instrucoes_ia,
         contexto_uso: uploadData.contexto_uso,
-        palavras_chave: uploadData.palavras_chave,
+        palavras_chave: palavrasChaveArray,
         prioridade: uploadData.prioridade,
         observacoes: uploadData.observacoes,
         cliente_id: uploadData.cliente_id,
@@ -371,6 +393,12 @@ export default function ArquivosIAPage() {
         return
       }
 
+      // Processar palavras-chave da string
+      const palavrasChaveArray = palavrasChaveUpload
+        .split(',')
+        .map(k => k.trim())
+        .filter(k => k)
+      
       // Create IA file record that references the common file
       const fileData: CreateArquivoIAData = {
         nome: uploadData.nome,
@@ -382,7 +410,7 @@ export default function ArquivosIAPage() {
         subcategoria: uploadData.subcategoria,
         instrucoes_ia: uploadData.instrucoes_ia,
         contexto_uso: uploadData.contexto_uso,
-        palavras_chave: uploadData.palavras_chave,
+        palavras_chave: palavrasChaveArray,
         prioridade: uploadData.prioridade,
         observacoes: uploadData.observacoes,
         cliente_id: uploadData.cliente_id,
@@ -622,7 +650,7 @@ export default function ArquivosIAPage() {
                     >
                       <Download className="h-4 w-4" />
                     </Button>
-                    <Button size="sm" variant="ghost" className="hover:bg-green-100 hover:text-green-700 bg-white/90 backdrop-blur-sm shadow-sm" onClick={() => handleEditFile(arquivo)}>
+                    <Button size="sm" variant="ghost" className="hover:bg-green-100 hover:text-green-700 bg-white/90 backdrop-blur-sm shadow-sm" onClick={() => handleEdit(arquivo)}>
                       <Edit className="h-4 w-4" />
                     </Button>
                     <Button size="sm" variant="ghost" className="hover:bg-red-100 hover:text-red-700 bg-white/90 backdrop-blur-sm shadow-sm" onClick={() => handleDeleteFile(arquivo)}>
@@ -847,13 +875,15 @@ export default function ArquivosIAPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="palavras_chave">Palavras-chave</Label>
+                <Label htmlFor="palavras_chave">Palavras-chave (separadas por vírgula)</Label>
                 <Input
                   id="palavras_chave"
-                  value={uploadData.palavras_chave?.join(', ') || ''}
-                  onChange={(e) => setUploadData({...uploadData, palavras_chave: e.target.value.split(',').map(k => k.trim()).filter(k => k)})}
+                  type="text"
+                  value={palavrasChaveUpload}
+                  onChange={(e) => setPalavrasChaveUpload(e.target.value)}
                   placeholder="palavra1, palavra2, palavra3"
                 />
+                <p className="text-xs text-gray-500 mt-1">Separe as palavras-chave com vírgulas</p>
               </div>
               
               <div>
@@ -1116,7 +1146,7 @@ export default function ArquivosIAPage() {
                 </Button>
                 <Button variant="outline" onClick={() => {
                   setIsViewModalOpen(false)
-                  handleEditFile(selectedArquivo)
+                  handleEdit(selectedArquivo)
                 }} className="flex items-center gap-2">
                   <Edit className="h-4 w-4" />
                   Editar
@@ -1234,10 +1264,12 @@ export default function ArquivosIAPage() {
             <div className="space-y-2">
               <Label>Palavras-chave (separadas por vírgula)</Label>
               <Input
-                value={editData.palavras_chave?.join(', ') || ''}
-                onChange={(e) => setEditData({...editData, palavras_chave: e.target.value.split(',').map(k => k.trim()).filter(k => k)})}
+                type="text"
+                value={palavrasChaveEdit}
+                onChange={(e) => setPalavrasChaveEdit(e.target.value)}
                 placeholder="palavra1, palavra2, palavra3"
               />
+              <p className="text-xs text-gray-500">Separe as palavras-chave com vírgulas</p>
             </div>
 
             <div className="space-y-2">
