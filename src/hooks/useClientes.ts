@@ -85,18 +85,19 @@ export function useClientesStageStats() {
 export function useCreateCliente() {
   const queryClient = useQueryClient()
   const { refreshAfterMutation } = useAutoRefresh()
-  
-  return useMutation({
+  const createMutation = useMutation({
     mutationFn: clientesService.create,
     onSuccess: async () => {
       await refreshAfterMutation('cliente', 'create')
-      toast.success('Cliente criado com sucesso!')
+      // Toast será exibido pelo componente
     },
     onError: (error: Error) => {
       toast.error(`Erro ao criar cliente: ${error.message}`)
       queryClient.invalidateQueries({ queryKey: ['clientes'] })
     }
   })
+
+  return createMutation
 }
 
 export function useUpdateCliente() {

@@ -22,7 +22,7 @@ export interface Cliente {
   data_criacao: string
   data_atualizacao: string
   vendedor_id?: string
-  contexto_cliente?: string
+  analise_cliente?: string
   data_ultima_etapa?: string
   dores_atuais?: string
   motivacao?: string
@@ -37,31 +37,99 @@ export interface Cliente {
 }
 
 export interface ClienteCreateData {
+  // Dados básicos do contato
   nome_contato: string
-  email: string
+  cargo?: string
+  email?: string
+  whatsapp?: string
+  telefone?: string
+  
+  // Dados da empresa
   nome_empresa: string
   razao_social?: string
-  cargo?: string
-  segmento_cliente: string
+  cnpj?: string
+  
+  // Endereço
   endereco: string
   numero?: string
   cidade: string
   estado: string
-  cep: string
+  cep?: string
+  pais?: string
+  
+  // Segmentação e produtos
+  segmento_cliente: string
+  produtos_interesse?: string
+  volume_mensal?: string
+  volume_mensal_numero?: number
+  orcamento_estimado?: number
+  sazonalidade?: string
+  fornecedor_atual?: string
+  motivo_troca?: string
+  
+  // Pipeline e qualificação
   etapa_pipeline: string
-  classificacao: string
+  valor_estimado?: number
+  valor_final?: number
+  probabilidade?: number
+  qualificacao_score?: number
+  qualificacao_completa?: boolean
+  informacoes_faltantes?: string[]
+  criterios_qualificacao?: any
+  
+  // Origem e classificação
   origem: string
+  fonte_detalhada?: string
+  classificacao: string
+  
+  // Datas de contato
+  primeiro_contato_em?: string
+  ultimo_contato_em?: string
+  proximo_contato_em?: string
+  frequencia_contato?: string
+  data_ultima_etapa?: string
+  
+  // Proposta
+  proposta_enviada?: boolean
+  proposta_enviada_em?: string
+  proposta_valor?: number
+  proposta_status?: string
+  proposta_em_andamento?: boolean
+  
+  // Perda/Rejeição
+  motivo_perda?: string
+  categoria_perda?: string
+  concorrente?: string
+  feedback_rejeicao?: string
+  
+  // Observações e análise
   observacoes?: string
-  produtos_interesse?: string[]
-  expectativa?: string
-  vendedor_id?: string
-  contexto_cliente?: string
+  tags?: string[]
+  caracteristicas_especiais?: string
+  restricoes?: string
+  preferencias_contato?: string
+  analise_cliente?: string
   dores_atuais?: string
   motivacao?: string
-  whatsapp?: string
-  telefone_empresa?: string
+  expectativa?: string
+  
+  // Controle e estatísticas
+  numero_pedidos?: number
+  vendedor_id?: string
+  formulario_site?: boolean
+  atendimento_ia?: string
+  ultima_mensagem?: string
+  follow_up?: boolean
+  respondeu_fup?: boolean
+  remotejid?: string
+  ultima_conversa?: string
+  ultima_mensagem_fup?: string
+  instancia?: string
+  cadastrado_rp?: boolean
+  
+  // Documentos adicionais
   cpf?: string
-  cnpj?: string
+  telefone_empresa?: string
   inscricao_estadual?: string
 }
 
@@ -196,19 +264,19 @@ export const clientesService = {
 
     const adminId = currentProfile.admin_profile_id || currentProfile.id
 
-    // Preparar dados para inserção no banco - APENAS campos que existem na tabela
+    // Preparar dados para inserção no banco - TODOS os campos da tabela clientes
     const insertData = {
-      // Campos básicos
+      // Dados básicos do contato
       nome_contato: clienteData.nome_contato,
+      cargo: clienteData.cargo,
       email: clienteData.email,
+      whatsapp: clienteData.whatsapp,
+      telefone: clienteData.telefone,
+      
+      // Dados da empresa
       nome_empresa: clienteData.nome_empresa,
       razao_social: clienteData.razao_social,
-      cargo: clienteData.cargo,
-      inscricao_estadual: clienteData.inscricao_estadual,
-      
-      // Telefones (whatsapp já processado, telefone_empresa direto)
-      whatsapp: clienteData.whatsapp,
-      telefone_empresa: clienteData.telefone_empresa,
+      cnpj: clienteData.cnpj,
       
       // Endereço
       endereco: clienteData.endereco,
@@ -216,27 +284,82 @@ export const clientesService = {
       cidade: clienteData.cidade,
       estado: clienteData.estado,
       cep: clienteData.cep,
+      pais: clienteData.pais,
       
-      // Documentos
-      cpf: clienteData.cpf,
-      cnpj: clienteData.cnpj,
-      
-      // Pipeline
-      etapa_pipeline: clienteData.etapa_pipeline,
-      classificacao: clienteData.classificacao,
-      origem: clienteData.origem,
-      
-      // Negócio
+      // Segmentação e produtos
       segmento_cliente: clienteData.segmento_cliente,
-      vendedor_id: clienteData.vendedor_id,
-      
-      // Contexto
-      observacoes: clienteData.observacoes,
       produtos_interesse: clienteData.produtos_interesse,
-      contexto_cliente: clienteData.contexto_cliente,
+      volume_mensal: clienteData.volume_mensal,
+      volume_mensal_numero: clienteData.volume_mensal_numero,
+      orcamento_estimado: clienteData.orcamento_estimado,
+      sazonalidade: clienteData.sazonalidade,
+      fornecedor_atual: clienteData.fornecedor_atual,
+      motivo_troca: clienteData.motivo_troca,
+      
+      // Pipeline e qualificação
+      etapa_pipeline: clienteData.etapa_pipeline,
+      valor_estimado: clienteData.valor_estimado,
+      valor_final: clienteData.valor_final,
+      probabilidade: clienteData.probabilidade,
+      qualificacao_score: clienteData.qualificacao_score,
+      qualificacao_completa: clienteData.qualificacao_completa,
+      informacoes_faltantes: clienteData.informacoes_faltantes,
+      criterios_qualificacao: clienteData.criterios_qualificacao,
+      
+      // Origem e classificação
+      origem: clienteData.origem,
+      fonte_detalhada: clienteData.fonte_detalhada,
+      classificacao: clienteData.classificacao,
+      
+      // Datas de contato
+      primeiro_contato_em: clienteData.primeiro_contato_em,
+      ultimo_contato_em: clienteData.ultimo_contato_em,
+      proximo_contato_em: clienteData.proximo_contato_em,
+      frequencia_contato: clienteData.frequencia_contato,
+      data_ultima_etapa: clienteData.data_ultima_etapa,
+      
+      // Proposta
+      proposta_enviada: clienteData.proposta_enviada,
+      proposta_enviada_em: clienteData.proposta_enviada_em,
+      proposta_valor: clienteData.proposta_valor,
+      proposta_status: clienteData.proposta_status,
+      proposta_em_andamento: clienteData.proposta_em_andamento,
+      
+      // Perda/Rejeição
+      motivo_perda: clienteData.motivo_perda,
+      categoria_perda: clienteData.categoria_perda,
+      concorrente: clienteData.concorrente,
+      feedback_rejeicao: clienteData.feedback_rejeicao,
+      
+      // Observações e análise
+      observacoes: clienteData.observacoes,
+      tags: clienteData.tags,
+      caracteristicas_especiais: clienteData.caracteristicas_especiais,
+      restricoes: clienteData.restricoes,
+      preferencias_contato: clienteData.preferencias_contato,
+      analise_cliente: clienteData.analise_cliente,
       dores_atuais: clienteData.dores_atuais,
       motivacao: clienteData.motivacao,
       expectativa: clienteData.expectativa,
+      
+      // Controle e estatísticas
+      numero_pedidos: clienteData.numero_pedidos,
+      vendedor_id: clienteData.vendedor_id,
+      formulario_site: clienteData.formulario_site,
+      atendimento_ia: clienteData.atendimento_ia,
+      ultima_mensagem: clienteData.ultima_mensagem,
+      follow_up: clienteData.follow_up,
+      respondeu_fup: clienteData.respondeu_fup,
+      remotejid: clienteData.remotejid,
+      ultima_conversa: clienteData.ultima_conversa,
+      ultima_mensagem_fup: clienteData.ultima_mensagem_fup,
+      instancia: clienteData.instancia,
+      cadastrado_rp: clienteData.cadastrado_rp,
+      
+      // Documentos adicionais
+      cpf: clienteData.cpf,
+      telefone_empresa: clienteData.telefone_empresa,
+      inscricao_estadual: clienteData.inscricao_estadual,
       
       // Sistema
       profile: adminId,

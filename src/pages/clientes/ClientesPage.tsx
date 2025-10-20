@@ -1676,7 +1676,7 @@ export function ClientesPage() {
                       { key: 'produtos_interesse', label: 'Produto de Interesse', value: cliente.produtos_interesse },
                       { key: 'motivacao', label: 'Motivação', value: cliente.motivacao },
                       { key: 'expectativa', label: 'Expectativa', value: cliente.expectativa },
-                      { key: 'contexto_cliente', label: 'Análise do Cliente', value: cliente.analise_cliente },
+                      { key: 'analise_cliente', label: 'Análise do Cliente', value: cliente.analise_cliente },
                     ]
                     
                     // Adicionar campos opcionais baseados nas regras de qualificação

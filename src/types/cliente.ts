@@ -15,7 +15,7 @@ export interface Cliente {
   data_criacao: string
   data_atualizacao: string
   vendedor_id?: string
-  contexto_cliente?: string
+  analise_cliente?: string
 }
 
 export interface ClienteCreateData {
@@ -32,7 +32,7 @@ export interface ClienteCreateData {
   origem: string
   observacoes?: string
   vendedor_id?: string
-  contexto_cliente?: string
+  analise_cliente?: string
 }
 
 export type ClienteUpdateData = Partial<ClienteCreateData>

@@ -1,0 +1,149 @@
+/* Estilos específicos para a página do WhatsApp Web */
+
+.whatsapp-web-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 0.5rem;
+  background: #f8f9fa;
+}
+
+.whatsapp-web-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  border-radius: 0.5rem;
+  background: white;
+  transition: opacity 0.3s ease-in-out;
+}
+
+.whatsapp-web-iframe.loading {
+  opacity: 0.7;
+}
+
+.whatsapp-loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  backdrop-filter: blur(2px);
+}
+
+.whatsapp-loading-content {
+  text-align: center;
+  padding: 2rem;
+}
+
+.whatsapp-loading-spinner {
+  width: 3rem;
+  height: 3rem;
+  border: 3px solid #e5e7eb;
+  border-top: 3px solid #10b981;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.whatsapp-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.whatsapp-status-badge.online {
+  background-color: #dcfce7;
+  color: #166534;
+}
+
+.whatsapp-status-badge.offline {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+.whatsapp-instructions-card {
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  border: 1px solid #bfdbfe;
+  border-radius: 0.5rem;
+  padding: 1rem;
+}
+
+.whatsapp-instructions-icon {
+  background-color: #dbeafe;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.whatsapp-footer-card {
+  background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  padding: 1rem;
+}
+
+.whatsapp-feature-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.whatsapp-feature-dot.green {
+  background-color: #10b981;
+}
+
+.whatsapp-feature-dot.blue {
+  background-color: #3b82f6;
+}
+
+.whatsapp-feature-dot.purple {
+  background-color: #8b5cf6;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .whatsapp-web-container {
+    height: calc(100vh - 200px);
+    min-height: 500px;
+  }
+  
+  .whatsapp-loading-content {
+    padding: 1rem;
+  }
+  
+  .whatsapp-instructions-card {
+    padding: 0.75rem;
+  }
+  
+  .whatsapp-footer-card {
+    padding: 0.75rem;
+  }
+}
+
+/* Melhorar a aparência do iframe em telas pequenas */
+@media (max-width: 640px) {
+  .whatsapp-web-iframe {
+    transform: scale(0.9);
+    transform-origin: top left;
+    width: 111.11%;
+    height: 111.11%;
+  }
+}

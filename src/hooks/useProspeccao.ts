@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 import { useWhatsAppInstance } from './useWhatsApp'
 import { prospeccaoService } from '../services/api/prospeccao'
+import { clientesService } from '../services/api/clientes'
+import { prospeccaoLogsService } from '../services/api/prospeccao-logs'
 
 // Interfaces
 interface EstabelecimentoGoogleMaps {
@@ -35,16 +37,70 @@ export const useProspeccao = () => {
   const [isLoading, setIsLoading] = useState(false)
   const { data: whatsappInstance } = useWhatsAppInstance()
 
-  // Buscar estabelecimentos no Google Maps
+  // Buscar estabelecimentos no Google Maps (com verificação de duplicatas e paginação automática)
   const buscarEstabelecimentos = async (
     tipoEstabelecimento: string, 
-    cidade: string
+    cidade: string,
+    minEstabelecimentos: number = 10
   ): Promise<EstabelecimentoGoogleMaps[]> => {
     setIsLoading(true)
     
     try {
-      const estabelecimentos = await prospeccaoService.buscarEstabelecimentos(tipoEstabelecimento, cidade)
-      return estabelecimentos
+      console.log('🔍 Buscando estabelecimentos e verificando duplicatas...')
+      
+      const estabelecimentosFiltrados: EstabelecimentoGoogleMaps[] = []
+      let duplicatasEncontradas = 0
+      let nextPageToken: string | undefined
+      let tentativas = 0
+      const maxTentativas = 3 // Máximo 3 páginas (60 estabelecimentos)
+      
+      do {
+        tentativas++
+        console.log(`📄 Buscando página ${tentativas}${nextPageToken ? ` (token: ${nextPageToken.substring(0, 10)}...)` : ''}`)
+        
+        const resultado = await prospeccaoService.buscarEstabelecimentos(tipoEstabelecimento, cidade, nextPageToken)
+        const estabelecimentosBrutos = resultado.estabelecimentos
+        nextPageToken = resultado.nextPageToken
+        
+        console.log(`📋 Página ${tentativas}: ${estabelecimentosBrutos.length} estabelecimentos encontrados`)
+        
+        // Filtrar estabelecimentos já prospectados desta página
+        for (const estabelecimento of estabelecimentosBrutos) {
+          const jaProspectado = await prospeccaoLogsService.verificarJaProspectado(estabelecimento.place_id)
+          
+          if (jaProspectado) {
+            console.log(`⏭️ Pulando ${estabelecimento.nome} - já prospectado anteriormente`)
+            duplicatasEncontradas++
+          } else {
+            estabelecimentosFiltrados.push(estabelecimento)
+          }
+        }
+        
+        console.log(`📊 Após página ${tentativas}: ${estabelecimentosFiltrados.length} novos, ${duplicatasEncontradas} já prospectados`)
+        
+        // Aguardar 2 segundos entre páginas para respeitar rate limits
+        if (nextPageToken && estabelecimentosFiltrados.length < minEstabelecimentos && tentativas < maxTentativas) {
+          console.log('⏳ Aguardando 2 segundos antes da próxima página...')
+          await new Promise(resolve => setTimeout(resolve, 2000))
+        }
+        
+      } while (
+        nextPageToken && 
+        estabelecimentosFiltrados.length < minEstabelecimentos && 
+        tentativas < maxTentativas
+      )
+      
+      console.log(`🎯 Busca finalizada: ${estabelecimentosFiltrados.length} novos estabelecimentos em ${tentativas} página(s)`)
+      
+      if (duplicatasEncontradas > 0) {
+        toast.info(`${duplicatasEncontradas} estabelecimentos já foram prospectados anteriormente e foram pulados`)
+      }
+      
+      if (estabelecimentosFiltrados.length === 0) {
+        toast.warning('Todos os estabelecimentos encontrados já foram prospectados. Tente uma busca diferente.')
+      }
+      
+      return estabelecimentosFiltrados
 
     } catch (error) {
       console.error('Erro ao buscar estabelecimentos:', error)
@@ -58,10 +114,16 @@ export const useProspeccao = () => {
   // Validar se um número é WhatsApp usando Evolution API
   const validarWhatsApp = async (telefone: string): Promise<ValidacaoWhatsApp> => {
     try {
+      console.log('🔍 Validando WhatsApp para:', telefone)
+      console.log('📱 Instância WhatsApp:', whatsappInstance)
+      
       // Verificar se existe instância WhatsApp configurada
       if (!whatsappInstance?.instanceName) {
+        console.error('❌ Nenhuma instância WhatsApp configurada')
         throw new Error('Nenhuma instância WhatsApp configurada. Configure na aba WhatsApp primeiro.')
       }
+
+      console.log('✅ Instância encontrada:', whatsappInstance.instanceName)
 
       // Limpar e formatar o número
       const numeroLimpo = telefone.replace(/\D/g, '')
@@ -71,6 +133,9 @@ export const useProspeccao = () => {
 
       // URL correta conforme documentação: /chat/whatsappNumbers/{instance}
       const url = `${EVOLUTION_API_BASE_URL}chat/whatsappNumbers/${whatsappInstance.instanceName}`
+      
+      console.log('🌐 Fazendo requisição para Evolution API:', url)
+      console.log('📞 Número formatado:', numeroFormatado)
       
       const response = await fetch(url, {
         method: 'POST',
@@ -83,17 +148,21 @@ export const useProspeccao = () => {
         })
       })
 
+      console.log('📡 Resposta Evolution API status:', response.status)
+
       if (!response.ok) {
         const errorText = await response.text()
         throw new Error(`Evolution API Error: ${response.status} - ${errorText}`)
       }
 
       const data = await response.json()
+      console.log('📋 Resposta Evolution API data:', data)
       
       // Verificar se o número é WhatsApp válido
       // Resposta esperada: [{ "exists": true, "jid": "553198296801@s.whatsapp.net", "number": "553198296801" }]
       if (data && Array.isArray(data) && data.length > 0) {
         const resultado = data[0]
+        console.log('✅ Resultado validação:', resultado)
         return {
           isWhatsApp: resultado.exists === true,
           jid: resultado.jid,
@@ -101,6 +170,7 @@ export const useProspeccao = () => {
         }
       }
 
+      console.log('❌ Número não é WhatsApp válido')
       return { isWhatsApp: false }
 
     } catch (error) {
@@ -112,10 +182,16 @@ export const useProspeccao = () => {
   // Enviar mensagem via Evolution API
   const enviarMensagem = async (numeroOuJid: string, mensagem: string): Promise<void> => {
     try {
+      console.log('📤 Enviando mensagem para:', numeroOuJid)
+      console.log('💬 Mensagem:', mensagem)
+      
       // Verificar se existe instância WhatsApp configurada
       if (!whatsappInstance?.instanceName) {
+        console.error('❌ Nenhuma instância WhatsApp configurada para envio')
         throw new Error('Nenhuma instância WhatsApp configurada. Configure na aba WhatsApp primeiro.')
       }
+
+      console.log('✅ Instância para envio:', whatsappInstance.instanceName)
 
       // URL correta conforme documentação: /message/sendText/{instance}
       const url = `${EVOLUTION_API_BASE_URL}message/sendText/${whatsappInstance.instanceName}`
@@ -123,6 +199,9 @@ export const useProspeccao = () => {
       // Extrair apenas o número do JID se necessário
       // JID formato: "553198296801@s.whatsapp.net" -> número: "553198296801"
       const numero = numeroOuJid.includes('@') ? numeroOuJid.split('@')[0] : numeroOuJid
+      
+      console.log('🌐 URL de envio:', url)
+      console.log('📱 Número final:', numero)
       
       const response = await fetch(url, {
         method: 'POST',
@@ -136,17 +215,24 @@ export const useProspeccao = () => {
         })
       })
 
+      console.log('📡 Status resposta envio:', response.status)
+
       if (!response.ok) {
         const errorText = await response.text()
+        console.error('❌ Erro no envio:', errorText)
         throw new Error(`Evolution API Error: ${response.status} - ${errorText}`)
       }
 
       const data = await response.json()
+      console.log('📋 Resposta envio:', data)
       
       // Resposta esperada: { "key": { "remoteJid": "553198296801@s.whatsapp.net", "fromMe": true, "id": "BAE594145F4C59B4" }, ... }
       if (!data.key || !data.key.id) {
+        console.error('❌ Resposta inválida do envio:', data)
         throw new Error('Falha ao enviar mensagem - resposta inválida')
       }
+
+      console.log('✅ Mensagem enviada com sucesso! ID:', data.key.id)
 
       // Salvar disparo no localStorage para controle diário
       await salvarDisparoProspeccao({
@@ -239,13 +325,155 @@ export const useProspeccao = () => {
     }
   }
 
+  // Salvar estabelecimento como cliente no banco de dados
+  const salvarComoCliente = async (estabelecimento: EstabelecimentoGoogleMaps, telefoneWhatsApp: string): Promise<string | null> => {
+    try {
+      console.log('💾 Salvando estabelecimento como cliente:', estabelecimento.nome)
+      
+      // Extrair cidade e estado do endereço (formato: "Rua, Cidade - Estado, CEP")
+      const enderecoPartes = estabelecimento.endereco.split(',')
+      let cidade = 'Não informado'
+      let estado = 'Não informado'
+      
+      if (enderecoPartes.length >= 2) {
+        const cidadeEstado = enderecoPartes[enderecoPartes.length - 2].trim()
+        const cidadeEstadoPartes = cidadeEstado.split(' - ')
+        
+        if (cidadeEstadoPartes.length >= 2) {
+          cidade = cidadeEstadoPartes[0].trim()
+          estado = cidadeEstadoPartes[1].trim()
+        } else {
+          cidade = cidadeEstado
+        }
+      }
+
+      const clienteData = {
+        // Dados básicos do contato
+        nome_contato: estabelecimento.nome,
+        email: '', // Será preenchido posteriormente se necessário
+        whatsapp: telefoneWhatsApp,
+        
+        // Dados da empresa
+        nome_empresa: estabelecimento.nome,
+        razao_social: estabelecimento.nome, // Usar o mesmo nome inicialmente
+        
+        // Endereço
+        endereco: estabelecimento.endereco,
+        cidade: cidade,
+        estado: estado,
+        cep: '',
+        pais: 'Brasil',
+        
+        // Classificação e pipeline
+        etapa_pipeline: 'novo',
+        classificacao: 'frio', // Usar 'frio' conforme constraint do banco
+        origem: 'Prospecção',
+        fonte_detalhada: 'Google Maps - Prospecção Automatizada',
+        
+        // Segmentação
+        segmento_cliente: 'Não informado',
+        
+        // Qualificação inicial
+        qualificacao_score: 0,
+        qualificacao_completa: false,
+        probabilidade: 0,
+        valor_estimado: 0,
+        
+        // Critérios de qualificação (JSONB)
+        criterios_qualificacao: {
+          dados_completos: false,
+          timeline_definida: false,
+          autoridade_decisao: false,
+          orcamento_definido: false,
+          necessidade_urgente: false
+        },
+        
+        // Informações faltantes
+        informacoes_faltantes: ['email', 'telefone_empresa', 'segmento_cliente', 'produtos_interesse'],
+        
+        // Datas importantes
+        primeiro_contato_em: new Date().toISOString(),
+        data_ultima_etapa: new Date().toISOString(),
+        
+        // Observações e análise
+        observacoes: `Cliente prospectado automaticamente via Google Maps. Place ID: ${estabelecimento.place_id}. Telefone WhatsApp validado.`,
+        analise_cliente: 'Lead prospectado automaticamente via sistema de prospecção. Necessita qualificação manual para completar dados comerciais.',
+        
+        // Controle de follow-up
+        follow_up: true, // Marcar para follow-up automático
+        respondeu_fup: false,
+        
+        // Configurações iniciais
+        numero_pedidos: 0,
+        proposta_enviada: false,
+        formulario_site: false,
+        cadastrado_rp: false
+      }
+
+      console.log('📋 Dados do cliente a serem salvos:', clienteData)
+
+      const novoCliente = await clientesService.create(clienteData)
+      
+      console.log('✅ Cliente salvo com sucesso:', novoCliente.id)
+      
+      return novoCliente.id
+      
+    } catch (error) {
+      console.error('❌ Erro ao salvar cliente:', error)
+      toast.error(`Erro ao salvar cliente ${estabelecimento.nome}`)
+      throw error
+    }
+  }
+
+  // Salvar log de prospecção no banco de dados
+  const salvarLogProspeccao = async (
+    estabelecimento: EstabelecimentoGoogleMaps,
+    tipoEstabelecimento: string,
+    cidade: string,
+    whatsappValido: boolean,
+    jid?: string,
+    mensagensEnviada: boolean = false,
+    clienteSalvo: boolean = false,
+    clienteId?: string
+  ): Promise<void> => {
+    try {
+      console.log('📝 Salvando log de prospecção:', estabelecimento.nome)
+      
+      await prospeccaoLogsService.salvarLog({
+        place_id: estabelecimento.place_id,
+        nome_estabelecimento: estabelecimento.nome,
+        endereco: estabelecimento.endereco,
+        telefone: estabelecimento.telefone,
+        whatsapp_valido: whatsappValido,
+        jid: jid,
+        mensagem_enviada: mensagensEnviada,
+        cliente_salvo: clienteSalvo,
+        cliente_id: clienteId,
+        tipo_estabelecimento: tipoEstabelecimento,
+        cidade: cidade,
+        observacoes: `Prospectado automaticamente via Google Maps`
+      })
+      
+      console.log('✅ Log de prospecção salvo com sucesso')
+      
+    } catch (error) {
+      console.error('❌ Erro ao salvar log de prospecção:', error)
+      // Não interromper o fluxo por erro no log
+    }
+  }
+
   return {
     buscarEstabelecimentos,
     validarWhatsApp,
     enviarMensagem,
+    salvarComoCliente,
+    salvarLogProspeccao,
     obterDisparosHoje,
     limparDisparosAntigos,
     obterHistoricoDisparos,
+    // Funções de logs
+    buscarLogsProspeccao: prospeccaoLogsService.buscarLogs,
+    obterEstatisticasProspeccao: prospeccaoLogsService.obterEstatisticas,
     isLoading
   }
 }

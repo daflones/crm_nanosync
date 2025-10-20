@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -77,11 +77,19 @@ export default function ProspeccaoPage() {
 
   const [estabelecimentos, setEstabelecimentos] = useState<EstabelecimentoProspectado[]>([])
   const [logs, setLogs] = useState<string[]>([])
+  
+  // Controle de pausa/parada em tempo real
+  const prospeccaoControlRef = useRef({
+    ativa: false,
+    pausada: false
+  })
 
   const {
     buscarEstabelecimentos,
     validarWhatsApp,
     enviarMensagem,
+    salvarComoCliente,
+    salvarLogProspeccao,
     obterDisparosHoje,
     isLoading
   } = useProspeccao()
@@ -128,12 +136,17 @@ export default function ProspeccaoPage() {
     }
 
     try {
+      // Atualizar controle em tempo real
+      prospeccaoControlRef.current = { ativa: true, pausada: false }
       setStatus(prev => ({ ...prev, ativa: true, pausada: false }))
       adicionarLog('Iniciando prospecção...')
 
       // Buscar estabelecimentos no Google Maps
       adicionarLog(`Buscando estabelecimentos: ${config.tipo_estabelecimento} em ${config.cidade}`)
+      console.log('🔍 Iniciando busca de estabelecimentos...')
+      
       const resultados = await buscarEstabelecimentos(config.tipo_estabelecimento, config.cidade)
+      console.log('✅ Estabelecimentos encontrados:', resultados.length)
       
       const estabelecimentosEncontrados: EstabelecimentoProspectado[] = resultados.map(est => ({
         id: est.place_id,
@@ -144,6 +157,8 @@ export default function ProspeccaoPage() {
         status: 'pendente'
       }))
 
+      console.log('📋 Estabelecimentos mapeados:', estabelecimentosEncontrados.length)
+
       setEstabelecimentos(estabelecimentosEncontrados)
       setStatus(prev => ({ 
         ...prev, 
@@ -151,9 +166,12 @@ export default function ProspeccaoPage() {
       }))
 
       adicionarLog(`${estabelecimentosEncontrados.length} estabelecimentos encontrados`)
+      console.log('🚀 Iniciando processamento da fila...')
 
       // Processar estabelecimentos em fila
       await processarFilaEstabelecimentos(estabelecimentosEncontrados)
+      
+      console.log('✅ Processamento da fila finalizado!')
 
     } catch (error) {
       console.error('Erro na prospecção:', error)
@@ -164,15 +182,41 @@ export default function ProspeccaoPage() {
   }
 
   const processarFilaEstabelecimentos = async (estabelecimentosList: EstabelecimentoProspectado[]) => {
+    console.log('🚀 Iniciando processamento da fila:', estabelecimentosList.length, 'estabelecimentos')
+    adicionarLog(`Iniciando processamento de ${estabelecimentosList.length} estabelecimentos`)
+    
     let processados = 0
     let whatsappValidos = 0
     let mensagensEnviadas = 0
     let disparosHoje = status.disparos_hoje
 
+    console.log('📊 Status inicial:', { processados, whatsappValidos, mensagensEnviadas, disparosHoje })
+
     for (const estabelecimento of estabelecimentosList) {
+      console.log(`🔄 Processando estabelecimento ${processados + 1}/${estabelecimentosList.length}:`, estabelecimento.nome)
+      
       // Verificar se a prospecção foi pausada ou parada
-      if (!status.ativa || status.pausada) {
-        adicionarLog('Prospecção pausada pelo usuário')
+      if (!prospeccaoControlRef.current.ativa) {
+        adicionarLog('Prospecção interrompida pelo usuário')
+        break
+      }
+
+      // Aguardar enquanto pausada
+      if (prospeccaoControlRef.current.pausada && prospeccaoControlRef.current.ativa) {
+        adicionarLog('Prospecção pausada - aguardando retomada...')
+        
+        while (prospeccaoControlRef.current.pausada && prospeccaoControlRef.current.ativa) {
+          await new Promise(resolve => setTimeout(resolve, 1000)) // Aguardar 1 segundo
+        }
+        
+        if (prospeccaoControlRef.current.ativa) {
+          adicionarLog('Prospecção retomada - continuando processamento...')
+        }
+      }
+
+      // Verificar novamente se foi parada durante a pausa
+      if (!prospeccaoControlRef.current.ativa) {
+        adicionarLog('Prospecção interrompida pelo usuário')
         break
       }
 
@@ -182,7 +226,10 @@ export default function ProspeccaoPage() {
         break
       }
 
+      console.log(`📞 Telefone do estabelecimento ${estabelecimento.nome}:`, estabelecimento.telefone)
+      
       if (!estabelecimento.telefone) {
+        console.log(`❌ Estabelecimento sem telefone: ${estabelecimento.nome}`)
         processados++
         setEstabelecimentos(prev => 
           prev.map((est: EstabelecimentoProspectado) => 
@@ -205,10 +252,15 @@ export default function ProspeccaoPage() {
         )
 
         adicionarLog(`Validando WhatsApp: ${estabelecimento.nome} - ${estabelecimento.telefone}`)
+        console.log(`🔍 Iniciando validação WhatsApp para: ${estabelecimento.nome}`)
 
         // Validar WhatsApp
         const validacao = await validarWhatsApp(estabelecimento.telefone)
+        console.log(`📋 Resultado validação:`, validacao)
         
+        let clienteId: string | null = null
+        let mensagemEnviada = false
+
         if (validacao.isWhatsApp && validacao.jid) {
           whatsappValidos++
           
@@ -223,11 +275,28 @@ export default function ProspeccaoPage() {
 
           adicionarLog(`WhatsApp válido encontrado: ${estabelecimento.nome}`)
 
+          // Salvar como cliente no banco de dados
+          try {
+            clienteId = await salvarComoCliente({
+              place_id: estabelecimento.place_id,
+              nome: estabelecimento.nome,
+              endereco: estabelecimento.endereco,
+              telefone: estabelecimento.telefone
+            }, validacao.jid)
+            
+            adicionarLog(`Cliente ${estabelecimento.nome} salvo no banco de dados`)
+            toast.success(`Cliente ${estabelecimento.nome} salvo com sucesso!`)
+          } catch (error) {
+            console.error('Erro ao salvar cliente:', error)
+            adicionarLog(`Erro ao salvar cliente ${estabelecimento.nome}: ${error}`)
+          }
+
           // Enviar mensagem
           try {
             await enviarMensagem(validacao.jid, config.mensagem)
             mensagensEnviadas++
             disparosHoje++
+            mensagemEnviada = true
 
             setEstabelecimentos(prev => 
               prev.map((est: EstabelecimentoProspectado) => 
@@ -261,6 +330,23 @@ export default function ProspeccaoPage() {
           adicionarLog(`WhatsApp inválido: ${estabelecimento.nome}`)
         }
 
+        // Salvar log de prospecção no banco de dados
+        await salvarLogProspeccao(
+          {
+            place_id: estabelecimento.place_id,
+            nome: estabelecimento.nome,
+            endereco: estabelecimento.endereco,
+            telefone: estabelecimento.telefone
+          },
+          config.tipo_estabelecimento,
+          config.cidade,
+          validacao.isWhatsApp,
+          validacao.jid,
+          mensagemEnviada,
+          !!clienteId,
+          clienteId || undefined
+        )
+
       } catch (error) {
         setEstabelecimentos(prev => 
           prev.map((est: EstabelecimentoProspectado) => 
@@ -273,6 +359,7 @@ export default function ProspeccaoPage() {
       }
 
       processados++
+      console.log(`✅ Estabelecimento ${processados}/${estabelecimentosList.length} processado: ${estabelecimento.nome}`)
       
       // Atualizar status geral
       setStatus(prev => ({
@@ -291,17 +378,38 @@ export default function ProspeccaoPage() {
       }
     }
 
-    setStatus(prev => ({ ...prev, ativa: false, pausada: false }))
-    adicionarLog('Prospecção finalizada')
+    console.log('📊 Estatísticas finais:', { processados, whatsappValidos, mensagensEnviadas })
+    
+    // Limpar controle em tempo real
+    prospeccaoControlRef.current = { ativa: false, pausada: false }
+    
+    setStatus(prev => ({ 
+      ...prev, 
+      ativa: false, 
+      pausada: false,
+      processados,
+      whatsapp_validos: whatsappValidos,
+      mensagens_enviadas: mensagensEnviadas
+    }))
+    adicionarLog(`Prospecção finalizada - Processados: ${processados}, WhatsApp válidos: ${whatsappValidos}, Mensagens enviadas: ${mensagensEnviadas}`)
     toast.success('Prospecção finalizada!')
   }
 
   const pausarProspeccao = () => {
-    setStatus(prev => ({ ...prev, pausada: !prev.pausada }))
-    adicionarLog(status.pausada ? 'Prospecção retomada' : 'Prospecção pausada')
+    const novoPausado = !status.pausada
+    
+    // Atualizar controle em tempo real
+    prospeccaoControlRef.current.pausada = novoPausado
+    
+    setStatus(prev => ({ ...prev, pausada: novoPausado }))
+    adicionarLog(novoPausado ? 'Prospecção pausada' : 'Prospecção retomada')
   }
 
   const pararProspeccao = () => {
+    // Atualizar controle em tempo real
+    prospeccaoControlRef.current.ativa = false
+    prospeccaoControlRef.current.pausada = false
+    
     setStatus(prev => ({ 
       ...prev, 
       ativa: false, 
