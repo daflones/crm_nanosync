@@ -15,7 +15,8 @@ import {
   Activity,
   Bot,
   MessageCircle,
-  CreditCard
+  CreditCard,
+  Target
 } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 import { usePlanoAtivo } from '@/hooks/usePlanoAtivo'
@@ -84,6 +85,12 @@ const menuItems = [
     icon: FolderOpen, 
     href: '/arquivos-ia',
     color: 'text-violet-600'
+  },
+  { 
+    label: 'Prospecção', 
+    icon: Target, 
+    href: '/prospeccao',
+    color: 'text-red-600'
   },
   // { 
   //   label: 'Relatórios', 

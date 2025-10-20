@@ -26,6 +26,7 @@ const AtividadesPage = lazy(() => import('./pages/atividades/AtividadesPage').th
 const WhatsAppPage = lazy(() => import('./pages/WhatsAppPage'))
 const LandingPage = lazy(() => import('./pages/landing/LandingPage').then(m => ({ default: m.LandingPage })))
 const PlanosPage = lazy(() => import('./pages/Planos'))
+const ProspeccaoPage = lazy(() => import('./pages/prospeccao/ProspeccaoPage').then(m => ({ default: m.default })))
 
 // Loading component for Suspense fallback
 const PageLoader = () => (
@@ -147,6 +148,10 @@ export const router = createBrowserRouter([
       {
         path: 'whatsapp',
         element: withSuspense(WhatsAppPage),
+      },
+      {
+        path: 'prospeccao',
+        element: withSuspense(ProspeccaoPage),
       },
     ],
   },
