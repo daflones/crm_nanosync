@@ -31,7 +31,9 @@ export interface IAConfig {
     expectativa: boolean
     analise_cliente: boolean
     // Campos opcionais configuráveis
-    documento: boolean // CPF/CNPJ
+    cpf: boolean // CPF separado
+    cnpj: boolean // CNPJ separado
+    nome_empresa: boolean // Nome da empresa
     email: boolean
     segmento: boolean
     endereco: {
@@ -165,7 +167,9 @@ export const getIAConfig = async (userId: string) => {
           expectativa: true,
           analise_cliente: true,
           // Campos opcionais (padrão false)
-          documento: false,
+          cpf: false,
+          cnpj: false,
+          nome_empresa: false,
           email: false,
           segmento: false,
           endereco: {

@@ -1680,8 +1680,16 @@ export function ClientesPage() {
                     ]
                     
                     // Adicionar campos opcionais baseados nas regras de qualificação
-                    if (regrasQualificacao?.documento) {
-                      requiredFields.push({ key: 'documento', label: 'CPF/CNPJ', value: cliente.cpf || cliente.cnpj })
+                    if (regrasQualificacao?.nome_empresa) {
+                      requiredFields.push({ key: 'nome_empresa', label: 'Nome da Empresa', value: cliente.nome_empresa })
+                    }
+                    
+                    if (regrasQualificacao?.cpf) {
+                      requiredFields.push({ key: 'cpf', label: 'CPF', value: cliente.cpf })
+                    }
+                    
+                    if (regrasQualificacao?.cnpj) {
+                      requiredFields.push({ key: 'cnpj', label: 'CNPJ', value: cliente.cnpj })
                     }
                     
                     if (regrasQualificacao?.email) {

@@ -55,7 +55,9 @@ export function IAConfigPage() {
       motivacao: true,
       expectativa: true,
       analise_cliente: true,
-      documento: false,
+      cpf: false,
+      cnpj: false,
+      nome_empresa: false,
       email: false,
       segmento: false,
       endereco: {
@@ -289,7 +291,23 @@ export function IAConfigPage() {
                       const horariosAtivos = vendedor.horarios_vendedor ? 
                         ordenarDiasDaSemana(vendedor.horarios_vendedor)
                           .filter(([_, config]: [string, any]) => config?.ativo === true)
-                          .map(([dia, config]: [string, any]) => `${dia.charAt(0).toUpperCase() + dia.slice(1)}: ${config.inicio}-${config.fim}`)
+                          .map(([dia, config]: [string, any]) => {
+                            const diaFormatado = dia.charAt(0).toUpperCase() + dia.slice(1)
+                            
+                            // Suporte para nova estrutura de múltiplos períodos
+                            if (config?.periodos && Array.isArray(config.periodos)) {
+                              const periodosTexto = config.periodos
+                                .map((periodo: any) => `${periodo.inicio}-${periodo.fim}`)
+                                .join(', ')
+                              return `${diaFormatado}: ${periodosTexto}`
+                            }
+                            // Compatibilidade com estrutura antiga
+                            else if (config?.inicio && config?.fim) {
+                              return `${diaFormatado}: ${config.inicio}-${config.fim}`
+                            }
+                            return null
+                          })
+                          .filter(Boolean)
                         : [];
                       
                       return (
@@ -368,21 +386,61 @@ export function IAConfigPage() {
                 Configure quais campos adicionais a IA deve coletar.
               </p>
 
-              {/* CPF/CNPJ */}
+              {/* Nome da Empresa */}
               <div className="flex items-center justify-between p-3 border rounded-lg">
                 <div className="space-y-0.5">
-                  <Label>CPF/CNPJ</Label>
+                  <Label>Nome da Empresa</Label>
                   <p className="text-sm text-gray-500">
-                    Solicitar documento (CPF ou CNPJ) do lead.
+                    Solicitar nome da empresa do lead.
                   </p>
                 </div>
                 <Switch
-                  checked={iaConfig.regras_qualificacao?.documento || false}
+                  checked={iaConfig.regras_qualificacao?.nome_empresa || false}
                   onCheckedChange={(checked) => setIaConfig({
                     ...iaConfig,
                     regras_qualificacao: {
                       ...iaConfig.regras_qualificacao!,
-                      documento: checked
+                      nome_empresa: checked
+                    }
+                  })}
+                />
+              </div>
+
+              {/* CPF */}
+              <div className="flex items-center justify-between p-3 border rounded-lg">
+                <div className="space-y-0.5">
+                  <Label>CPF</Label>
+                  <p className="text-sm text-gray-500">
+                    Solicitar CPF do lead (pessoa física).
+                  </p>
+                </div>
+                <Switch
+                  checked={iaConfig.regras_qualificacao?.cpf || false}
+                  onCheckedChange={(checked) => setIaConfig({
+                    ...iaConfig,
+                    regras_qualificacao: {
+                      ...iaConfig.regras_qualificacao!,
+                      cpf: checked
+                    }
+                  })}
+                />
+              </div>
+
+              {/* CNPJ */}
+              <div className="flex items-center justify-between p-3 border rounded-lg">
+                <div className="space-y-0.5">
+                  <Label>CNPJ</Label>
+                  <p className="text-sm text-gray-500">
+                    Solicitar CNPJ do lead (pessoa jurídica).
+                  </p>
+                </div>
+                <Switch
+                  checked={iaConfig.regras_qualificacao?.cnpj || false}
+                  onCheckedChange={(checked) => setIaConfig({
+                    ...iaConfig,
+                    regras_qualificacao: {
+                      ...iaConfig.regras_qualificacao!,
+                      cnpj: checked
                     }
                   })}
                 />

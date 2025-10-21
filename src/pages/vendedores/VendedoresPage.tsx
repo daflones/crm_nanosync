@@ -57,9 +57,11 @@ interface VendedorFormData {
   regioes_atendimento: string[]
   horarios_vendedor?: {
     [key: string]: {
-      inicio: string
-      fim: string
       ativo: boolean
+      periodos: Array<{
+        inicio: string
+        fim: string
+      }>
     }
   }
 }
@@ -245,13 +247,13 @@ export default function VendedoresPage() {
     segmentos_secundarios: [],
     regioes_atendimento: [],
     horarios_vendedor: {
-      segunda: { inicio: '08:00', fim: '18:00', ativo: false },
-      terca: { inicio: '08:00', fim: '18:00', ativo: false },
-      quarta: { inicio: '08:00', fim: '18:00', ativo: false },
-      quinta: { inicio: '08:00', fim: '18:00', ativo: false },
-      sexta: { inicio: '08:00', fim: '18:00', ativo: false },
-      sabado: { inicio: '08:00', fim: '12:00', ativo: false },
-      domingo: { inicio: '08:00', fim: '12:00', ativo: false }
+      segunda: { ativo: false, periodos: [{ inicio: '08:00', fim: '18:00' }] },
+      terca: { ativo: false, periodos: [{ inicio: '08:00', fim: '18:00' }] },
+      quarta: { ativo: false, periodos: [{ inicio: '08:00', fim: '18:00' }] },
+      quinta: { ativo: false, periodos: [{ inicio: '08:00', fim: '18:00' }] },
+      sexta: { ativo: false, periodos: [{ inicio: '08:00', fim: '18:00' }] },
+      sabado: { ativo: false, periodos: [{ inicio: '08:00', fim: '12:00' }] },
+      domingo: { ativo: false, periodos: [{ inicio: '08:00', fim: '12:00' }] }
     }
   })
 
@@ -286,13 +288,13 @@ export default function VendedoresPage() {
       segmentos_secundarios: [],
       regioes_atendimento: [],
       horarios_vendedor: {
-        segunda: { inicio: '08:00', fim: '18:00', ativo: true },
-        terca: { inicio: '08:00', fim: '18:00', ativo: true },
-        quarta: { inicio: '08:00', fim: '18:00', ativo: true },
-        quinta: { inicio: '08:00', fim: '18:00', ativo: true },
-        sexta: { inicio: '08:00', fim: '18:00', ativo: true },
-        sabado: { inicio: '08:00', fim: '12:00', ativo: false },
-        domingo: { inicio: '08:00', fim: '12:00', ativo: false }
+        segunda: { ativo: true, periodos: [{ inicio: '08:00', fim: '18:00' }] },
+        terca: { ativo: true, periodos: [{ inicio: '08:00', fim: '18:00' }] },
+        quarta: { ativo: true, periodos: [{ inicio: '08:00', fim: '18:00' }] },
+        quinta: { ativo: true, periodos: [{ inicio: '08:00', fim: '18:00' }] },
+        sexta: { ativo: true, periodos: [{ inicio: '08:00', fim: '18:00' }] },
+        sabado: { ativo: false, periodos: [{ inicio: '08:00', fim: '12:00' }] },
+        domingo: { ativo: false, periodos: [{ inicio: '08:00', fim: '12:00' }] }
       }
     })
   }
@@ -354,8 +356,8 @@ export default function VendedoresPage() {
         email: formData.email.trim().toLowerCase(),
         senha: formData.senha,
         whatsapp: formData.whatsapp.trim(),
-        telefone: formData.telefone.trim() || null,
-        cpf: formData.cpf.trim() || null,
+        telefone: formData.telefone.trim() || undefined,
+        cpf: formData.cpf.trim() || undefined,
         meta_mensal: Number(formData.meta_mensal) || 0,
         comissao_percentual: Number(formData.comissao_percentual) || 5,
         salario_base: Number(formData.salario_base) || 0,
@@ -442,13 +444,13 @@ export default function VendedoresPage() {
       segmentos_secundarios: vendedor.segmentos_secundarios || [],
       regioes_atendimento: vendedor.regioes_atendimento || [],
       horarios_vendedor: vendedor.horarios_vendedor || {
-        segunda: { inicio: '08:00', fim: '18:00', ativo: false },
-        terca: { inicio: '08:00', fim: '18:00', ativo: false },
-        quarta: { inicio: '08:00', fim: '18:00', ativo: false },
-        quinta: { inicio: '08:00', fim: '18:00', ativo: false },
-        sexta: { inicio: '08:00', fim: '18:00', ativo: false },
-        sabado: { inicio: '08:00', fim: '12:00', ativo: false },
-        domingo: { inicio: '08:00', fim: '12:00', ativo: false }
+        segunda: { ativo: false, periodos: [{ inicio: '08:00', fim: '18:00' }] },
+        terca: { ativo: false, periodos: [{ inicio: '08:00', fim: '18:00' }] },
+        quarta: { ativo: false, periodos: [{ inicio: '08:00', fim: '18:00' }] },
+        quinta: { ativo: false, periodos: [{ inicio: '08:00', fim: '18:00' }] },
+        sexta: { ativo: false, periodos: [{ inicio: '08:00', fim: '18:00' }] },
+        sabado: { ativo: false, periodos: [{ inicio: '08:00', fim: '12:00' }] },
+        domingo: { ativo: false, periodos: [{ inicio: '08:00', fim: '12:00' }] }
       }
     })
     setIsEditModalOpen(true)
@@ -985,47 +987,93 @@ export default function VendedoresPage() {
               <h4 className="text-sm font-medium text-gray-900 dark:text-white border-b pb-2">Horários Disponíveis para Agendamento</h4>
               <div className="space-y-3">
                 {ordenarDiasDaSemana(formData.horarios_vendedor).map(([dia, config]: [string, any]) => (
-                  <div key={dia} className="flex items-center gap-4 p-3 border rounded-lg">
-                    <div className="w-20">
-                      <Label className="capitalize">{dia}</Label>
+                  <div key={dia} className="p-3 border rounded-lg space-y-3">
+                    <div className="flex items-center gap-4">
+                      <div className="w-20">
+                        <Label className="capitalize">{dia}</Label>
+                      </div>
+                      <Switch
+                        checked={config?.ativo || false}
+                        onCheckedChange={(checked) => {
+                          const newHorarios = { ...formData.horarios_vendedor }
+                          if (checked) {
+                            newHorarios[dia] = { 
+                              ativo: true, 
+                              periodos: config?.periodos || [{ inicio: '08:00', fim: '18:00' }] 
+                            }
+                          } else {
+                            newHorarios[dia] = { ...config, ativo: false }
+                          }
+                          setFormData({ ...formData, horarios_vendedor: newHorarios })
+                        }}
+                      />
+                      {!config?.ativo && (
+                        <span className="text-sm text-gray-400">Indisponível</span>
+                      )}
                     </div>
-                    <Switch
-                      checked={config?.ativo || false}
-                      onCheckedChange={(checked) => {
-                        const newHorarios = { ...formData.horarios_vendedor }
-                        newHorarios[dia] = { ...config, ativo: checked }
-                        setFormData({ ...formData, horarios_vendedor: newHorarios })
-                      }}
-                    />
+                    
                     {config?.ativo && (
-                      <>
-                        <div className="flex items-center gap-2">
-                          <Input
-                            type="time"
-                            value={config?.inicio || '08:00'}
-                            onChange={(e) => {
-                              const newHorarios = { ...formData.horarios_vendedor }
-                              newHorarios[dia] = { ...config, inicio: e.target.value }
-                              setFormData({ ...formData, horarios_vendedor: newHorarios })
-                            }}
-                            className="w-24"
-                          />
-                          <span className="text-sm text-gray-500">às</span>
-                          <Input
-                            type="time"
-                            value={config?.fim || '18:00'}
-                            onChange={(e) => {
-                              const newHorarios = { ...formData.horarios_vendedor }
-                              newHorarios[dia] = { ...config, fim: e.target.value }
-                              setFormData({ ...formData, horarios_vendedor: newHorarios })
-                            }}
-                            className="w-24"
-                          />
-                        </div>
-                      </>
-                    )}
-                    {!config?.ativo && (
-                      <span className="text-sm text-gray-400">Indisponível</span>
+                      <div className="space-y-2 ml-24">
+                        {(config?.periodos || []).map((periodo: any, index: number) => (
+                          <div key={index} className="flex items-center gap-2">
+                            <Input
+                              type="time"
+                              value={periodo.inicio || '08:00'}
+                              onChange={(e) => {
+                                const newHorarios = { ...formData.horarios_vendedor }
+                                const newPeriodos = [...(config?.periodos || [])]
+                                newPeriodos[index] = { ...periodo, inicio: e.target.value }
+                                newHorarios[dia] = { ...config, periodos: newPeriodos }
+                                setFormData({ ...formData, horarios_vendedor: newHorarios })
+                              }}
+                              className="w-24"
+                            />
+                            <span className="text-sm text-gray-500">às</span>
+                            <Input
+                              type="time"
+                              value={periodo.fim || '18:00'}
+                              onChange={(e) => {
+                                const newHorarios = { ...formData.horarios_vendedor }
+                                const newPeriodos = [...(config?.periodos || [])]
+                                newPeriodos[index] = { ...periodo, fim: e.target.value }
+                                newHorarios[dia] = { ...config, periodos: newPeriodos }
+                                setFormData({ ...formData, horarios_vendedor: newHorarios })
+                              }}
+                              className="w-24"
+                            />
+                            {(config?.periodos || []).length > 1 && (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  const newHorarios = { ...formData.horarios_vendedor }
+                                  const newPeriodos = (config?.periodos || []).filter((_: any, i: number) => i !== index)
+                                  newHorarios[dia] = { ...config, periodos: newPeriodos }
+                                  setFormData({ ...formData, horarios_vendedor: newHorarios })
+                                }}
+                                className="text-red-600 hover:text-red-700"
+                              >
+                                Remover
+                              </Button>
+                            )}
+                          </div>
+                        ))}
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            const newHorarios = { ...formData.horarios_vendedor }
+                            const newPeriodos = [...(config?.periodos || []), { inicio: '14:00', fim: '18:00' }]
+                            newHorarios[dia] = { ...config, periodos: newPeriodos }
+                            setFormData({ ...formData, horarios_vendedor: newHorarios })
+                          }}
+                          className="text-blue-600 hover:text-blue-700"
+                        >
+                          + Adicionar Período
+                        </Button>
+                      </div>
                     )}
                   </div>
                 ))}
@@ -1220,17 +1268,33 @@ export default function VendedoresPage() {
                   <h4 className="font-semibold text-gray-900 dark:text-white mb-3">Horários de Atendimento</h4>
                   <div className="space-y-2">
                     {ordenarDiasDaSemana(selectedVendedor.horarios_vendedor).map(([dia, horario]: [string, any]) => (
-                      <div key={dia} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                        <div className="flex items-center gap-3">
+                      <div key={dia} className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                        <div className="flex items-center gap-3 mb-2">
                           <div className={`w-3 h-3 rounded-full ${horario.ativo ? 'bg-green-500' : 'bg-gray-300'}`} />
                           <span className="font-medium text-gray-900 dark:text-white capitalize">{dia}</span>
                         </div>
                         {horario.ativo ? (
-                          <span className="text-sm text-gray-600 dark:text-gray-300">
-                            {horario.inicio} - {horario.fim}
-                          </span>
+                          <div className="ml-6 space-y-1">
+                            {/* Suporte para nova estrutura de múltiplos períodos */}
+                            {horario.periodos && Array.isArray(horario.periodos) ? (
+                              horario.periodos.map((periodo: any, index: number) => (
+                                <div key={index} className="text-sm text-gray-600 dark:text-gray-300">
+                                  {periodo.inicio} - {periodo.fim}
+                                </div>
+                              ))
+                            ) : (
+                              /* Compatibilidade com estrutura antiga */
+                              horario.inicio && horario.fim && (
+                                <div className="text-sm text-gray-600 dark:text-gray-300">
+                                  {horario.inicio} - {horario.fim}
+                                </div>
+                              )
+                            )}
+                          </div>
                         ) : (
-                          <span className="text-sm text-gray-400">Inativo</span>
+                          <div className="ml-6">
+                            <span className="text-sm text-gray-400">Inativo</span>
+                          </div>
                         )}
                       </div>
                     ))}
@@ -1417,47 +1481,93 @@ export default function VendedoresPage() {
               <h4 className="text-sm font-medium text-gray-900 dark:text-white border-b pb-2">Horários Disponíveis para Agendamento</h4>
               <div className="space-y-3">
                 {ordenarDiasDaSemana(formData.horarios_vendedor).map(([dia, config]: [string, any]) => (
-                  <div key={dia} className="flex items-center gap-4 p-3 border rounded-lg">
-                    <div className="w-20">
-                      <Label className="capitalize">{dia}</Label>
+                  <div key={dia} className="p-3 border rounded-lg space-y-3">
+                    <div className="flex items-center gap-4">
+                      <div className="w-20">
+                        <Label className="capitalize">{dia}</Label>
+                      </div>
+                      <Switch
+                        checked={config?.ativo || false}
+                        onCheckedChange={(checked) => {
+                          const newHorarios = { ...formData.horarios_vendedor }
+                          if (checked) {
+                            newHorarios[dia] = { 
+                              ativo: true, 
+                              periodos: config?.periodos || [{ inicio: '08:00', fim: '18:00' }] 
+                            }
+                          } else {
+                            newHorarios[dia] = { ...config, ativo: false }
+                          }
+                          setFormData({ ...formData, horarios_vendedor: newHorarios })
+                        }}
+                      />
+                      {!config?.ativo && (
+                        <span className="text-sm text-gray-400">Indisponível</span>
+                      )}
                     </div>
-                    <Switch
-                      checked={config?.ativo || false}
-                      onCheckedChange={(checked) => {
-                        const newHorarios = { ...formData.horarios_vendedor }
-                        newHorarios[dia] = { ...config, ativo: checked }
-                        setFormData({ ...formData, horarios_vendedor: newHorarios })
-                      }}
-                    />
+                    
                     {config?.ativo && (
-                      <>
-                        <div className="flex items-center gap-2">
-                          <Input
-                            type="time"
-                            value={config?.inicio || '08:00'}
-                            onChange={(e) => {
-                              const newHorarios = { ...formData.horarios_vendedor }
-                              newHorarios[dia] = { ...config, inicio: e.target.value }
-                              setFormData({ ...formData, horarios_vendedor: newHorarios })
-                            }}
-                            className="w-24"
-                          />
-                          <span className="text-sm text-gray-500">às</span>
-                          <Input
-                            type="time"
-                            value={config?.fim || '18:00'}
-                            onChange={(e) => {
-                              const newHorarios = { ...formData.horarios_vendedor }
-                              newHorarios[dia] = { ...config, fim: e.target.value }
-                              setFormData({ ...formData, horarios_vendedor: newHorarios })
-                            }}
-                            className="w-24"
-                          />
-                        </div>
-                      </>
-                    )}
-                    {!config?.ativo && (
-                      <span className="text-sm text-gray-400">Indisponível</span>
+                      <div className="space-y-2 ml-24">
+                        {(config?.periodos || []).map((periodo: any, index: number) => (
+                          <div key={index} className="flex items-center gap-2">
+                            <Input
+                              type="time"
+                              value={periodo.inicio || '08:00'}
+                              onChange={(e) => {
+                                const newHorarios = { ...formData.horarios_vendedor }
+                                const newPeriodos = [...(config?.periodos || [])]
+                                newPeriodos[index] = { ...periodo, inicio: e.target.value }
+                                newHorarios[dia] = { ...config, periodos: newPeriodos }
+                                setFormData({ ...formData, horarios_vendedor: newHorarios })
+                              }}
+                              className="w-24"
+                            />
+                            <span className="text-sm text-gray-500">às</span>
+                            <Input
+                              type="time"
+                              value={periodo.fim || '18:00'}
+                              onChange={(e) => {
+                                const newHorarios = { ...formData.horarios_vendedor }
+                                const newPeriodos = [...(config?.periodos || [])]
+                                newPeriodos[index] = { ...periodo, fim: e.target.value }
+                                newHorarios[dia] = { ...config, periodos: newPeriodos }
+                                setFormData({ ...formData, horarios_vendedor: newHorarios })
+                              }}
+                              className="w-24"
+                            />
+                            {(config?.periodos || []).length > 1 && (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  const newHorarios = { ...formData.horarios_vendedor }
+                                  const newPeriodos = (config?.periodos || []).filter((_: any, i: number) => i !== index)
+                                  newHorarios[dia] = { ...config, periodos: newPeriodos }
+                                  setFormData({ ...formData, horarios_vendedor: newHorarios })
+                                }}
+                                className="text-red-600 hover:text-red-700"
+                              >
+                                Remover
+                              </Button>
+                            )}
+                          </div>
+                        ))}
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            const newHorarios = { ...formData.horarios_vendedor }
+                            const newPeriodos = [...(config?.periodos || []), { inicio: '14:00', fim: '18:00' }]
+                            newHorarios[dia] = { ...config, periodos: newPeriodos }
+                            setFormData({ ...formData, horarios_vendedor: newHorarios })
+                          }}
+                          className="text-blue-600 hover:text-blue-700"
+                        >
+                          + Adicionar Período
+                        </Button>
+                      </div>
                     )}
                   </div>
                 ))}

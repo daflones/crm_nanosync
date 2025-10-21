@@ -15,7 +15,6 @@ import {
   Activity,
   Bot,
   MessageCircle,
-  Monitor,
   CreditCard,
   Target
 } from 'lucide-react'
@@ -125,12 +124,6 @@ const menuItems = [
     href: '/whatsapp',
     color: 'text-green-600',
     adminOnly: true
-  },
-  { 
-    label: 'WhatsApp Web', 
-    icon: Monitor, 
-    href: '/whatsapp-web',
-    color: 'text-green-500'
   },
   { 
     label: 'Planos', 

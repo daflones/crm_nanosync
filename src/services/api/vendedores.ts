@@ -28,9 +28,11 @@ export interface Vendedor {
   observacoes?: string
   horarios_vendedor?: {
     [key: string]: {
-      inicio: string
-      fim: string
       ativo: boolean
+      periodos: Array<{
+        inicio: string
+        fim: string
+      }>
     }
   }
   profile: string // Campo para filtro por empresa
@@ -69,6 +71,15 @@ export interface VendedorCreateData {
   salario_base?: number
   status?: 'ativo' | 'inativo' | 'ferias' | 'afastado' | 'desligado'
   observacoes?: string
+  horarios_vendedor?: {
+    [key: string]: {
+      ativo: boolean
+      periodos: Array<{
+        inicio: string
+        fim: string
+      }>
+    }
+  }
 }
 
 export interface VendedorUpdateData {
@@ -87,6 +98,15 @@ export interface VendedorUpdateData {
   regioes_atendimento?: string[]
   status?: 'ativo' | 'inativo' | 'ferias' | 'afastado' | 'desligado'
   ativo?: boolean
+  horarios_vendedor?: {
+    [key: string]: {
+      ativo: boolean
+      periodos: Array<{
+        inicio: string
+        fim: string
+      }>
+    }
+  }
 }
 
 export const vendedoresService = {
