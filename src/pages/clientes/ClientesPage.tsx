@@ -1684,12 +1684,13 @@ export function ClientesPage() {
                       requiredFields.push({ key: 'nome_empresa', label: 'Nome da Empresa', value: cliente.nome_empresa })
                     }
                     
-                    if (regrasQualificacao?.cpf) {
-                      requiredFields.push({ key: 'cpf', label: 'CPF', value: cliente.cpf })
-                    }
-                    
-                    if (regrasQualificacao?.cnpj) {
-                      requiredFields.push({ key: 'cnpj', label: 'CNPJ', value: cliente.cnpj })
+                    // CPF/CNPJ como campo único se pelo menos um estiver ativo
+                    if (regrasQualificacao?.cpf || regrasQualificacao?.cnpj) {
+                      requiredFields.push({ 
+                        key: 'documento', 
+                        label: 'CPF/CNPJ', 
+                        value: cliente.cpf || cliente.cnpj 
+                      })
                     }
                     
                     if (regrasQualificacao?.email) {
