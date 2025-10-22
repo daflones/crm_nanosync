@@ -92,13 +92,17 @@ export function ChatInterface({ chats, messages, onSendMessage, onSendMedia, onG
   const getMessageAckIcon = (ack: number) => {
     switch (ack) {
       case 0:
+        // Enviando (relógio)
         return <Clock className="w-3 h-3 text-gray-400" />
       case 1:
+        // Enviado mas não entregue (um check cinza)
         return <Check className="w-3 h-3 text-gray-400" />
       case 2:
-        return <CheckCheck className="w-3 h-3 text-green-500" />
+        // Entregue (dois checks cinzas)
+        return <CheckCheck className="w-3 h-3 text-gray-400" />
       case 3:
-        return <CheckCheck className="w-3 h-3 text-green-600" />
+        // Lido (dois checks azuis/verdes)
+        return <CheckCheck className="w-3 h-3 text-blue-500" />
       default:
         return null
     }

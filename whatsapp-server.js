@@ -132,6 +132,12 @@ function initializeWhatsAppClient() {
   });
 
   whatsappClient.on('message_ack', (message, ack) => {
+    console.log('📨 Acknowledgment recebido no servidor:', {
+      messageId: message.id._serialized,
+      ack: ack,
+      body: message.body ? message.body.substring(0, 50) : 'sem body'
+    });
+    
     broadcastToClients({ 
       type: 'message_ack', 
       id: message.id._serialized,

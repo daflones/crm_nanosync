@@ -255,6 +255,12 @@ export function useWhatsAppWeb() {
               newMessages[chatId] = newMessages[chatId].map(msg => {
                 // Atualizar mensagem de mídia
                 if (msg.id === data.tempId) {
+                  console.log('✅ Atualizando mensagem de mídia:', {
+                    oldId: msg.id,
+                    newId: data.messageId,
+                    oldAck: msg.ack,
+                    newAck: 1
+                  })
                   return { ...msg, ack: 1, id: data.messageId }
                 }
                 // Atualizar mensagem de legenda se existir
@@ -265,6 +271,17 @@ export function useWhatsAppWeb() {
                     body: msg.body
                   })
                   return { ...msg, ack: 1, id: data.captionMessageId }
+                }
+                // Atualizar mensagem de texto normal
+                if (msg.id.startsWith('temp_') && !msg.id.startsWith('temp_caption_')) {
+                  console.log('✅ Atualizando mensagem de texto:', {
+                    oldId: msg.id,
+                    newId: data.messageId,
+                    oldAck: msg.ack,
+                    newAck: 1,
+                    body: msg.body.substring(0, 50)
+                  })
+                  return { ...msg, ack: 1, id: data.messageId }
                 }
                 return msg
               })
@@ -278,13 +295,32 @@ export function useWhatsAppWeb() {
       case 'message_ack':
         // Atualizar status de entrega da mensagem
         const { id, ack } = data
+        console.log('📨 Acknowledgment recebido:', { id, ack })
+        
         setState(prev => {
           const newMessages = { ...prev.messages }
+          let messageFound = false
+          
           Object.keys(newMessages).forEach(chatId => {
-            newMessages[chatId] = newMessages[chatId].map(msg =>
-              msg.id === id ? { ...msg, ack } : msg
-            )
+            newMessages[chatId] = newMessages[chatId].map(msg => {
+              if (msg.id === id) {
+                messageFound = true
+                console.log('✅ Mensagem encontrada para atualizar ack:', {
+                  messageId: msg.id,
+                  oldAck: msg.ack,
+                  newAck: ack,
+                  body: msg.body.substring(0, 50)
+                })
+                return { ...msg, ack }
+              }
+              return msg
+            })
           })
+          
+          if (!messageFound) {
+            console.log('❌ Mensagem não encontrada para ack:', id)
+          }
+          
           return { ...prev, messages: newMessages }
         })
         break

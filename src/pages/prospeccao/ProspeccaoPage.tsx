@@ -333,6 +333,18 @@ export default function ProspeccaoPage() {
           adicionarLog(`WhatsApp inválido: ${estabelecimento.nome}`)
         }
 
+        // Determinar status baseado no resultado
+        let statusProspeccao = 'Falha'
+        if (mensagemEnviada) {
+          statusProspeccao = 'Prospectado'
+        } else if (validacao.isWhatsApp) {
+          statusProspeccao = 'WhatsApp Válido'
+        } else if (!estabelecimento.telefone) {
+          statusProspeccao = 'Falha'
+        } else {
+          statusProspeccao = 'Falha'
+        }
+
         // Salvar log de prospecção no banco de dados
         await salvarLogProspeccao(
           {
@@ -347,7 +359,8 @@ export default function ProspeccaoPage() {
           validacao.jid,
           mensagemEnviada,
           !!clienteId,
-          clienteId || undefined
+          clienteId || undefined,
+          statusProspeccao
         )
 
       } catch (error) {

@@ -234,35 +234,9 @@ export const useProspeccao = () => {
 
       console.log('✅ Mensagem enviada com sucesso! ID:', data.key.id)
 
-      // Salvar disparo no localStorage para controle diário
-      await salvarDisparoProspeccao({
-        id: data.key.id,
-        telefone: numero,
-        jid: numeroOuJid,
-        mensagem: mensagem,
-        data_envio: new Date(),
-        estabelecimento_nome: '', // Será preenchido pela função chamadora
-        status: 'enviado'
-      })
-
     } catch (error) {
       console.error('Erro ao enviar mensagem:', error)
       throw error
-    }
-  }
-
-  // Salvar disparo no localStorage
-  const salvarDisparoProspeccao = async (disparo: DisparoProspeccao): Promise<void> => {
-    try {
-      const hoje = new Date().toISOString().split('T')[0] // YYYY-MM-DD
-      const chave = `disparos_prospeccao_${hoje}`
-      
-      const disparosExistentes = JSON.parse(localStorage.getItem(chave) || '[]')
-      disparosExistentes.push(disparo)
-      
-      localStorage.setItem(chave, JSON.stringify(disparosExistentes))
-    } catch (error) {
-      console.error('Erro ao salvar disparo:', error)
     }
   }
 
@@ -270,38 +244,29 @@ export const useProspeccao = () => {
   const obterDisparosHoje = async (): Promise<number> => {
     try {
       const hoje = new Date().toISOString().split('T')[0] // YYYY-MM-DD
-      const chave = `disparos_prospeccao_${hoje}`
+      const inicioHoje = `${hoje}T00:00:00.000Z`
+      const fimHoje = `${hoje}T23:59:59.999Z`
       
-      const disparos = JSON.parse(localStorage.getItem(chave) || '[]')
-      return disparos.length
+      console.log('📊 Buscando disparos do dia:', { hoje, inicioHoje, fimHoje })
+      
+      // Buscar logs de prospecção do dia atual onde mensagem foi enviada
+      const { data } = await prospeccaoLogsService.buscarLogs({
+        data_inicio: inicioHoje,
+        data_fim: fimHoje,
+        mensagem_enviada: true,
+        limit: 1000 // Limite alto para contar todos
+      })
+      
+      const totalDisparos = data?.length || 0
+      console.log('📊 Total de disparos hoje:', totalDisparos)
+      
+      return totalDisparos
     } catch (error) {
-      console.error('Erro ao obter disparos:', error)
+      console.error('Erro ao obter disparos do banco:', error)
       return 0
     }
   }
 
-  // Limpar disparos antigos (executar diariamente)
-  const limparDisparosAntigos = async (): Promise<void> => {
-    try {
-      const hoje = new Date()
-      const seteDiasAtras = new Date(hoje.getTime() - 7 * 24 * 60 * 60 * 1000)
-      
-      // Remover disparos com mais de 7 dias
-      for (let i = 0; i < localStorage.length; i++) {
-        const chave = localStorage.key(i)
-        if (chave && chave.startsWith('disparos_prospeccao_')) {
-          const dataString = chave.replace('disparos_prospeccao_', '')
-          const dataDisparo = new Date(dataString)
-          
-          if (dataDisparo < seteDiasAtras) {
-            localStorage.removeItem(chave)
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Erro ao limpar disparos antigos:', error)
-    }
-  }
 
   // Obter histórico de disparos
   const obterHistoricoDisparos = async (dias: number = 7): Promise<DisparoProspeccao[]> => {
@@ -435,7 +400,8 @@ export const useProspeccao = () => {
     jid?: string,
     mensagensEnviada: boolean = false,
     clienteSalvo: boolean = false,
-    clienteId?: string
+    clienteId?: string,
+    statusProspeccao?: string
   ): Promise<void> => {
     try {
       console.log('📝 Salvando log de prospecção:', estabelecimento.nome)
@@ -452,7 +418,8 @@ export const useProspeccao = () => {
         cliente_id: clienteId,
         tipo_estabelecimento: tipoEstabelecimento,
         cidade: cidade,
-        observacoes: `Prospectado automaticamente via Google Maps`
+        observacoes: `Prospectado automaticamente via Google Maps`,
+        status_prospeccao: statusProspeccao || (mensagensEnviada ? 'Prospectado' : whatsappValido ? 'WhatsApp Válido' : 'Falha')
       })
       
       console.log('✅ Log de prospecção salvo com sucesso')
@@ -470,7 +437,6 @@ export const useProspeccao = () => {
     salvarComoCliente,
     salvarLogProspeccao,
     obterDisparosHoje,
-    limparDisparosAntigos,
     obterHistoricoDisparos,
     // Funções de logs
     buscarLogsProspeccao: prospeccaoLogsService.buscarLogs,

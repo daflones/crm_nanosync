@@ -33,6 +33,7 @@ interface LogProspeccaoCreateData {
   tipo_estabelecimento: string
   cidade: string
   observacoes?: string
+  status_prospeccao?: string
 }
 
 export const prospeccaoLogsService = {

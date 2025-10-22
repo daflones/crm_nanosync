@@ -1,25 +1,25 @@
-2025/10/22-17:52:35.195 1160 Reusing MANIFEST C:\Users\dudud\OneDrive\Área de Trabalho\NanoSynCrm\crm_nanosync_clone\.wwebjs_auth\session-crm-nanosync\Default\IndexedDB\https_web.whatsapp.com_0.indexeddb.leveldb/MANIFEST-000001
-2025/10/22-17:52:35.196 1160 Recovering log #258
-2025/10/22-17:52:35.231 1160 Reusing old log C:\Users\dudud\OneDrive\Área de Trabalho\NanoSynCrm\crm_nanosync_clone\.wwebjs_auth\session-crm-nanosync\Default\IndexedDB\https_web.whatsapp.com_0.indexeddb.leveldb/000258.log 
-2025/10/22-17:52:37.220 33c0 Level-0 table #269: started
-2025/10/22-17:52:37.239 33c0 Level-0 table #269: 152913 bytes OK
-2025/10/22-17:52:37.243 33c0 Delete type=0 #258
-2025/10/22-17:52:37.247 33c0 Manual compaction at level-0 from '\x00$\x00\x00\x00' @ 72057594037927935 : 1 .. '\x00%\x00\x00\x00' @ 0 : 0; will stop at (end)
-2025/10/22-17:52:40.609 33c0 Compacting 1@1 + 7@2 files
-2025/10/22-17:52:40.763 33c0 Generated table #270@1: 52018 keys, 2215803 bytes
-2025/10/22-17:52:40.862 33c0 Generated table #271@1: 20533 keys, 2177951 bytes
-2025/10/22-17:52:40.927 33c0 Generated table #272@1: 3451 keys, 2159451 bytes
-2025/10/22-17:52:41.054 33c0 Generated table #273@1: 27649 keys, 2233683 bytes
-2025/10/22-17:52:41.160 33c0 Generated table #274@1: 41594 keys, 2177420 bytes
-2025/10/22-17:52:41.359 33c0 Generated table #275@1: 107022 keys, 2258699 bytes
-2025/10/22-17:52:41.398 33c0 Generated table #276@1: 17594 keys, 411716 bytes
-2025/10/22-17:52:41.398 33c0 Compacted 1@1 + 7@2 files => 13634723 bytes
-2025/10/22-17:52:41.400 33c0 compacted to: files[ 0 0 7 0 0 0 0 ]
-2025/10/22-17:52:41.401 33c0 Delete type=2 #260
-2025/10/22-17:52:41.401 33c0 Delete type=2 #261
-2025/10/22-17:52:41.401 33c0 Delete type=2 #262
-2025/10/22-17:52:41.401 33c0 Delete type=2 #263
-2025/10/22-17:52:41.401 33c0 Delete type=2 #264
-2025/10/22-17:52:41.401 33c0 Delete type=2 #265
-2025/10/22-17:52:41.401 33c0 Delete type=2 #266
-2025/10/22-17:52:41.401 33c0 Delete type=2 #269
+2025/10/22-18:21:16.172 2254 Reusing MANIFEST C:\Users\dudud\OneDrive\Área de Trabalho\NanoSynCrm\crm_nanosync_clone\.wwebjs_auth\session-crm-nanosync\Default\IndexedDB\https_web.whatsapp.com_0.indexeddb.leveldb/MANIFEST-000001
+2025/10/22-18:21:16.173 2254 Recovering log #268
+2025/10/22-18:21:16.347 2254 Reusing old log C:\Users\dudud\OneDrive\Área de Trabalho\NanoSynCrm\crm_nanosync_clone\.wwebjs_auth\session-crm-nanosync\Default\IndexedDB\https_web.whatsapp.com_0.indexeddb.leveldb/000268.log 
+2025/10/22-18:21:20.455 53f0 Level-0 table #279: started
+2025/10/22-18:21:20.502 53f0 Level-0 table #279: 718792 bytes OK
+2025/10/22-18:21:20.506 53f0 Delete type=0 #268
+2025/10/22-18:21:20.507 53f0 Manual compaction at level-0 from '\x00&\x00\x00\x00' @ 72057594037927935 : 1 .. '\x00'\x00\x00\x00' @ 0 : 0; will stop at (end)
+2025/10/22-18:21:23.865 2ca8 Compacting 1@1 + 7@2 files
+2025/10/22-18:21:24.032 2ca8 Generated table #280@1: 54334 keys, 2219586 bytes
+2025/10/22-18:21:24.163 2ca8 Generated table #281@1: 21267 keys, 2180133 bytes
+2025/10/22-18:21:24.229 2ca8 Generated table #282@1: 3429 keys, 2159143 bytes
+2025/10/22-18:21:24.351 2ca8 Generated table #283@1: 25782 keys, 2234009 bytes
+2025/10/22-18:21:24.449 2ca8 Generated table #284@1: 39848 keys, 2175342 bytes
+2025/10/22-18:21:24.634 2ca8 Generated table #285@1: 107088 keys, 2258333 bytes
+2025/10/22-18:21:24.676 2ca8 Generated table #286@1: 21438 keys, 498833 bytes
+2025/10/22-18:21:24.676 2ca8 Compacted 1@1 + 7@2 files => 13725379 bytes
+2025/10/22-18:21:24.679 2ca8 compacted to: files[ 0 0 7 0 0 0 0 ]
+2025/10/22-18:21:24.680 2ca8 Delete type=2 #270
+2025/10/22-18:21:24.680 2ca8 Delete type=2 #271
+2025/10/22-18:21:24.680 2ca8 Delete type=2 #272
+2025/10/22-18:21:24.680 2ca8 Delete type=2 #273
+2025/10/22-18:21:24.680 2ca8 Delete type=2 #274
+2025/10/22-18:21:24.680 2ca8 Delete type=2 #275
+2025/10/22-18:21:24.680 2ca8 Delete type=2 #276
+2025/10/22-18:21:24.680 2ca8 Delete type=2 #279
