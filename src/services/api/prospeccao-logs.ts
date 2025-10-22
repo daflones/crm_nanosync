@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase'
 
-export interface LogProspeccao {
+interface LogProspeccao {
   id: string
   profile_id: string
   place_id: string
@@ -20,7 +20,7 @@ export interface LogProspeccao {
   updated_at: string
 }
 
-export interface LogProspeccaoCreateData {
+interface LogProspeccaoCreateData {
   place_id: string
   nome_estabelecimento: string
   endereco: string
@@ -259,3 +259,5 @@ export const prospeccaoLogsService = {
     }
   }
 }
+
+export type { LogProspeccao, LogProspeccaoCreateData }

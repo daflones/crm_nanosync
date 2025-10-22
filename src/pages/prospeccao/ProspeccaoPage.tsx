@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { 
   Search, 
   Play, 
@@ -18,11 +19,13 @@ import {
   Target,
   CheckCircle,
   XCircle,
-  AlertCircle
+  AlertCircle,
+  History
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useProspeccao } from '../../hooks/useProspeccao'
 import { useWhatsAppInstance } from '../../hooks/useWhatsApp'
+import LogsProspeccaoTable from '../../components/prospeccao/LogsProspeccaoTable'
 
 interface ProspeccaoConfig {
   tipo_estabelecimento: string
@@ -59,9 +62,9 @@ export default function ProspeccaoPage() {
   const [config, setConfig] = useState<ProspeccaoConfig>({
     tipo_estabelecimento: '',
     cidade: '',
-    mensagem: '',
-    tempo_entre_disparos: 30,
-    limite_disparos_dia: 100
+    mensagem: 'Olá, tudo bem?',
+    tempo_entre_disparos: 600, // 10 minutos fixo
+    limite_disparos_dia: 100 // 100 disparos fixo
   })
 
   const [status, setStatus] = useState<ProspeccaoStatus>({
@@ -115,8 +118,8 @@ export default function ProspeccaoPage() {
   }
 
   const iniciarProspeccao = async () => {
-    if (!config.tipo_estabelecimento || !config.cidade || !config.mensagem) {
-      toast.error('Preencha todos os campos obrigatórios')
+    if (!config.tipo_estabelecimento || !config.cidade) {
+      toast.error('Preencha o tipo de estabelecimento e cidade')
       return
     }
 
@@ -282,7 +285,7 @@ export default function ProspeccaoPage() {
               nome: estabelecimento.nome,
               endereco: estabelecimento.endereco,
               telefone: estabelecimento.telefone
-            }, validacao.jid)
+            }, estabelecimento.telefone, validacao.jid)
             
             adicionarLog(`Cliente ${estabelecimento.nome} salvo no banco de dados`)
             toast.success(`Cliente ${estabelecimento.nome} salvo com sucesso!`)
@@ -474,18 +477,32 @@ export default function ProspeccaoPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Configuração */}
-        <div className="lg:col-span-1">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Target className="h-5 w-5" />
-                Configuração
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
+      {/* Tabs */}
+      <Tabs defaultValue="prospeccao" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="prospeccao" className="flex items-center gap-2">
+            <Target className="h-4 w-4" />
+            Prospecção Ativa
+          </TabsTrigger>
+          <TabsTrigger value="logs" className="flex items-center gap-2">
+            <History className="h-4 w-4" />
+            Histórico de Logs
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="prospeccao" className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Configuração */}
+            <div className="lg:col-span-1">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Target className="h-5 w-5" />
+                    Configuração
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
                 <Label htmlFor="tipo_estabelecimento">Tipo de Estabelecimento</Label>
                 <Input
                   id="tipo_estabelecimento"
@@ -511,39 +528,47 @@ export default function ProspeccaoPage() {
                 <Label htmlFor="mensagem">Mensagem a Enviar</Label>
                 <Textarea
                   id="mensagem"
-                  placeholder="Digite a mensagem que será enviada..."
-                  rows={4}
+                  placeholder="Mensagem fixa do sistema"
+                  rows={2}
                   value={config.mensagem}
-                  onChange={(e) => setConfig(prev => ({ ...prev, mensagem: e.target.value }))}
-                  disabled={status.ativa}
+                  readOnly
+                  disabled
+                  className="bg-gray-50 cursor-not-allowed"
                 />
+                <p className="text-xs text-gray-600 mt-1">
+                  Esta mensagem é enviada para atrair resposta do Lead e evitar mensagens de saudação automática.
+                </p>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="tempo_disparos">Tempo entre Disparos (seg)</Label>
+                  <Label htmlFor="tempo_disparos">Tempo entre Disparos</Label>
                   <Input
                     id="tempo_disparos"
-                    type="number"
-                    min="10"
-                    max="300"
-                    value={config.tempo_entre_disparos}
-                    onChange={(e) => setConfig(prev => ({ ...prev, tempo_entre_disparos: parseInt(e.target.value) || 30 }))}
-                    disabled={status.ativa}
+                    type="text"
+                    value="10 minutos"
+                    readOnly
+                    disabled
+                    className="bg-gray-50 cursor-not-allowed"
                   />
+                  <p className="text-xs text-gray-600 mt-1">
+                    Tempo fixo para evitar bloqueios
+                  </p>
                 </div>
 
                 <div>
                   <Label htmlFor="limite_disparos">Limite Diário</Label>
                   <Input
                     id="limite_disparos"
-                    type="number"
-                    min="1"
-                    max="1000"
-                    value={config.limite_disparos_dia}
-                    onChange={(e) => setConfig(prev => ({ ...prev, limite_disparos_dia: parseInt(e.target.value) || 100 }))}
-                    disabled={status.ativa}
+                    type="text"
+                    value="100 disparos"
+                    readOnly
+                    disabled
+                    className="bg-gray-50 cursor-not-allowed"
                   />
+                  <p className="text-xs text-gray-600 mt-1">
+                    Limite fixo por dia
+                  </p>
                 </div>
               </div>
 
@@ -586,141 +611,147 @@ export default function ProspeccaoPage() {
                   </>
                 )}
               </div>
-            </CardContent>
-          </Card>
-        </div>
+                </CardContent>
+              </Card>
+            </div>
 
-        {/* Status e Progresso */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Cards de Status */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600">Encontrados</p>
-                    <p className="text-2xl font-bold">{status.total_encontrados}</p>
-                  </div>
-                  <MapPin className="h-8 w-8 text-blue-500" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600">Processados</p>
-                    <p className="text-2xl font-bold">{status.total_processados}</p>
-                  </div>
-                  <Search className="h-8 w-8 text-orange-500" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600">WhatsApp Válidos</p>
-                    <p className="text-2xl font-bold">{status.total_whatsapp_validos}</p>
-                  </div>
-                  <Phone className="h-8 w-8 text-green-500" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600">Mensagens Enviadas</p>
-                    <p className="text-2xl font-bold">{status.total_mensagens_enviadas}</p>
-                  </div>
-                  <MessageSquare className="h-8 w-8 text-purple-500" />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Barra de Progresso */}
-          {status.ativa && (
-            <Card>
-              <CardContent className="p-4">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Progresso da Prospecção</span>
-                    <span className="text-sm text-gray-600">{Math.round(status.progresso)}%</span>
-                  </div>
-                  <Progress value={status.progresso} className="h-2" />
-                  {status.pausada && (
-                    <p className="text-sm text-orange-600 flex items-center gap-1">
-                      <Pause className="h-3 w-3" />
-                      Prospecção pausada
-                    </p>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Lista de Estabelecimentos */}
-          {estabelecimentos.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Estabelecimentos Encontrados</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2 max-h-96 overflow-y-auto">
-                  {estabelecimentos.map((estabelecimento) => (
-                    <div 
-                      key={estabelecimento.id}
-                      className="flex items-center justify-between p-3 border rounded-lg"
-                    >
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          {getStatusIcon(estabelecimento.status)}
-                          <h4 className="font-medium">{estabelecimento.nome}</h4>
-                        </div>
-                        <p className="text-sm text-gray-600">{estabelecimento.endereco}</p>
-                        {estabelecimento.telefone && (
-                          <p className="text-sm text-gray-600">{estabelecimento.telefone}</p>
-                        )}
-                        {estabelecimento.erro && (
-                          <p className="text-sm text-red-600">{estabelecimento.erro}</p>
-                        )}
+            {/* Status e Progresso */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Cards de Status */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-gray-600">Encontrados</p>
+                        <p className="text-2xl font-bold">{status.total_encontrados}</p>
                       </div>
-                      <Badge className={getStatusColor(estabelecimento.status)}>
-                        {estabelecimento.status.replace('_', ' ')}
-                      </Badge>
+                      <MapPin className="h-8 w-8 text-blue-500" />
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
+                  </CardContent>
+                </Card>
 
-          {/* Logs */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Logs da Prospecção</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-1 max-h-64 overflow-y-auto bg-gray-50 dark:bg-gray-800 p-3 rounded font-mono text-sm">
-                {logs.length === 0 ? (
-                  <p className="text-gray-500">Nenhum log ainda...</p>
-                ) : (
-                  logs.map((log, index) => (
-                    <div key={index} className="text-gray-700 dark:text-gray-300">
-                      {log}
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-gray-600">Processados</p>
+                        <p className="text-2xl font-bold">{status.total_processados}</p>
+                      </div>
+                      <Search className="h-8 w-8 text-orange-500" />
                     </div>
-                  ))
-                )}
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-gray-600">WhatsApp Válidos</p>
+                        <p className="text-2xl font-bold">{status.total_whatsapp_validos}</p>
+                      </div>
+                      <Phone className="h-8 w-8 text-green-500" />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-gray-600">Mensagens Enviadas</p>
+                        <p className="text-2xl font-bold">{status.total_mensagens_enviadas}</p>
+                      </div>
+                      <MessageSquare className="h-8 w-8 text-purple-500" />
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+
+              {/* Barra de Progresso */}
+              {status.ativa && (
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">Progresso da Prospecção</span>
+                        <span className="text-sm text-gray-600">{Math.round(status.progresso)}%</span>
+                      </div>
+                      <Progress value={status.progresso} className="h-2" />
+                      {status.pausada && (
+                        <p className="text-sm text-orange-600 flex items-center gap-1">
+                          <Pause className="h-3 w-3" />
+                          Prospecção pausada
+                        </p>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Lista de Estabelecimentos */}
+              {estabelecimentos.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Estabelecimentos Encontrados</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2 max-h-96 overflow-y-auto">
+                      {estabelecimentos.map((estabelecimento) => (
+                        <div 
+                          key={estabelecimento.id}
+                          className="flex items-center justify-between p-3 border rounded-lg"
+                        >
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              {getStatusIcon(estabelecimento.status)}
+                              <h4 className="font-medium">{estabelecimento.nome}</h4>
+                            </div>
+                            <p className="text-sm text-gray-600">{estabelecimento.endereco}</p>
+                            {estabelecimento.telefone && (
+                              <p className="text-sm text-gray-600">{estabelecimento.telefone}</p>
+                            )}
+                            {estabelecimento.erro && (
+                              <p className="text-sm text-red-600">{estabelecimento.erro}</p>
+                            )}
+                          </div>
+                          <Badge className={getStatusColor(estabelecimento.status)}>
+                            {estabelecimento.status.replace('_', ' ')}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Logs */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Logs da Prospecção</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-1 max-h-64 overflow-y-auto bg-gray-50 dark:bg-gray-800 p-3 rounded font-mono text-sm">
+                    {logs.length === 0 ? (
+                      <p className="text-gray-500">Nenhum log ainda...</p>
+                    ) : (
+                      logs.map((log, index) => (
+                        <div key={index} className="text-gray-700 dark:text-gray-300">
+                          {log}
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="logs" className="space-y-6">
+          <LogsProspeccaoTable />
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }

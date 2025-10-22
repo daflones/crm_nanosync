@@ -16,7 +16,8 @@ import {
   Bot,
   MessageCircle,
   CreditCard,
-  Target
+  Target,
+  QrCode
 } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 import { usePlanoAtivo } from '@/hooks/usePlanoAtivo'
@@ -119,10 +120,17 @@ const menuItems = [
     adminOnly: true
   },
   { 
-    label: 'WhatsApp', 
-    icon: MessageCircle, 
+    label: 'Instancia IA', 
+    icon: QrCode, 
     href: '/whatsapp',
     color: 'text-green-600',
+    adminOnly: true
+  },
+  { 
+    label: 'WhatsApp Web', 
+    icon: MessageCircle, 
+    href: '/whatsapp-web',
+    color: 'text-green-700',
     adminOnly: true
   },
   { 

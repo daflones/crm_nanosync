@@ -326,7 +326,7 @@ export const useProspeccao = () => {
   }
 
   // Salvar estabelecimento como cliente no banco de dados
-  const salvarComoCliente = async (estabelecimento: EstabelecimentoGoogleMaps, telefoneWhatsApp: string): Promise<string | null> => {
+  const salvarComoCliente = async (estabelecimento: EstabelecimentoGoogleMaps, telefoneWhatsApp: string, jid?: string): Promise<string | null> => {
     try {
       console.log('💾 Salvando estabelecimento como cliente:', estabelecimento.nome)
       
@@ -352,6 +352,7 @@ export const useProspeccao = () => {
         nome_contato: estabelecimento.nome,
         email: '', // Será preenchido posteriormente se necessário
         whatsapp: telefoneWhatsApp,
+        remotejid: jid || '', // JID do WhatsApp para envio de mensagens
         
         // Dados da empresa
         nome_empresa: estabelecimento.nome,
@@ -396,8 +397,8 @@ export const useProspeccao = () => {
         data_ultima_etapa: new Date().toISOString(),
         
         // Observações e análise
-        observacoes: `Cliente prospectado automaticamente via Google Maps. Place ID: ${estabelecimento.place_id}. Telefone WhatsApp validado.`,
-        analise_cliente: 'Lead prospectado automaticamente via sistema de prospecção. Necessita qualificação manual para completar dados comerciais.',
+        observacoes: `Cliente prospectado pelo sistema de prospecção automatizada via Google Maps. Place ID: ${estabelecimento.place_id}. Telefone WhatsApp validado. Este cliente será trabalhado pelo agente de prospecção para qualificação e desenvolvimento comercial.`,
+        analise_cliente: 'Cliente prospectado em fase de conversão. Lead gerado automaticamente pelo sistema de prospecção, necessita abordagem comercial para qualificação e desenvolvimento da oportunidade.',
         
         // Controle de follow-up
         follow_up: true, // Marcar para follow-up automático
