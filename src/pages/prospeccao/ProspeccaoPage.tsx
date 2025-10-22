@@ -364,6 +364,21 @@ export default function ProspeccaoPage() {
       processados++
       console.log(`✅ Estabelecimento ${processados}/${estabelecimentosList.length} processado: ${estabelecimento.nome}`)
       
+      // Determinar se houve sucesso (mensagem enviada) ou erro
+      const estabelecimentoAtual = estabelecimentos.find(est => est.id === estabelecimento.id)
+      const houveSucesso = estabelecimentoAtual?.status === 'mensagem_enviada' || mensagemEnviada
+      const houveErro = estabelecimentoAtual?.status === 'erro' || 
+                       estabelecimentoAtual?.status === 'whatsapp_invalido' || 
+                       !estabelecimento.telefone
+      
+      console.log(`📊 Status do processamento:`, {
+        estabelecimento: estabelecimento.nome,
+        status: estabelecimentoAtual?.status,
+        houveSucesso,
+        houveErro,
+        mensagemEnviada
+      })
+      
       // Atualizar status geral
       setStatus(prev => ({
         ...prev,
@@ -374,10 +389,21 @@ export default function ProspeccaoPage() {
         progresso: (processados / estabelecimentosList.length) * 100
       }))
 
-      // Aguardar tempo configurado entre disparos
+      // Aguardar tempo configurado apenas se houve sucesso (mensagem enviada)
+      // Em caso de erro, pular para o próximo imediatamente
       if (processados < estabelecimentosList.length) {
-        adicionarLog(`Aguardando ${config.tempo_entre_disparos} segundos...`)
-        await new Promise(resolve => setTimeout(resolve, config.tempo_entre_disparos * 1000))
+        if (houveSucesso) {
+          adicionarLog(`✅ Mensagem enviada com sucesso! Aguardando ${config.tempo_entre_disparos} segundos...`)
+          await new Promise(resolve => setTimeout(resolve, config.tempo_entre_disparos * 1000))
+        } else if (houveErro) {
+          adicionarLog(`❌ Erro ou WhatsApp inválido - pulando para o próximo estabelecimento`)
+          // Aguardar apenas 1 segundo para não sobrecarregar o sistema
+          await new Promise(resolve => setTimeout(resolve, 1000))
+        } else {
+          // Caso padrão - aguardar tempo normal
+          adicionarLog(`Aguardando ${config.tempo_entre_disparos} segundos...`)
+          await new Promise(resolve => setTimeout(resolve, config.tempo_entre_disparos * 1000))
+        }
       }
     }
 

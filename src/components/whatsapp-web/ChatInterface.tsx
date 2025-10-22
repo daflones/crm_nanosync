@@ -24,6 +24,7 @@ import {
   Download
 } from 'lucide-react'
 import type { WhatsAppChat, WhatsAppMessage } from '@/hooks/useWhatsAppWeb'
+import { ImageEditorModal } from './ImageEditorModal'
 
 interface ChatInterfaceProps {
   chats: WhatsAppChat[]
@@ -46,6 +47,10 @@ export function ChatInterface({ chats, messages, onSendMessage, onSendMedia, onG
     isOpen: false,
     src: '',
     alt: ''
+  })
+  const [imageEditorModal, setImageEditorModal] = useState<{isOpen: boolean, file: File | null}>({
+    isOpen: false,
+    file: null
   })
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -340,6 +345,13 @@ export function ChatInterface({ chats, messages, onSendMessage, onSendMedia, onG
     console.log('Processando arquivos:', fileArray.map(f => ({ name: f.name, type: f.type, size: f.size })))
     
     for (const file of fileArray) {
+      // Se for uma imagem, abrir o modal de edição
+      if (file.type.startsWith('image/')) {
+        setImageEditorModal({ isOpen: true, file })
+        return // Processar apenas uma imagem por vez
+      }
+      
+      // Para outros tipos de arquivo, enviar diretamente
       const reader = new FileReader()
       reader.onload = (e) => {
         const base64 = e.target?.result as string
@@ -370,17 +382,69 @@ export function ChatInterface({ chats, messages, onSendMessage, onSendMedia, onG
     }
   }
 
+  const handleSendEditedImage = (imageData: string, caption: string) => {
+    if (!selectedChat || !onSendMedia) return
+    
+    // Converter data URL para base64
+    const base64Data = imageData.split(',')[1]
+    
+    const mediaData = {
+      data: base64Data,
+      mimetype: 'image/jpeg',
+      filename: `edited_image_${Date.now()}.jpg`,
+      filesize: Math.round(base64Data.length * 0.75), // Estimativa do tamanho
+      caption: caption || undefined
+    }
+    
+    console.log('Enviando imagem editada:', {
+      chatId: selectedChat.id,
+      hasCaption: !!caption,
+      caption: caption,
+      captionLength: caption ? caption.length : 0,
+      filename: mediaData.filename,
+      mediaData: mediaData
+    })
+    
+    onSendMedia(selectedChat.id, mediaData)
+  }
+
   const getLastMessagePreview = (chat: WhatsAppChat) => {
     const chatMessages = messages[chat.id] || []
     const lastMessage = chatMessages[chatMessages.length - 1]
     
-    if (!lastMessage) {
-      return chat.lastMessage?.body || 'Nenhuma mensagem'
+    // Usar mensagem local se disponível, senão usar lastMessage do chat
+    const messageToCheck = lastMessage || chat.lastMessage
+    
+    if (!messageToCheck) {
+      return 'Nenhuma mensagem'
     }
 
-    return lastMessage.body.length > 50 
-      ? lastMessage.body.substring(0, 50) + '...'
-      : lastMessage.body
+    // Se a mensagem tem mídia, mostrar indicador do tipo
+    if (messageToCheck.hasMedia || (messageToCheck.type && messageToCheck.type !== 'chat')) {
+      switch (messageToCheck.type) {
+        case 'image':
+          return '📷 Imagem'
+        case 'audio':
+        case 'ptt':
+          return '🎵 Áudio'
+        case 'video':
+          return '🎥 Vídeo'
+        case 'document':
+          return '📄 Documento'
+        case 'sticker':
+          return '🎭 Figurinha'
+        default:
+          if (messageToCheck.hasMedia) {
+            return '📎 Mídia'
+          }
+      }
+    }
+
+    // Para mensagens de texto, mostrar o conteúdo
+    const messageText = messageToCheck.body || ''
+    return messageText.length > 50 
+      ? messageText.substring(0, 50) + '...'
+      : messageText || 'Mensagem'
   }
 
   if (!isConnected) {
@@ -655,19 +719,26 @@ export function ChatInterface({ chats, messages, onSendMessage, onSendMedia, onG
         )}
       </Card>
 
-      {/* Modal de Imagem */}
+      {/* Modal de edição de imagem */}
+      <ImageEditorModal
+        isOpen={imageEditorModal.isOpen}
+        onClose={() => setImageEditorModal({ isOpen: false, file: null })}
+        onSend={handleSendEditedImage}
+        imageFile={imageEditorModal.file}
+      />
+
+      {/* Modal de visualização de imagem */}
       {imageModal.isOpen && (
         <div 
-          className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 p-4"
+          className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50"
           onClick={() => setImageModal({ isOpen: false, src: '', alt: '' })}
         >
-          <div className="relative w-full h-full flex items-center justify-center">
+          <div className="relative max-w-full max-h-full p-4">
             <img 
               src={imageModal.src} 
               alt={imageModal.alt}
               className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
               onClick={(e) => e.stopPropagation()}
-              style={{ maxWidth: '90vw', maxHeight: '90vh' }}
             />
             <button
               className="absolute top-4 right-4 text-white bg-black bg-opacity-60 rounded-full w-10 h-10 flex items-center justify-center hover:bg-opacity-80 transition-all text-xl font-bold"

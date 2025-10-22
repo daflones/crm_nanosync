@@ -247,7 +247,9 @@ function formatChat(chat) {
     lastMessage: chat.lastMessage ? {
       body: chat.lastMessage.body || '',
       timestamp: chat.lastMessage.timestamp || Date.now(),
-      fromMe: chat.lastMessage.fromMe || false
+      fromMe: chat.lastMessage.fromMe || false,
+      type: chat.lastMessage.type || 'chat',
+      hasMedia: chat.lastMessage.hasMedia || false
     } : null
   };
 }
@@ -583,6 +585,7 @@ async function handleClientMessage(ws, data) {
             mimetype: data.media.mimetype,
             filename: data.media.filename,
             filesize: data.media.filesize,
+            caption: data.media.caption,
             dataLength: data.media.data ? data.media.data.length : 0
           });
           
@@ -607,15 +610,38 @@ async function handleClientMessage(ws, data) {
             data.media.filesize
           );
           
-          // Enviar mídia
+          // Enviar mídia primeiro
           const sentMessage = await whatsappClient.sendMessage(data.to, media);
           
           console.log('Mídia enviada com sucesso:', sentMessage.id._serialized);
+          
+          // Se há legenda, enviar como mensagem de texto separada
+          let captionMessageId = null;
+          console.log('Verificando legenda:', {
+            hasCaption: !!data.media.caption,
+            caption: data.media.caption,
+            captionTrimmed: data.media.caption ? data.media.caption.trim() : null,
+            captionLength: data.media.caption ? data.media.caption.trim().length : 0
+          });
+          
+          if (data.media.caption && data.media.caption.trim()) {
+            console.log('Enviando legenda como texto:', data.media.caption.trim());
+            try {
+              const captionMessage = await whatsappClient.sendMessage(data.to, data.media.caption.trim());
+              captionMessageId = captionMessage.id._serialized;
+              console.log('Legenda enviada com sucesso:', captionMessageId);
+            } catch (captionError) {
+              console.error('Erro ao enviar legenda:', captionError);
+            }
+          } else {
+            console.log('Nenhuma legenda para enviar');
+          }
           
           // Confirmar envio
           ws.send(JSON.stringify({ 
             type: 'message_sent', 
             messageId: sentMessage.id._serialized,
+            captionMessageId: captionMessageId,
             tempId: data.tempId,
             chatId: data.to
           }));

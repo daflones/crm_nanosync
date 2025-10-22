@@ -28,6 +28,8 @@ export interface WhatsAppChat {
     body: string
     timestamp: number
     fromMe: boolean
+    type?: string
+    hasMedia?: boolean
   }
 }
 
@@ -239,14 +241,33 @@ export function useWhatsAppWeb() {
 
       case 'message_sent':
         console.log('Mensagem enviada confirmada:', data)
+        console.log('Dados de confirmação:', {
+          messageId: data.messageId,
+          captionMessageId: data.captionMessageId,
+          tempId: data.tempId,
+          chatId: data.chatId
+        })
         // Atualizar status da mensagem para enviada
         if (data.messageId) {
           setState(prev => {
             const newMessages = { ...prev.messages }
             Object.keys(newMessages).forEach(chatId => {
-              newMessages[chatId] = newMessages[chatId].map(msg =>
-                msg.id.startsWith('temp_') ? { ...msg, ack: 1, id: data.messageId } : msg
-              )
+              newMessages[chatId] = newMessages[chatId].map(msg => {
+                // Atualizar mensagem de mídia
+                if (msg.id === data.tempId) {
+                  return { ...msg, ack: 1, id: data.messageId }
+                }
+                // Atualizar mensagem de legenda se existir
+                if (data.captionMessageId && msg.id.startsWith('temp_caption_')) {
+                  console.log('Atualizando mensagem de legenda:', {
+                    oldId: msg.id,
+                    newId: data.captionMessageId,
+                    body: msg.body
+                  })
+                  return { ...msg, ack: 1, id: data.captionMessageId }
+                }
+                return msg
+              })
             })
             return { ...prev, messages: newMessages }
           })
@@ -411,12 +432,69 @@ export function useWhatsAppWeb() {
   const sendMedia = useCallback((to: string, media: any) => {
     if (wsRef.current?.readyState === WebSocket.OPEN && state.isConnected) {
       const tempId = `temp_${Date.now()}`
+      const tempCaptionId = media.caption ? `temp_caption_${Date.now()}` : null
+      
       wsRef.current.send(JSON.stringify({ 
         type: 'send_media', 
         to, 
         media,
         tempId
       }))
+      
+      // Adicionar mensagem de mídia localmente
+      const tempMediaMessage: WhatsAppMessage = {
+        id: tempId,
+        body: '',
+        from: 'me',
+        to,
+        fromMe: true,
+        timestamp: Date.now(),
+        type: media.mimetype?.startsWith('image/') ? 'image' : 
+              media.mimetype?.startsWith('audio/') ? 'audio' :
+              media.mimetype?.startsWith('video/') ? 'video' : 'document',
+        hasMedia: true,
+        ack: 0,
+        mediaUrl: `data:${media.mimetype};base64,${media.data}`,
+        filename: media.filename,
+        filesize: media.filesize,
+        mimetype: media.mimetype
+      }
+
+      const messagesToAdd = [tempMediaMessage]
+      
+      // Se há legenda, adicionar como mensagem de texto separada
+      if (media.caption && media.caption.trim()) {
+        console.log('Criando mensagem temporária de legenda:', {
+          tempCaptionId,
+          caption: media.caption.trim(),
+          to
+        })
+        const tempCaptionMessage: WhatsAppMessage = {
+          id: tempCaptionId!,
+          body: media.caption.trim(),
+          from: 'me',
+          to,
+          fromMe: true,
+          timestamp: Date.now() + 1, // +1ms para garantir ordem
+          type: 'chat',
+          hasMedia: false,
+          ack: 0
+        }
+        messagesToAdd.push(tempCaptionMessage)
+        console.log('Mensagem de legenda adicionada à lista:', tempCaptionMessage)
+      }
+
+      setState(prev => ({
+        ...prev,
+        messages: {
+          ...prev.messages,
+          [to]: [
+            ...(prev.messages[to] || []),
+            ...messagesToAdd
+          ]
+        }
+      }))
+
     } else {
       toast.error('WhatsApp não está conectado')
     }
