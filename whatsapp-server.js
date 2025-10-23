@@ -9,7 +9,7 @@ import { createServer } from 'http';
 
 // Configuração do servidor
 const app = express();
-const PORT = 3001;
+const PORT = process.env.PORT || 3001;
 
 app.use(cors());
 app.use(express.json());
@@ -690,9 +690,10 @@ app.get('/health', (req, res) => {
 
 // Iniciar servidor HTTP
 server.listen(PORT, () => {
-  console.log(`Servidor HTTP rodando na porta ${PORT}`);
-  console.log(`WebSocket rodando em ws://localhost:${PORT}/whatsapp-web`);
-  console.log('Servidor WhatsApp Web pronto. Aguardando conexões...');
+  console.log(`🚀 Servidor HTTP rodando na porta ${PORT}`);
+  console.log(`📡 WebSocket endpoint: /whatsapp-web`);
+  console.log(`🌐 Ambiente: ${process.env.NODE_ENV || 'development'}`);
+  console.log('✅ Servidor WhatsApp Web pronto. Aguardando conexões...');
   
   // NÃO inicializar automaticamente - aguardar comando do frontend
 });
