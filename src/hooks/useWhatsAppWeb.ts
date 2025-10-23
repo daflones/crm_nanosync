@@ -87,8 +87,25 @@ export function useWhatsAppWeb() {
     }
 
     try {
+      // Determinar URL do WebSocket baseada no ambiente
+      const getWebSocketUrl = () => {
+        if (import.meta.env.VITE_WHATSAPP_WS_URL) {
+          return import.meta.env.VITE_WHATSAPP_WS_URL
+        }
+        
+        // Em produção, usar o mesmo host da aplicação
+        if (window.location.protocol === 'https:') {
+          return `wss://${window.location.host}/whatsapp-web`
+        } else {
+          return `ws://${window.location.host}/whatsapp-web`
+        }
+      }
+      
+      const wsUrl = getWebSocketUrl()
+      console.log('Conectando ao WebSocket:', wsUrl)
+      
       // Conectar ao WebSocket do backend
-      const ws = new WebSocket('ws://localhost:3001/whatsapp-web')
+      const ws = new WebSocket(wsUrl)
       wsRef.current = ws
 
       ws.onopen = () => {
