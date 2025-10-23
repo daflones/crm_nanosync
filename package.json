@@ -10,8 +10,7 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview --host 0.0.0.0",
-    "start": "npm run whatsapp-server",
-    "start-with-preview": "concurrently --names \"WhatsApp,Vite\" --prefix-colors \"green,blue\" \"npm run whatsapp-server\" \"vite preview --host 0.0.0.0 --port ${PORT:-3000}\""
+    "start": "concurrently --names \"WhatsApp,Vite\" --prefix-colors \"green,blue\" \"npm run whatsapp-server\" \"vite preview --host 0.0.0.0 --port ${PORT:-3000}\""
   },
   "dependencies": {
     "@fullcalendar/daygrid": "^6.1.9",
