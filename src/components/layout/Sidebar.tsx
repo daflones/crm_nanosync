@@ -170,6 +170,9 @@ export function Sidebar() {
     // Ocultar WhatsApp se não tiver plano ativo
     if (item.href === '/whatsapp' && !planoAtivo) return false
     
+    // Ocultar WhatsApp Web da sidebar (funcionalidade existe mas aba fica oculta)
+    if (item.href === '/whatsapp-web') return false
+    
     return true
   })
 
