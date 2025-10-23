@@ -400,8 +400,7 @@ export const useProspeccao = () => {
     jid?: string,
     mensagensEnviada: boolean = false,
     clienteSalvo: boolean = false,
-    clienteId?: string,
-    statusProspeccao?: string
+    clienteId?: string
   ): Promise<void> => {
     try {
       console.log('📝 Salvando log de prospecção:', estabelecimento.nome)
@@ -418,8 +417,7 @@ export const useProspeccao = () => {
         cliente_id: clienteId,
         tipo_estabelecimento: tipoEstabelecimento,
         cidade: cidade,
-        observacoes: `Prospectado automaticamente via Google Maps`,
-        status_prospeccao: statusProspeccao || (mensagensEnviada ? 'Prospectado' : whatsappValido ? 'WhatsApp Válido' : 'Falha')
+        observacoes: `Prospectado automaticamente via Google Maps`
       })
       
       console.log('✅ Log de prospecção salvo com sucesso')

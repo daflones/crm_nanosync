@@ -20,7 +20,8 @@ import {
   CheckCircle,
   XCircle,
   AlertCircle,
-  History
+  History,
+  RotateCcw
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useProspeccao } from '../../hooks/useProspeccao'
@@ -117,6 +118,33 @@ export default function ProspeccaoPage() {
     setLogs(prev => [`[${timestamp}] ${mensagem}`, ...prev.slice(0, 99)]) // Manter apenas 100 logs
   }
 
+  const continuarProspeccaoExistente = async () => {
+    try {
+      // Atualizar controle em tempo real
+      prospeccaoControlRef.current = { ativa: true, pausada: false }
+      setStatus(prev => ({ ...prev, ativa: true, pausada: false }))
+
+      // Filtrar apenas estabelecimentos pendentes
+      const estabelecimentosPendentes = estabelecimentos.filter(est => 
+        est.status === 'pendente' || est.status === 'validando'
+      )
+
+      console.log('🔄 Continuando prospecção existente...')
+      console.log(`📋 ${estabelecimentosPendentes.length} estabelecimentos pendentes`)
+
+      // Processar estabelecimentos pendentes
+      await processarFilaEstabelecimentos(estabelecimentosPendentes)
+      
+      console.log('✅ Continuação da prospecção finalizada!')
+
+    } catch (error) {
+      console.error('Erro ao continuar prospecção:', error)
+      toast.error('Erro ao continuar prospecção')
+      adicionarLog(`Erro: ${error}`)
+      setStatus(prev => ({ ...prev, ativa: false }))
+    }
+  }
+
   const iniciarProspeccao = async () => {
     if (!config.tipo_estabelecimento || !config.cidade) {
       toast.error('Preencha o tipo de estabelecimento e cidade')
@@ -133,9 +161,29 @@ export default function ProspeccaoPage() {
       return
     }
 
-    if (status.disparos_hoje >= config.limite_disparos_dia) {
-      toast.error('Limite diário de disparos atingido')
-      return
+    // Verificar se já existem estabelecimentos pendentes
+    const estabelecimentosPendentes = estabelecimentos.filter(est => 
+      est.status === 'pendente' || est.status === 'validando'
+    )
+
+    if (estabelecimentosPendentes.length > 0) {
+      const continuar = window.confirm(
+        `Existe uma prospecção pendente com ${estabelecimentosPendentes.length} estabelecimentos não processados.\n\n` +
+        `Deseja:\n` +
+        `• OK: Continuar a prospecção existente\n` +
+        `• Cancelar: Fazer nova busca (dados atuais serão perdidos)`
+      )
+
+      if (continuar) {
+        // Continuar prospecção existente
+        adicionarLog(`Continuando prospecção pendente com ${estabelecimentosPendentes.length} estabelecimentos...`)
+        await continuarProspeccaoExistente()
+        return
+      } else {
+        // Limpar dados existentes para nova busca
+        setEstabelecimentos([])
+        adicionarLog('Iniciando nova prospecção (dados anteriores limpos)...')
+      }
     }
 
     try {
@@ -244,6 +292,11 @@ export default function ProspeccaoPage() {
         continue
       }
 
+      // Declarar variáveis fora do try/catch para uso posterior
+      let clienteId: string | null = null
+      let mensagemEnviada = false
+      let validacao: any = null
+
       try {
         // Atualizar status para validando
         setEstabelecimentos(prev => 
@@ -258,11 +311,8 @@ export default function ProspeccaoPage() {
         console.log(`🔍 Iniciando validação WhatsApp para: ${estabelecimento.nome}`)
 
         // Validar WhatsApp
-        const validacao = await validarWhatsApp(estabelecimento.telefone)
+        validacao = await validarWhatsApp(estabelecimento.telefone)
         console.log(`📋 Resultado validação:`, validacao)
-        
-        let clienteId: string | null = null
-        let mensagemEnviada = false
 
         if (validacao.isWhatsApp && validacao.jid) {
           whatsappValidos++
@@ -333,35 +383,27 @@ export default function ProspeccaoPage() {
           adicionarLog(`WhatsApp inválido: ${estabelecimento.nome}`)
         }
 
-        // Determinar status baseado no resultado
-        let statusProspeccao = 'Falha'
-        if (mensagemEnviada) {
-          statusProspeccao = 'Prospectado'
-        } else if (validacao.isWhatsApp) {
-          statusProspeccao = 'WhatsApp Válido'
-        } else if (!estabelecimento.telefone) {
-          statusProspeccao = 'Falha'
-        } else {
-          statusProspeccao = 'Falha'
+        // Salvar log de prospecção no banco de dados (não interromper se falhar)
+        try {
+          await salvarLogProspeccao(
+            {
+              place_id: estabelecimento.place_id,
+              nome: estabelecimento.nome,
+              endereco: estabelecimento.endereco,
+              telefone: estabelecimento.telefone
+            },
+            config.tipo_estabelecimento,
+            config.cidade,
+            validacao?.isWhatsApp || false,
+            validacao?.jid,
+            mensagemEnviada,
+            !!clienteId,
+            clienteId || undefined
+          )
+        } catch (logError) {
+          console.error('Erro ao salvar log (continuando prospecção):', logError)
+          adicionarLog(`Aviso: Erro ao salvar log para ${estabelecimento.nome}`)
         }
-
-        // Salvar log de prospecção no banco de dados
-        await salvarLogProspeccao(
-          {
-            place_id: estabelecimento.place_id,
-            nome: estabelecimento.nome,
-            endereco: estabelecimento.endereco,
-            telefone: estabelecimento.telefone
-          },
-          config.tipo_estabelecimento,
-          config.cidade,
-          validacao.isWhatsApp,
-          validacao.jid,
-          mensagemEnviada,
-          !!clienteId,
-          clienteId || undefined,
-          statusProspeccao
-        )
 
       } catch (error) {
         setEstabelecimentos(prev => 
@@ -377,19 +419,20 @@ export default function ProspeccaoPage() {
       processados++
       console.log(`✅ Estabelecimento ${processados}/${estabelecimentosList.length} processado: ${estabelecimento.nome}`)
       
-      // Determinar se houve sucesso (mensagem enviada) ou erro
-      const estabelecimentoAtual = estabelecimentos.find(est => est.id === estabelecimento.id)
-      const houveSucesso = estabelecimentoAtual?.status === 'mensagem_enviada' || mensagemEnviada
-      const houveErro = estabelecimentoAtual?.status === 'erro' || 
-                       estabelecimentoAtual?.status === 'whatsapp_invalido' || 
-                       !estabelecimento.telefone
+      // Determinar se houve sucesso ou erro baseado nas variáveis locais (mais confiável)
+      const houveSucesso = mensagemEnviada
+      const houveErro = !estabelecimento.telefone ||                    // Sem telefone
+                       !validacao ||                                   // Erro na validação
+                       (validacao && !validacao.isWhatsApp) ||         // WhatsApp inválido
+                       (validacao?.isWhatsApp && !mensagemEnviada)     // WhatsApp válido mas erro no envio
       
       console.log(`📊 Status do processamento:`, {
         estabelecimento: estabelecimento.nome,
-        status: estabelecimentoAtual?.status,
+        telefone: estabelecimento.telefone,
+        whatsappValido: validacao?.isWhatsApp,
+        mensagemEnviada,
         houveSucesso,
-        houveErro,
-        mensagemEnviada
+        houveErro
       })
       
       // Atualizar status geral
@@ -407,14 +450,25 @@ export default function ProspeccaoPage() {
       if (processados < estabelecimentosList.length) {
         if (houveSucesso) {
           adicionarLog(`✅ Mensagem enviada com sucesso! Aguardando ${config.tempo_entre_disparos} segundos...`)
+          console.log(`⏳ Aguardando ${config.tempo_entre_disparos} segundos (sucesso)`)
           await new Promise(resolve => setTimeout(resolve, config.tempo_entre_disparos * 1000))
         } else if (houveErro) {
-          adicionarLog(`❌ Erro ou WhatsApp inválido - pulando para o próximo estabelecimento`)
+          if (!estabelecimento.telefone) {
+            adicionarLog(`❌ Sem telefone - pulando imediatamente`)
+          } else if (!validacao) {
+            adicionarLog(`❌ Erro na validação - pulando imediatamente`)
+          } else if (!validacao.isWhatsApp) {
+            adicionarLog(`❌ WhatsApp inválido - pulando imediatamente`)
+          } else {
+            adicionarLog(`❌ Erro no envio - pulando imediatamente`)
+          }
+          console.log(`⚡ Pulando para próximo (erro detectado)`)
           // Aguardar apenas 1 segundo para não sobrecarregar o sistema
           await new Promise(resolve => setTimeout(resolve, 1000))
         } else {
           // Caso padrão - aguardar tempo normal
-          adicionarLog(`Aguardando ${config.tempo_entre_disparos} segundos...`)
+          adicionarLog(`⚠️ Status indefinido - aguardando tempo padrão`)
+          console.log(`⏳ Aguardando ${config.tempo_entre_disparos} segundos (padrão)`)
           await new Promise(resolve => setTimeout(resolve, config.tempo_entre_disparos * 1000))
         }
       }
@@ -613,14 +667,29 @@ export default function ProspeccaoPage() {
 
               <div className="flex gap-2">
                 {!status.ativa ? (
-                  <Button 
-                    onClick={iniciarProspeccao} 
-                    disabled={isLoading}
-                    className="flex-1"
-                  >
-                    <Play className="h-4 w-4 mr-2" />
-                    Iniciar Prospecção
-                  </Button>
+                  <>
+                    <Button 
+                      onClick={iniciarProspeccao} 
+                      disabled={isLoading}
+                      className="flex-1"
+                    >
+                      <Play className="h-4 w-4 mr-2" />
+                      Iniciar Prospecção
+                    </Button>
+                    
+                    {/* Botão Resumir - aparece quando há estabelecimentos pendentes */}
+                    {estabelecimentos.filter(est => est.status === 'pendente' || est.status === 'validando').length > 0 && (
+                      <Button 
+                        onClick={continuarProspeccaoExistente} 
+                        disabled={isLoading}
+                        variant="outline"
+                        className="flex-1"
+                      >
+                        <RotateCcw className="h-4 w-4 mr-2" />
+                        Resumir ({estabelecimentos.filter(est => est.status === 'pendente' || est.status === 'validando').length})
+                      </Button>
+                    )}
+                  </>
                 ) : (
                   <>
                     <Button 
