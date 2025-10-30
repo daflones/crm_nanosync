@@ -17,7 +17,8 @@ import {
   MessageCircle,
   CreditCard,
   Target,
-  QrCode
+  QrCode,
+  Building2
 } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 import { usePlanoAtivo } from '@/hooks/usePlanoAtivo'
@@ -43,6 +44,13 @@ const menuItems = [
     icon: UserCheck, 
     href: '/vendedores',
     color: 'text-purple-600',
+    adminOnly: true
+  },
+  { 
+    label: 'Setores de Atendimento', 
+    icon: Building2, 
+    href: '/setores-atendimento',
+    color: 'text-blue-600',
     adminOnly: true
   },
   { 

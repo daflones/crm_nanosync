@@ -12,6 +12,7 @@ const ResetPasswordPage = lazy(() => import('./pages/auth/ResetPasswordPage').th
 const DashboardPage = lazy(() => import('./pages/dashboard/DashboardPage').then(m => ({ default: m.DashboardPage })))
 const ClientesPage = lazy(() => import('./pages/clientes/ClientesPage').then(m => ({ default: m.ClientesPage })))
 const VendedoresPage = lazy(() => import('./pages/vendedores/VendedoresPage'))
+const SetoresAtendimentoPage = lazy(() => import('./pages/setores-atendimento/SetoresAtendimentoPage'))
 const ProdutosPage = lazy(() => import('./pages/produtos/ProdutosPage').then(m => ({ default: m.ProdutosPage })))
 const CategoriasPage = lazy(() => import('./pages/categorias/CategoriasPage').then(m => ({ default: m.CategoriasPage })))
 const SegmentosPage = lazy(() => import('./pages/segmentos/SegmentosPage').then(m => ({ default: m.SegmentosPage })))
@@ -97,6 +98,10 @@ export const router = createBrowserRouter([
       {
         path: 'vendedores',
         element: withSuspense(VendedoresPage),
+      },
+      {
+        path: 'setores-atendimento',
+        element: withSuspense(SetoresAtendimentoPage),
       },
       {
         path: 'produtos',
