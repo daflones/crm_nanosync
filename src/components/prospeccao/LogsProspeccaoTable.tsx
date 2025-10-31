@@ -19,6 +19,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { 
   Search, 
   Filter,
@@ -26,7 +33,8 @@ import {
   MessageSquare,
   User,
   MapPin,
-  Phone
+  Phone,
+  Eye
 } from 'lucide-react'
 import { useLogsProspeccao } from '@/hooks/useLogsProspeccao'
 import type { LogProspeccao } from '@/services/api/prospeccao-logs'
@@ -59,6 +67,8 @@ export default function LogsProspeccaoTable() {
   })
 
   const [filtrosAplicados, setFiltrosAplicados] = useState<FiltrosState>(filtros)
+  const [logSelecionado, setLogSelecionado] = useState<LogProspeccao | null>(null)
+  const [modalAberto, setModalAberto] = useState(false)
 
   const { 
     logs, 
@@ -79,6 +89,7 @@ export default function LogsProspeccaoTable() {
   })
 
   const aplicarFiltros = () => {
+    console.log('🔍 Aplicando filtros:', filtros)
     setFiltrosAplicados({ ...filtros, page: 1 })
   }
 
@@ -201,10 +212,23 @@ export default function LogsProspeccaoTable() {
       {/* Filtros */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Filter className="h-5 w-5" />
-            Filtros
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <Filter className="h-5 w-5" />
+              Filtros
+            </CardTitle>
+            {(filtrosAplicados.tipo_estabelecimento || 
+              filtrosAplicados.cidade || 
+              filtrosAplicados.whatsapp_valido !== 'all' || 
+              filtrosAplicados.mensagem_enviada !== 'all' || 
+              filtrosAplicados.cliente_salvo !== 'all' || 
+              filtrosAplicados.data_inicio || 
+              filtrosAplicados.data_fim) && (
+              <Badge className="bg-blue-500 text-white">
+                Filtros Ativos
+              </Badge>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -365,8 +389,19 @@ export default function LogsProspeccaoTable() {
                         <TableCell>
                           {formatarData(log.data_prospeccao)}
                         </TableCell>
-                        <TableCell className="max-w-xs truncate">
-                          {log.observacoes || '-'}
+                        <TableCell>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setLogSelecionado(log)
+                              setModalAberto(true)
+                            }}
+                            className="flex items-center gap-1"
+                          >
+                            <Eye className="h-3 w-3" />
+                            Ver Detalhes
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -404,6 +439,115 @@ export default function LogsProspeccaoTable() {
           )}
         </CardContent>
       </Card>
+
+      {/* Modal de Detalhes */}
+      <Dialog open={modalAberto} onOpenChange={setModalAberto}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Detalhes da Prospecção</DialogTitle>
+            <DialogDescription>
+              Informações completas do estabelecimento prospectado
+            </DialogDescription>
+          </DialogHeader>
+
+          {logSelecionado && (
+            <div className="space-y-4 mt-4">
+              {/* Informações Principais */}
+              <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg space-y-3">
+                <div>
+                  <p className="text-sm font-semibold text-gray-600 dark:text-gray-400">Estabelecimento</p>
+                  <p className="text-lg font-bold">{logSelecionado.nome_estabelecimento}</p>
+                </div>
+
+                <div>
+                  <p className="text-sm font-semibold text-gray-600 dark:text-gray-400">Endereço</p>
+                  <p>{logSelecionado.endereco}</p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm font-semibold text-gray-600 dark:text-gray-400">Tipo</p>
+                    <p className="capitalize">{logSelecionado.tipo_estabelecimento}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-gray-600 dark:text-gray-400">Cidade</p>
+                    <p>{logSelecionado.cidade}</p>
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-sm font-semibold text-gray-600 dark:text-gray-400">Telefone</p>
+                  <p>{logSelecionado.telefone || 'Não cadastrado'}</p>
+                </div>
+              </div>
+
+              {/* Status */}
+              <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+                <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">Status da Prospecção</p>
+                <div className="flex flex-wrap gap-2">
+                  {logSelecionado.whatsapp_valido && (
+                    <Badge className="bg-green-100 text-green-800">
+                      <Phone className="h-3 w-3 mr-1" />
+                      WhatsApp Válido
+                    </Badge>
+                  )}
+                  {!logSelecionado.whatsapp_valido && logSelecionado.telefone && (
+                    <Badge className="bg-red-100 text-red-800">
+                      <Phone className="h-3 w-3 mr-1" />
+                      WhatsApp Inválido
+                    </Badge>
+                  )}
+                  {logSelecionado.mensagem_enviada && (
+                    <Badge className="bg-purple-100 text-purple-800">
+                      <MessageSquare className="h-3 w-3 mr-1" />
+                      Mensagem Enviada
+                    </Badge>
+                  )}
+                  {logSelecionado.cliente_salvo && (
+                    <Badge className="bg-orange-100 text-orange-800">
+                      <User className="h-3 w-3 mr-1" />
+                      Cliente Salvo
+                    </Badge>
+                  )}
+                </div>
+              </div>
+
+              {/* Observações */}
+              <div className="bg-orange-50 dark:bg-orange-900/20 p-4 rounded-lg">
+                <p className="text-sm font-semibold text-orange-900 dark:text-orange-100 mb-2">Observações</p>
+                <p className="text-orange-800 dark:text-orange-200">
+                  {logSelecionado.observacoes || 'Sem observações'}
+                </p>
+              </div>
+
+              {/* Dados Técnicos */}
+              <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg space-y-2">
+                <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">Dados Técnicos</p>
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <p className="text-gray-500">Place ID</p>
+                    <p className="font-mono text-xs break-all">{logSelecionado.place_id}</p>
+                  </div>
+                  {logSelecionado.jid && (
+                    <div>
+                      <p className="text-gray-500">WhatsApp JID</p>
+                      <p className="font-mono text-xs break-all">{logSelecionado.jid}</p>
+                    </div>
+                  )}
+                  <div>
+                    <p className="text-gray-500">Data de Prospecção</p>
+                    <p>{formatarData(logSelecionado.data_prospeccao)}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500">Criado em</p>
+                    <p>{formatarData(logSelecionado.created_at)}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

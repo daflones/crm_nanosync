@@ -24,6 +24,9 @@ import {
   Tag,
   TrendingUp
 } from 'lucide-react'
+import ClienteTimeline from '@/components/cliente/ClienteTimeline'
+import AcaoModal from '@/components/cliente/AcaoModal'
+import type { ClienteAcao } from '@/types/cliente-acao'
 import { useClientes, useClientesStageStats, useCreateCliente, useUpdateCliente, useDeleteCliente, useUpdatePipelineStage } from '@/hooks/useClientes'
 import { usePropostas } from '@/hooks/usePropostas'
 import { useVendedores } from '@/hooks/useVendedores'
@@ -144,6 +147,8 @@ export function ClientesPage() {
   const [selectedTags, setSelectedTags] = useState<string[]>([]) // Tags para criação/edição
   const [isPropostaModalOpen, setIsPropostaModalOpen] = useState(false)
   const [selectedProposta, setSelectedProposta] = useState<any>(null)
+  const [isAcaoModalOpen, setIsAcaoModalOpen] = useState(false)
+  const [selectedAcao, setSelectedAcao] = useState<ClienteAcao | null>(null)
 
   // Load clients with pagination and stage filter
   const { data: clientes = [], count: totalClientesFiltered = 0, isLoading } = useClientes({ 
@@ -2382,6 +2387,21 @@ export function ClientesPage() {
                   </div>
                 )}
               </div>
+
+              {/* Linha do Tempo de Ações */}
+              <div className="mt-6">
+                <ClienteTimeline
+                  clienteId={selectedCliente.id}
+                  onNovaAcao={() => {
+                    setSelectedAcao(null)
+                    setIsAcaoModalOpen(true)
+                  }}
+                  onEditarAcao={(acao) => {
+                    setSelectedAcao(acao)
+                    setIsAcaoModalOpen(true)
+                  }}
+                />
+              </div>
             </div>
           )}
           
@@ -2406,6 +2426,19 @@ export function ClientesPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Modal de Ação */}
+      {selectedCliente && (
+        <AcaoModal
+          clienteId={selectedCliente.id}
+          acao={selectedAcao}
+          aberto={isAcaoModalOpen}
+          onFechar={() => {
+            setIsAcaoModalOpen(false)
+            setSelectedAcao(null)
+          }}
+        />
+      )}
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>

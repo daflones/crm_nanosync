@@ -405,6 +405,21 @@ export const useProspeccao = () => {
     try {
       console.log('📝 Salvando log de prospecção:', estabelecimento.nome)
       
+      // Criar observação detalhada baseada no resultado
+      let observacoes = 'Prospectado automaticamente via Google Maps'
+      
+      if (!estabelecimento.telefone) {
+        observacoes = 'Prospectado - Sem telefone cadastrado'
+      } else if (!whatsappValido) {
+        observacoes = 'Prospectado - WhatsApp inválido ou não encontrado'
+      } else if (whatsappValido && !mensagensEnviada) {
+        observacoes = 'Prospectado - WhatsApp válido, mas mensagem não foi enviada'
+      } else if (whatsappValido && mensagensEnviada && clienteSalvo) {
+        observacoes = 'Prospectado - Mensagem enviada com sucesso e salvo como cliente'
+      } else if (whatsappValido && mensagensEnviada) {
+        observacoes = 'Prospectado - Mensagem enviada com sucesso'
+      }
+      
       await prospeccaoLogsService.salvarLog({
         place_id: estabelecimento.place_id,
         nome_estabelecimento: estabelecimento.nome,
@@ -417,7 +432,7 @@ export const useProspeccao = () => {
         cliente_id: clienteId,
         tipo_estabelecimento: tipoEstabelecimento,
         cidade: cidade,
-        observacoes: `Prospectado automaticamente via Google Maps`
+        observacoes: observacoes
       })
       
       console.log('✅ Log de prospecção salvo com sucesso')

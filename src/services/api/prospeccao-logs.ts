@@ -136,6 +136,8 @@ export const prospeccaoLogsService = {
     limit?: number
   }): Promise<{ data: LogProspeccao[], count: number }> {
     try {
+      console.log('📋 Buscando logs com filtros:', filtros)
+      
       // Get current user's profile
       const { data: { user: currentUser } } = await supabase.auth.getUser()
       if (!currentUser) {
@@ -167,7 +169,7 @@ export const prospeccaoLogsService = {
 
       // Aplicar filtros
       if (filtros?.tipo_estabelecimento) {
-        query = query.eq('tipo_estabelecimento', filtros.tipo_estabelecimento)
+        query = query.ilike('tipo_estabelecimento', `%${filtros.tipo_estabelecimento}%`)
       }
       if (filtros?.cidade) {
         query = query.ilike('cidade', `%${filtros.cidade}%`)
@@ -195,6 +197,7 @@ export const prospeccaoLogsService = {
         throw new Error(`Erro ao buscar logs: ${error.message}`)
       }
 
+      console.log(`✅ Logs encontrados: ${count} registros (mostrando ${data?.length || 0})`)
       return { data: data || [], count: count || 0 }
     } catch (error) {
       console.error('Erro ao buscar logs:', error)

@@ -48,7 +48,7 @@ class WhatsAppService {
     const baseUrl = import.meta.env.VITE_EVOLUTION_API_URL || ''
     this.baseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl
     this.apiKey = import.meta.env.VITE_EVOLUTION_API_KEY || ''
-    this.webhookUrl = 'https://n8n.agenciagvcompany.com.br/webhook/crmnanosync'
+    this.webhookUrl = 'https://n8n.nanosync.com.br/webhook/crmnanosync'
     
     console.log('✅ Base URL final:', this.baseUrl)
     console.log('✅ API Key length:', this.apiKey.length)
