@@ -52,6 +52,8 @@
     "express": "^5.1.0",
     "framer-motion": "^10.18.0",
     "howler": "^2.2.4",
+    "jspdf": "^3.0.3",
+    "jspdf-autotable": "^5.0.2",
     "lottie-react": "^2.4.0",
     "lucide-react": "^0.294.0",
     "qrcode": "^1.5.4",

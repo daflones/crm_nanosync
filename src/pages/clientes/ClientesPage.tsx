@@ -18,9 +18,13 @@ import {
   Bot,
   Globe,
   UserPlus,
-  Plug
+  Plug,
+  FileText,
+  X,
+  Tag
 } from 'lucide-react'
 import { useClientes, useClientesStageStats, useCreateCliente, useUpdateCliente, useDeleteCliente, useUpdatePipelineStage } from '@/hooks/useClientes'
+import { usePropostas } from '@/hooks/usePropostas'
 import { useVendedores } from '@/hooks/useVendedores'
 import { useIsAdmin, useCurrentVendedorId } from '@/hooks/useAuth'
 import { useIAConfig } from '@/hooks/useIAConfig'
@@ -61,6 +65,18 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { KanbanBoard } from '@/components/kanban/KanbanBoard'
+import { Badge } from '@/components/ui/badge'
+
+// Opções de tags disponíveis
+const TAGS_DISPONIVEIS = ['Atacado', 'Varejo', 'Pallet', 'Carga'] as const
+
+// Cores para cada tag
+const TAG_COLORS: Record<string, string> = {
+  'Atacado': 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
+  'Varejo': 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+  'Pallet': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+  'Carga': 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200'
+}
 
 // Validation schema - aligned with database structure
 const clienteSchema = z.object({
@@ -105,6 +121,9 @@ const clienteSchema = z.object({
   dores_atuais: z.string().nullable().optional().or(z.literal('')),
   motivacao: z.string().nullable().optional().or(z.literal('')),
   expectativa: z.string().nullable().optional().or(z.literal('')),
+  
+  // Tags/Marcadores
+  tags: z.array(z.string()).optional().nullable(),
 })
 
 type ClienteFormData = z.infer<typeof clienteSchema>
@@ -120,6 +139,9 @@ export function ClientesPage() {
   const [viewMode, setViewMode] = useState<'grid' | 'list' | 'kanban'>('grid')
   const [page, setPage] = useState(1)
   const [limit] = useState(50) // 50 clientes por página
+  const [selectedTags, setSelectedTags] = useState<string[]>([]) // Tags para criação/edição
+  const [isPropostaModalOpen, setIsPropostaModalOpen] = useState(false)
+  const [selectedProposta, setSelectedProposta] = useState<any>(null)
 
   // Load clients with pagination and stage filter
   const { data: clientes = [], count: totalClientesFiltered = 0, isLoading } = useClientes({ 
@@ -141,6 +163,11 @@ export function ClientesPage() {
   const updatePipelineStage = useUpdatePipelineStage()
   const { addNotification: _addNotification } = useNotifications()
   const { data: iaConfigData } = useIAConfig()
+  
+  // Buscar propostas do cliente selecionado
+  const { data: propostasCliente = [] } = usePropostas({ 
+    cliente_id: selectedCliente?.id 
+  })
   
   // Role-based access control
   const isAdmin = useIsAdmin()
@@ -215,7 +242,12 @@ export function ClientesPage() {
         const matchesCPF = searchNumbers ? (cliente.cpf || '').replace(/\D/g, '').includes(searchNumbers) : false
         const matchesCNPJ = searchNumbers ? (cliente.cnpj || '').replace(/\D/g, '').includes(searchNumbers) : false
         
-        return matchesName || matchesCompany || matchesEmail || matchesPhone || matchesPhoneCompany || matchesCPF || matchesCNPJ
+        // Busca por tags
+        const matchesTags = cliente.tags && Array.isArray(cliente.tags)
+          ? cliente.tags.some((tag: string) => tag.toLowerCase().includes(searchLower))
+          : false
+        
+        return matchesName || matchesCompany || matchesEmail || matchesPhone || matchesPhoneCompany || matchesCPF || matchesCNPJ || matchesTags
       })
     : clientes
 
@@ -303,6 +335,9 @@ export function ClientesPage() {
         dores_atuais: data.dores_atuais || null,
         motivacao: data.motivacao || null,
         expectativa: data.expectativa || null,
+        
+        // Tags/Marcadores
+        tags: selectedTags.length > 0 ? selectedTags : null,
       }
 
       console.log('📤 Enviando dados para criação:', clienteData)
@@ -311,6 +346,7 @@ export function ClientesPage() {
       
       setIsCreateModalOpen(false)
       reset()
+      setSelectedTags([]) // Limpar tags
       toast.success('Cliente criado com sucesso!')
       
       // Criar notificação no banco
@@ -383,6 +419,9 @@ export function ClientesPage() {
         dores_atuais: data.dores_atuais || null,
         motivacao: data.motivacao || null,
         expectativa: data.expectativa || null,
+        
+        // Tags/Marcadores
+        tags: selectedTags.length > 0 ? selectedTags : null,
       }
 
       console.log('🔵 [Cliente] Iniciando atualização...', { id: selectedCliente.id, clienteData })
@@ -397,6 +436,7 @@ export function ClientesPage() {
       setIsEditModalOpen(false)
       setSelectedCliente(null)
       reset()
+      setSelectedTags([]) // Limpar tags
       
       // Criar notificação no banco
       await createDatabaseNotification({
@@ -502,6 +542,9 @@ export function ClientesPage() {
     setValue('expectativa', cliente.expectativa || '')
     setValue('vendedor_id', cliente.vendedor_id || '')
     
+    // Carregar tags
+    setSelectedTags(cliente.tags || [])
+    
     setIsEditModalOpen(true)
   }
 
@@ -562,7 +605,7 @@ export function ClientesPage() {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <input
               type="text"
-              placeholder="Buscar por nome, empresa, telefone, email, CPF ou CNPJ..."
+              placeholder="Buscar por nome, empresa, telefone, email, CPF, CNPJ ou tags..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
@@ -865,6 +908,23 @@ export function ClientesPage() {
                             </span>
                           </div>
                         </div>
+                        
+                        {/* Tags/Marcadores */}
+                        {cliente.tags && cliente.tags.length > 0 && (
+                          <div className="flex items-center gap-2">
+                            <Tag className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500 flex-shrink-0" />
+                            <div className="flex flex-wrap gap-1.5">
+                              {cliente.tags.map((tag: string, index: number) => (
+                                <Badge 
+                                  key={index}
+                                  className={`text-xs ${TAG_COLORS[tag] || 'bg-gray-100 text-gray-800'}`}
+                                >
+                                  {tag}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
 
                         {/* Actions */}
                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -1285,6 +1345,42 @@ export function ClientesPage() {
                   rows={3}
                 />
               </div>
+              
+              {/* Tags/Marcadores */}
+              <div>
+                <Label htmlFor="tags" className="flex items-center gap-2">
+                  <Tag className="h-4 w-4" />
+                  Tags/Marcadores
+                </Label>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {TAGS_DISPONIVEIS.map((tag) => (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => {
+                        setSelectedTags(prev => 
+                          prev.includes(tag) 
+                            ? prev.filter(t => t !== tag)
+                            : [...prev, tag]
+                        )
+                      }}
+                      className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+                        selectedTags.includes(tag)
+                          ? TAG_COLORS[tag] + ' ring-2 ring-offset-1 ring-current'
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700'
+                      }`}
+                    >
+                      {selectedTags.includes(tag) && <span className="mr-1">✓</span>}
+                      {tag}
+                    </button>
+                  ))}
+                </div>
+                {selectedTags.length > 0 && (
+                  <p className="text-xs text-gray-500 mt-2">
+                    Selecionadas: {selectedTags.join(', ')}
+                  </p>
+                )}
+              </div>
 
               <div>
                 <Label htmlFor="produtos_interesse">Produto de Interesse</Label>
@@ -1591,6 +1687,42 @@ export function ClientesPage() {
                   rows={3}
                 />
               </div>
+              
+              {/* Tags/Marcadores */}
+              <div>
+                <Label htmlFor="edit-tags" className="flex items-center gap-2">
+                  <Tag className="h-4 w-4" />
+                  Tags/Marcadores
+                </Label>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {TAGS_DISPONIVEIS.map((tag) => (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => {
+                        setSelectedTags(prev => 
+                          prev.includes(tag) 
+                            ? prev.filter(t => t !== tag)
+                            : [...prev, tag]
+                        )
+                      }}
+                      className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+                        selectedTags.includes(tag)
+                          ? TAG_COLORS[tag] + ' ring-2 ring-offset-1 ring-current'
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700'
+                      }`}
+                    >
+                      {selectedTags.includes(tag) && <span className="mr-1">✓</span>}
+                      {tag}
+                    </button>
+                  ))}
+                </div>
+                {selectedTags.length > 0 && (
+                  <p className="text-xs text-gray-500 mt-2">
+                    Selecionadas: {selectedTags.join(', ')}
+                  </p>
+                )}
+              </div>
 
               <div>
                 <Label htmlFor="edit-produtos_interesse">Produto de Interesse</Label>
@@ -1761,6 +1893,26 @@ export function ClientesPage() {
                   )
                 })()}
               </div>
+
+              {/* Tags/Marcadores */}
+              {selectedCliente.tags && selectedCliente.tags.length > 0 && (
+                <div className="bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900/20 dark:to-slate-800/20 p-6 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                  <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4 flex items-center gap-2">
+                    <Tag className="h-5 w-5" />
+                    Tags/Marcadores
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedCliente.tags.map((tag: string, index: number) => (
+                      <Badge 
+                        key={index}
+                        className={TAG_COLORS[tag] || 'bg-gray-100 text-gray-800'}
+                      >
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Layout com Informações Básicas e Comerciais */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -2110,6 +2262,93 @@ export function ClientesPage() {
                   )}
                 </div>
               )}
+              
+              {/* Propostas do Cliente */}
+              <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-indigo-900/20 dark:to-indigo-800/20 p-6 rounded-xl border border-indigo-200 dark:border-indigo-700 shadow-sm">
+                <h3 className="text-lg font-semibold text-indigo-900 dark:text-indigo-100 mb-4 flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  Propostas
+                  <Badge variant="secondary" className="ml-auto">
+                    {propostasCliente.length}
+                  </Badge>
+                </h3>
+                
+                {propostasCliente.length > 0 ? (
+                  <div className="space-y-3">
+                    {propostasCliente.slice(0, 5).map((proposta: any) => (
+                      <div 
+                        key={proposta.id}
+                        className="bg-white dark:bg-indigo-900/30 p-4 rounded-lg border border-indigo-200 dark:border-indigo-600 hover:shadow-md transition-shadow cursor-pointer"
+                        onClick={() => {
+                          setSelectedProposta(proposta)
+                          setIsPropostaModalOpen(true)
+                        }}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1 flex-wrap">
+                              <h4 className="font-semibold text-indigo-900 dark:text-indigo-100">
+                                {proposta.titulo}
+                              </h4>
+                              <Badge 
+                                variant="outline"
+                                className={
+                                  proposta.status === 'aprovada' ? 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-300' :
+                                  proposta.status === 'enviada' ? 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300' :
+                                  proposta.status === 'rascunho' ? 'bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-900/30 dark:text-gray-300' :
+                                  proposta.status === 'rejeitada' ? 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-300' :
+                                  'bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-300'
+                                }
+                              >
+                                {proposta.status}
+                              </Badge>
+                            </div>
+                            
+                            <p className="text-sm text-indigo-600 dark:text-indigo-300 mb-2">
+                              #{proposta.numero_proposta}
+                            </p>
+                            
+                            <div className="flex items-center gap-4 text-xs text-indigo-500 dark:text-indigo-400">
+                              <span>
+                                Valor: <strong className="text-indigo-700 dark:text-indigo-200">
+                                  R$ {proposta.valor_total?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                </strong>
+                              </span>
+                              <span>
+                                {new Date(proposta.created_at).toLocaleDateString('pt-BR')}
+                              </span>
+                            </div>
+                          </div>
+                          
+                          <Eye className="h-4 w-4 text-indigo-600 dark:text-indigo-400 flex-shrink-0" />
+                        </div>
+                      </div>
+                    ))}
+                    
+                    {propostasCliente.length > 5 && (
+                      <Button
+                        variant="ghost"
+                        className="w-full text-indigo-600 hover:text-indigo-700 hover:bg-indigo-100"
+                        onClick={() => window.open(`/app/propostas?cliente_id=${selectedCliente.id}`, '_blank')}
+                      >
+                        Ver todas ({propostasCliente.length}) propostas →
+                      </Button>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-indigo-600 dark:text-indigo-400">
+                    <FileText className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                    <p className="text-sm">Nenhuma proposta cadastrada</p>
+                    <Button
+                      variant="link"
+                      className="text-indigo-600 mt-2"
+                      onClick={() => window.open('/app/propostas', '_blank')}
+                    >
+                      Criar primeira proposta
+                    </Button>
+                  </div>
+                )}
+              </div>
             </div>
           )}
           
@@ -2160,6 +2399,304 @@ export function ClientesPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Modal de Visualização de Proposta */}
+      <Dialog open={isPropostaModalOpen} onOpenChange={setIsPropostaModalOpen}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-2xl">Detalhes da Proposta</DialogTitle>
+            <DialogDescription>
+              Visualize todas as informações completas da proposta
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedProposta && (
+            <div className="space-y-6">
+              {/* Header da Proposta */}
+              <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-indigo-900/20 dark:to-indigo-800/20 p-6 rounded-xl border border-indigo-200 dark:border-indigo-700 shadow-sm">
+                <div className="flex items-start justify-between gap-4 mb-4">
+                  <div className="flex-1">
+                    <h3 className="text-3xl font-bold text-indigo-900 dark:text-indigo-100 mb-2">
+                      {selectedProposta.titulo}
+                    </h3>
+                    <p className="text-base text-indigo-600 dark:text-indigo-300 font-mono">
+                      #{selectedProposta.numero_proposta}
+                    </p>
+                  </div>
+                  <Badge 
+                    variant="outline"
+                    className={`text-base px-4 py-2 font-semibold ${
+                      selectedProposta.status === 'aprovada' ? 'bg-green-50 text-green-700 border-green-300 dark:bg-green-900/30 dark:text-green-300' :
+                      selectedProposta.status === 'enviada' ? 'bg-blue-50 text-blue-700 border-blue-300 dark:bg-blue-900/30 dark:text-blue-300' :
+                      selectedProposta.status === 'rascunho' ? 'bg-gray-50 text-gray-700 border-gray-300 dark:bg-gray-900/30 dark:text-gray-300' :
+                      selectedProposta.status === 'rejeitada' ? 'bg-red-50 text-red-700 border-red-300 dark:bg-red-900/30 dark:text-red-300' :
+                      'bg-yellow-50 text-yellow-700 border-yellow-300 dark:bg-yellow-900/30 dark:text-yellow-300'
+                    }`}
+                  >
+                    {selectedProposta.status}
+                  </Badge>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                  <div className="bg-white/50 dark:bg-indigo-950/30 p-4 rounded-lg">
+                    <p className="text-xs text-indigo-600 dark:text-indigo-400 mb-1">Valor Total</p>
+                    <p className="text-3xl font-bold text-indigo-900 dark:text-indigo-100">
+                      R$ {selectedProposta.valor_total?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </p>
+                  </div>
+                  <div className="bg-white/50 dark:bg-indigo-950/30 p-4 rounded-lg">
+                    <p className="text-xs text-indigo-600 dark:text-indigo-400 mb-1">Data de Criação</p>
+                    <p className="text-lg font-semibold text-indigo-900 dark:text-indigo-100">
+                      {new Date(selectedProposta.created_at).toLocaleDateString('pt-BR')}
+                    </p>
+                  </div>
+                  <div className="bg-white/50 dark:bg-indigo-950/30 p-4 rounded-lg">
+                    <p className="text-xs text-indigo-600 dark:text-indigo-400 mb-1">Validade</p>
+                    <p className="text-lg font-semibold text-indigo-900 dark:text-indigo-100">
+                      {selectedProposta.validade_dias} dias
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Itens da Proposta */}
+              {selectedProposta.itens && selectedProposta.itens.length > 0 && (
+                <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+                  <div className="bg-gray-50 dark:bg-gray-900 px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                    <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                      Itens da Proposta ({selectedProposta.itens.length})
+                    </h4>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-gray-50 dark:bg-gray-900">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Item</th>
+                          <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Qtd</th>
+                          <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Unidade</th>
+                          <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Valor Unit.</th>
+                          <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Desconto</th>
+                          <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Total</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                        {selectedProposta.itens.map((item: any, index: number) => (
+                          <tr key={index} className="hover:bg-gray-50 dark:hover:bg-gray-900/50">
+                            <td className="px-6 py-4">
+                              <div className="flex items-center gap-2">
+                                <Badge variant="outline" className="text-xs">
+                                  {item.tipo === 'produto' ? '📦 Produto' : '⚙️ Serviço'}
+                                </Badge>
+                                <div>
+                                  <p className="font-medium text-gray-900 dark:text-gray-100">{item.nome}</p>
+                                  {item.descricao && (
+                                    <p className="text-sm text-gray-500 dark:text-gray-400">{item.descricao}</p>
+                                  )}
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 text-center text-gray-900 dark:text-gray-100 font-medium">
+                              {item.quantidade}
+                            </td>
+                            <td className="px-6 py-4 text-center text-gray-700 dark:text-gray-300">
+                              {item.unidade}
+                            </td>
+                            <td className="px-6 py-4 text-right text-gray-900 dark:text-gray-100">
+                              R$ {item.valor_unitario?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            </td>
+                            <td className="px-6 py-4 text-right text-orange-600 dark:text-orange-400">
+                              {item.percentual_desconto > 0 ? `${item.percentual_desconto}%` : '-'}
+                            </td>
+                            <td className="px-6 py-4 text-right font-semibold text-gray-900 dark:text-gray-100">
+                              R$ {item.valor_total?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+              
+              {/* Resumo Financeiro */}
+              <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-xl border border-green-200 dark:border-green-700 p-6">
+                <h4 className="text-lg font-semibold text-green-900 dark:text-green-100 mb-4">Resumo Financeiro</h4>
+                <div className="space-y-3">
+                  {selectedProposta.valor_produtos > 0 && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-green-700 dark:text-green-300">Subtotal Produtos:</span>
+                      <span className="font-semibold text-green-900 dark:text-green-100">
+                        R$ {selectedProposta.valor_produtos?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                  )}
+                  {selectedProposta.valor_servicos > 0 && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-green-700 dark:text-green-300">Subtotal Serviços:</span>
+                      <span className="font-semibold text-green-900 dark:text-green-100">
+                        R$ {selectedProposta.valor_servicos?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                  )}
+                  {selectedProposta.valor_desconto > 0 && (
+                    <div className="flex justify-between items-center text-orange-600 dark:text-orange-400">
+                      <span>Desconto ({selectedProposta.percentual_desconto}%):</span>
+                      <span className="font-semibold">
+                        - R$ {selectedProposta.valor_desconto?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                  )}
+                  {selectedProposta.valor_frete > 0 && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-green-700 dark:text-green-300">Frete:</span>
+                      <span className="font-semibold text-green-900 dark:text-green-100">
+                        R$ {selectedProposta.valor_frete?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                  )}
+                  {selectedProposta.valor_impostos > 0 && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-green-700 dark:text-green-300">Impostos:</span>
+                      <span className="font-semibold text-green-900 dark:text-green-100">
+                        R$ {selectedProposta.valor_impostos?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                  )}
+                  <div className="border-t-2 border-green-300 dark:border-green-700 pt-3 mt-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-lg font-bold text-green-900 dark:text-green-100">Valor Total:</span>
+                      <span className="text-2xl font-bold text-green-900 dark:text-green-100">
+                        R$ {selectedProposta.valor_total?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Condições Comerciais */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {selectedProposta.forma_pagamento && (
+                  <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <p className="text-sm text-blue-600 dark:text-blue-400 mb-1 font-semibold">💳 Forma de Pagamento</p>
+                    <p className="text-blue-900 dark:text-blue-100">
+                      {selectedProposta.forma_pagamento}
+                    </p>
+                  </div>
+                )}
+                
+                {selectedProposta.condicoes_pagamento && (
+                  <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg border border-purple-200 dark:border-purple-800">
+                    <p className="text-sm text-purple-600 dark:text-purple-400 mb-1 font-semibold">📋 Condições de Pagamento</p>
+                    <p className="text-purple-900 dark:text-purple-100">
+                      {selectedProposta.condicoes_pagamento}
+                    </p>
+                  </div>
+                )}
+                
+                {selectedProposta.prazo_entrega && (
+                  <div className="bg-orange-50 dark:bg-orange-900/20 p-4 rounded-lg border border-orange-200 dark:border-orange-800">
+                    <p className="text-sm text-orange-600 dark:text-orange-400 mb-1 font-semibold">🚚 Prazo de Entrega</p>
+                    <p className="text-orange-900 dark:text-orange-100">
+                      {selectedProposta.prazo_entrega}
+                    </p>
+                  </div>
+                )}
+                
+                {selectedProposta.local_entrega && (
+                  <div className="bg-teal-50 dark:bg-teal-900/20 p-4 rounded-lg border border-teal-200 dark:border-teal-800">
+                    <p className="text-sm text-teal-600 dark:text-teal-400 mb-1 font-semibold">📍 Local de Entrega</p>
+                    <p className="text-teal-900 dark:text-teal-100">
+                      {selectedProposta.local_entrega}
+                    </p>
+                  </div>
+                )}
+                
+                {selectedProposta.garantia && (
+                  <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border border-green-200 dark:border-green-800">
+                    <p className="text-sm text-green-600 dark:text-green-400 mb-1 font-semibold">✅ Garantia</p>
+                    <p className="text-green-900 dark:text-green-100">
+                      {selectedProposta.garantia}
+                    </p>
+                  </div>
+                )}
+                
+                <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-2 font-semibold">Incluso</p>
+                  <div className="space-y-1">
+                    {selectedProposta.suporte_incluido && (
+                      <p className="text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                        <span className="text-green-500">✓</span> Suporte Técnico
+                      </p>
+                    )}
+                    {selectedProposta.treinamento_incluido && (
+                      <p className="text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                        <span className="text-green-500">✓</span> Treinamento
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+              
+              {/* Descrição */}
+              {selectedProposta.descricao && (
+                <div className="bg-gray-50 dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
+                  <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">📄 Descrição</h4>
+                  <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">
+                    {selectedProposta.descricao}
+                  </p>
+                </div>
+              )}
+              
+              {/* Termos e Condições */}
+              {selectedProposta.termos_condicoes && (
+                <div className="bg-blue-50 dark:bg-blue-900/20 p-6 rounded-lg border border-blue-200 dark:border-blue-800">
+                  <h4 className="text-lg font-semibold text-blue-900 dark:text-blue-100 mb-3">📜 Termos e Condições</h4>
+                  <p className="text-blue-800 dark:text-blue-200 whitespace-pre-wrap text-sm leading-relaxed">
+                    {selectedProposta.termos_condicoes}
+                  </p>
+                </div>
+              )}
+              
+              {/* Observações */}
+              {selectedProposta.observacoes && (
+                <div className="bg-yellow-50 dark:bg-yellow-900/20 p-6 rounded-lg border-l-4 border-yellow-400 dark:border-yellow-600">
+                  <h4 className="text-lg font-semibold text-yellow-800 dark:text-yellow-200 mb-3">⚠️ Observações Importantes</h4>
+                  <p className="text-yellow-900 dark:text-yellow-100 whitespace-pre-wrap leading-relaxed">
+                    {selectedProposta.observacoes}
+                  </p>
+                </div>
+              )}
+              
+              {/* Condições Especiais */}
+              {selectedProposta.condicoes_especiais && (
+                <div className="bg-purple-50 dark:bg-purple-900/20 p-6 rounded-lg border border-purple-200 dark:border-purple-800">
+                  <h4 className="text-lg font-semibold text-purple-900 dark:text-purple-100 mb-3">⭐ Condições Especiais</h4>
+                  <p className="text-purple-800 dark:text-purple-200 whitespace-pre-wrap leading-relaxed">
+                    {selectedProposta.condicoes_especiais}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setIsPropostaModalOpen(false)}
+            >
+              Fechar
+            </Button>
+            <Button
+              onClick={() => {
+                setIsPropostaModalOpen(false)
+                window.open(`/app/propostas?id=${selectedProposta?.id}`, '_blank')
+              }}
+            >
+              Abrir Proposta Completa
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

@@ -19,16 +19,22 @@ import {
   Send,
   Eye,
   Edit,
-  Trash2
+  Trash2,
+  Download,
+  MessageCircle,
+  Check
 } from 'lucide-react'
 import { usePropostas, usePropostasStatusStats, usePropostasValorStats, useCreateProposta, useUpdateProposta, useDeleteProposta } from '@/hooks/usePropostas'
 import { useClientes } from '@/hooks/useClientes'
 import { useVendedores } from '@/hooks/useVendedores'
 import { useProdutos } from '@/hooks/useProdutos'
+import { useProfile } from '@/hooks/useConfiguracoes'
 import { PlanoAtivoButton } from '@/components/PlanoAtivoGuard'
 import { type PropostaCreateData } from '@/services/api/propostas'
 import { toast } from 'sonner'
 import { useNotifications } from '@/contexts/NotificationContext'
+import { downloadPropostaPDF, generatePropostaPDF, COLOR_THEMES, type ColorTheme } from '@/services/pdf/propostaGenerator'
+import { whatsappService } from '@/services/api/whatsapp'
 
 const initialPropostaState: PropostaCreateData = {
   cliente_id: '',
@@ -82,6 +88,11 @@ export function PropostasPage() {
   const [newProposta, setNewProposta] = useState<PropostaCreateData>(initialPropostaState)
   const [editProposta, setEditProposta] = useState<PropostaCreateData>(initialPropostaState)
   const [propostaToDelete, setPropostaToDelete] = useState<string | null>(null)
+  const [isDownloadingPDF, setIsDownloadingPDF] = useState<string | null>(null)
+  const [isSendWhatsAppModalOpen, setIsSendWhatsAppModalOpen] = useState(false)
+  const [selectedPropostaForWhatsApp, setSelectedPropostaForWhatsApp] = useState<any>(null)
+  const [whatsappMessage, setWhatsappMessage] = useState('')
+  const [pdfColorTheme, setPdfColorTheme] = useState<ColorTheme>('purple')
 
   // Hooks com paginação e filtro
   const { data: propostas = [], count: totalPropostasFiltered = 0, isLoading } = usePropostas({
@@ -92,6 +103,9 @@ export function PropostasPage() {
   
   // Total geral (sempre fixo)
   const { count: totalPropostas = 0 } = usePropostas({ page: 1, limit: 1 })
+  
+  // Buscar perfil para nome da empresa
+  const { data: profile } = useProfile()
   
   // Stats por status
   const { data: statusStats = {} } = usePropostasStatusStats()
@@ -445,75 +459,161 @@ export function PropostasPage() {
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex space-x-2">
-                  <Button 
-                    size="sm" 
-                    className="flex-1 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 dark:border-blue-700 transition-all duration-200 hover:scale-105"
-                    onClick={() => {
-                      setSelectedProposta(proposta)
-                      setIsViewModalOpen(true)
-                    }}
-                  >
-                    <Eye className="mr-2 h-4 w-4" />
-                    Ver
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    className="flex-1 bg-violet-50 hover:bg-violet-100 text-violet-700 border border-violet-200 dark:border-violet-700 transition-all duration-200 hover:scale-105"
-                    onClick={() => {
-                      setEditProposta({
-                        cliente_id: proposta.cliente_id,
-                        vendedor_id: proposta.vendedor_id,
-                        titulo: proposta.titulo,
-                        versao: proposta.versao || 1,
-                        proposta_pai: proposta.proposta_pai || '',
-                        descricao: proposta.descricao || '',
-                        valor_total: proposta.valor_total || 0,
-                        valor_produtos: proposta.valor_produtos || 0,
-                        valor_servicos: proposta.valor_servicos || 0,
-                        valor_desconto: proposta.valor_desconto || 0,
-                        percentual_desconto: proposta.percentual_desconto || 0,
-                        valor_frete: proposta.valor_frete || 0,
-                        valor_impostos: proposta.valor_impostos || 0,
-                        status: proposta.status,
-                        forma_pagamento: proposta.forma_pagamento || '',
-                        condicoes_pagamento: proposta.condicoes_pagamento || '',
-                        prazo_entrega: proposta.prazo_entrega || '',
-                        local_entrega: proposta.local_entrega || '',
-                        responsavel_frete: proposta.responsavel_frete || 'cliente',
-                        condicoes_especiais: proposta.condicoes_especiais || '',
-                        garantia: proposta.garantia || '',
-                        suporte_incluido: proposta.suporte_incluido || false,
-                        treinamento_incluido: proposta.treinamento_incluido || false,
-                        validade_dias: proposta.validade_dias || 30,
-                        data_vencimento: proposta.data_vencimento ? new Date(proposta.data_vencimento).toISOString().split('T')[0] : '',
-                        feedback_cliente: proposta.feedback_cliente || '',
-                        objecoes: proposta.objecoes || '',
-                        pontos_negociacao: proposta.pontos_negociacao || '',
-                        motivo_rejeicao: proposta.motivo_rejeicao || '',
-                        template_usado: proposta.template_usado || '',
-                        requer_aprovacao: proposta.requer_aprovacao || false,
-                        motivo_aprovacao: proposta.motivo_aprovacao || '',
-                        recompra_ativada: proposta.recompra_ativada || false,
-                        data_recompra: proposta.data_recompra ? new Date(proposta.data_recompra).toISOString().split('T')[0] : '',
-                        observacoes: proposta.observacoes || '',
-                        termos_condicoes: proposta.termos_condicoes || '',
-                        itens: proposta.itens || []
-                      })
-                      setSelectedProposta(proposta)
-                      setIsEditModalOpen(true)
-                    }}
-                  >
-                    <Edit className="mr-2 h-4 w-4" />
-                    Editar
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    className="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 dark:border-rose-700 transition-all duration-200 hover:scale-105"
-                    onClick={() => setPropostaToDelete(proposta.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                <div className="space-y-2">
+                  <div className="flex space-x-2">
+                    <Button 
+                      size="sm" 
+                      className="flex-1 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 dark:border-blue-700 transition-all duration-200 hover:scale-105"
+                      onClick={() => {
+                        setSelectedProposta(proposta)
+                        setIsViewModalOpen(true)
+                      }}
+                    >
+                      <Eye className="mr-2 h-4 w-4" />
+                      Ver
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      className="flex-1 bg-violet-50 hover:bg-violet-100 text-violet-700 border border-violet-200 dark:border-violet-700 transition-all duration-200 hover:scale-105"
+                      onClick={() => {
+                        setEditProposta({
+                          cliente_id: proposta.cliente_id,
+                          vendedor_id: proposta.vendedor_id,
+                          titulo: proposta.titulo,
+                          versao: proposta.versao || 1,
+                          proposta_pai: proposta.proposta_pai || '',
+                          descricao: proposta.descricao || '',
+                          valor_total: proposta.valor_total || 0,
+                          valor_produtos: proposta.valor_produtos || 0,
+                          valor_servicos: proposta.valor_servicos || 0,
+                          valor_desconto: proposta.valor_desconto || 0,
+                          percentual_desconto: proposta.percentual_desconto || 0,
+                          valor_frete: proposta.valor_frete || 0,
+                          valor_impostos: proposta.valor_impostos || 0,
+                          status: proposta.status,
+                          forma_pagamento: proposta.forma_pagamento || '',
+                          condicoes_pagamento: proposta.condicoes_pagamento || '',
+                          prazo_entrega: proposta.prazo_entrega || '',
+                          local_entrega: proposta.local_entrega || '',
+                          responsavel_frete: proposta.responsavel_frete || 'cliente',
+                          condicoes_especiais: proposta.condicoes_especiais || '',
+                          garantia: proposta.garantia || '',
+                          suporte_incluido: proposta.suporte_incluido || false,
+                          treinamento_incluido: proposta.treinamento_incluido || false,
+                          validade_dias: proposta.validade_dias || 30,
+                          data_vencimento: proposta.data_vencimento ? new Date(proposta.data_vencimento).toISOString().split('T')[0] : '',
+                          feedback_cliente: proposta.feedback_cliente || '',
+                          objecoes: proposta.objecoes || '',
+                          pontos_negociacao: proposta.pontos_negociacao || '',
+                          motivo_rejeicao: proposta.motivo_rejeicao || '',
+                          template_usado: proposta.template_usado || '',
+                          requer_aprovacao: proposta.requer_aprovacao || false,
+                          motivo_aprovacao: proposta.motivo_aprovacao || '',
+                          recompra_ativada: proposta.recompra_ativada || false,
+                          data_recompra: proposta.data_recompra ? new Date(proposta.data_recompra).toISOString().split('T')[0] : '',
+                          observacoes: proposta.observacoes || '',
+                          termos_condicoes: proposta.termos_condicoes || '',
+                          itens: proposta.itens || []
+                        })
+                        setSelectedProposta(proposta)
+                        setIsEditModalOpen(true)
+                      }}
+                    >
+                      <Edit className="mr-2 h-4 w-4" />
+                      Editar
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      className="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 dark:border-rose-700 transition-all duration-200 hover:scale-105"
+                      onClick={() => setPropostaToDelete(proposta.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  
+                  <div className="flex space-x-2">
+                    <Button 
+                      size="sm" 
+                      className="flex-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 dark:border-emerald-700 transition-all duration-200 hover:scale-105"
+                      onClick={async () => {
+                        try {
+                          setIsDownloadingPDF(proposta.id)
+                          toast.loading('Gerando PDF...', { id: 'pdf-download' })
+                          
+                          // Buscar dados completos do cliente
+                          const cliente = clientes.find(c => c.id === proposta.cliente_id)
+                          const vendedor = vendedores.find(v => v.id === proposta.vendedor_id)
+                          
+                          const propostaComDados = {
+                            ...proposta,
+                            cliente: cliente ? {
+                              nome_contato: cliente.nome_contato,
+                              nome_empresa: cliente.nome_empresa,
+                              email: cliente.email,
+                              whatsapp: cliente.whatsapp,
+                              cnpj: cliente.cnpj,
+                              endereco: cliente.endereco,
+                              cidade: cliente.cidade,
+                              estado: cliente.estado
+                            } : undefined,
+                            vendedor: vendedor ? {
+                              nome: vendedor.nome,
+                              email: vendedor.email
+                            } : undefined
+                          }
+                          
+                          await downloadPropostaPDF(propostaComDados)
+                          toast.success('PDF baixado com sucesso!', { id: 'pdf-download' })
+                        } catch (error) {
+                          console.error('Erro ao gerar PDF:', error)
+                          toast.error('Erro ao gerar PDF', { id: 'pdf-download' })
+                        } finally {
+                          setIsDownloadingPDF(null)
+                        }
+                      }}
+                      disabled={isDownloadingPDF === proposta.id}
+                    >
+                      {isDownloadingPDF === proposta.id ? (
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-emerald-700 mr-2" />
+                      ) : (
+                        <Download className="mr-2 h-4 w-4" />
+                      )}
+                      Baixar PDF
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      className="flex-1 bg-green-50 hover:bg-green-100 text-green-700 border border-green-200 dark:border-green-700 transition-all duration-200 hover:scale-105"
+                      onClick={() => {
+                        const cliente = clientes.find(c => c.id === proposta.cliente_id)
+                        const vendedor = vendedores.find(v => v.id === proposta.vendedor_id)
+                        
+                        const propostaComDados = {
+                          ...proposta,
+                          cliente: cliente ? {
+                            nome_contato: cliente.nome_contato,
+                            nome_empresa: cliente.nome_empresa,
+                            email: cliente.email,
+                            whatsapp: cliente.whatsapp,
+                            cnpj: cliente.cnpj,
+                            endereco: cliente.endereco,
+                            cidade: cliente.cidade,
+                            estado: cliente.estado
+                          } : undefined,
+                          vendedor: vendedor ? {
+                            nome: vendedor.nome,
+                            email: vendedor.email
+                          } : undefined
+                        }
+                        
+                        setSelectedPropostaForWhatsApp(propostaComDados)
+                        setWhatsappMessage(`Olá! Segue em anexo a proposta comercial *${proposta.titulo}*.\n\nValor: R$ ${proposta.valor_total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}\n\nQualquer dúvida, estou à disposição!`)
+                        setIsSendWhatsAppModalOpen(true)
+                      }}
+                    >
+                      <MessageCircle className="mr-2 h-4 w-4" />
+                      Enviar WhatsApp
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -2198,6 +2298,207 @@ export function PropostasPage() {
               disabled={deleteProposta.isPending}
             >
               {deleteProposta.isPending ? 'Excluindo...' : 'Excluir'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Envio via WhatsApp */}
+      <Dialog open={isSendWhatsAppModalOpen} onOpenChange={setIsSendWhatsAppModalOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Enviar Proposta via WhatsApp</DialogTitle>
+            <DialogDescription>
+              Envie a proposta em PDF para o cliente via WhatsApp
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            {selectedPropostaForWhatsApp && (
+              <>
+                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
+                  <div className="space-y-2">
+                    <div>
+                      <p className="text-sm font-semibold text-blue-900 dark:text-blue-100">
+                        {selectedPropostaForWhatsApp.titulo}
+                      </p>
+                      <p className="text-xs text-blue-700 dark:text-blue-300">
+                        {selectedPropostaForWhatsApp.numero_proposta}
+                      </p>
+                    </div>
+                    
+                    <div className="pt-2 border-t border-blue-200 dark:border-blue-700">
+                      <p className="text-xs text-blue-600 dark:text-blue-400">Cliente</p>
+                      <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                        {selectedPropostaForWhatsApp.cliente?.nome_empresa || selectedPropostaForWhatsApp.cliente?.nome_contato}
+                      </p>
+                      {(selectedPropostaForWhatsApp.cliente?.remotejid || selectedPropostaForWhatsApp.cliente?.whatsapp) && (
+                        <p className="text-xs text-blue-700 dark:text-blue-300 flex items-center gap-1 mt-1">
+                          <MessageCircle className="h-3 w-3" />
+                          {selectedPropostaForWhatsApp.cliente.remotejid 
+                            ? selectedPropostaForWhatsApp.cliente.remotejid.replace('@s.whatsapp.net', '')
+                            : selectedPropostaForWhatsApp.cliente.whatsapp}
+                          {selectedPropostaForWhatsApp.cliente.remotejid && (
+                            <span className="text-[10px] bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 px-1 rounded">✓ Validado</span>
+                          )}
+                        </p>
+                      )}
+                    </div>
+                    
+                    <div className="pt-2 border-t border-blue-200 dark:border-blue-700">
+                      <p className="text-xs text-blue-600 dark:text-blue-400">Valor Total</p>
+                      <p className="text-lg font-bold text-blue-900 dark:text-blue-100">
+                        R$ {selectedPropostaForWhatsApp.valor_total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {!selectedPropostaForWhatsApp.cliente?.remotejid && !selectedPropostaForWhatsApp.cliente?.whatsapp && (
+                  <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-4 border border-yellow-200 dark:border-yellow-800">
+                    <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                      ⚠️ O cliente não possui WhatsApp cadastrado. Por favor, cadastre um número antes de enviar.
+                    </p>
+                  </div>
+                )}
+                
+                {selectedPropostaForWhatsApp.cliente?.remotejid && (
+                  <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3 border border-green-200 dark:border-green-800">
+                    <p className="text-xs text-green-800 dark:text-green-200">
+                      ✓ WhatsApp validado pela Evolution API. Envio otimizado.
+                    </p>
+                  </div>
+                )}
+                
+                {/* Seletor de Cor do PDF */}
+                <div>
+                  <Label htmlFor="pdf-color" className="flex items-center gap-2">
+                    🎨 Cor do PDF
+                  </Label>
+                  <p className="text-xs text-gray-500 mb-3">
+                    Escolha a cor principal do documento
+                  </p>
+                  <div className="grid grid-cols-5 gap-2">
+                    {(Object.keys(COLOR_THEMES) as ColorTheme[]).map((theme) => (
+                      <button
+                        key={theme}
+                        type="button"
+                        onClick={() => setPdfColorTheme(theme)}
+                        className={`relative p-3 rounded-lg border-2 transition-all hover:scale-105 ${
+                          pdfColorTheme === theme 
+                            ? 'border-gray-900 dark:border-white ring-2 ring-offset-2 ring-gray-400' 
+                            : 'border-gray-200 dark:border-gray-700'
+                        }`}
+                        style={{ backgroundColor: COLOR_THEMES[theme].primary }}
+                      >
+                        {pdfColorTheme === theme && (
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="bg-white dark:bg-gray-900 rounded-full p-1">
+                              <Check className="h-4 w-4 text-gray-900 dark:text-white" />
+                            </div>
+                          </div>
+                        )}
+                        <div className="text-[10px] text-white font-semibold text-center mt-1 opacity-0 hover:opacity-100 transition-opacity">
+                          {COLOR_THEMES[theme].name}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mt-2 text-center">
+                    {COLOR_THEMES[pdfColorTheme].name}
+                  </p>
+                </div>
+
+                <div>
+                  <Label htmlFor="whatsapp-message">Mensagem (opcional)</Label>
+                  <Textarea
+                    id="whatsapp-message"
+                    value={whatsappMessage}
+                    onChange={(e) => setWhatsappMessage(e.target.value)}
+                    placeholder="Digite uma mensagem para acompanhar o PDF..."
+                    rows={6}
+                    className="mt-2"
+                  />
+                  <p className="text-xs text-gray-500 mt-2">
+                    💡 Você pode personalizar a mensagem ou enviar apenas o PDF
+                  </p>
+                </div>
+              </>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsSendWhatsAppModalOpen(false)
+                setSelectedPropostaForWhatsApp(null)
+                setWhatsappMessage('')
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button
+              className="bg-green-600 hover:bg-green-700"
+              onClick={async () => {
+                // Verificar se tem remotejid ou whatsapp
+                const cliente = selectedPropostaForWhatsApp?.cliente
+                const whatsappContact = cliente?.remotejid || cliente?.whatsapp
+                
+                if (!whatsappContact) {
+                  toast.error('Cliente não possui WhatsApp cadastrado')
+                  return
+                }
+
+                try {
+                  toast.loading('Gerando PDF e enviando...', { id: 'whatsapp-send' })
+                  
+                  // Gerar PDF com cor e nome da empresa selecionados
+                  const pdfBlob = await generatePropostaPDF(
+                    selectedPropostaForWhatsApp,
+                    pdfColorTheme,
+                    profile?.nome_empresa || 'NanoSync CRM' // Nome da empresa do perfil
+                  )
+                  
+                  // Converter Blob para Base64
+                  const reader = new FileReader()
+                  reader.readAsDataURL(pdfBlob)
+                  
+                  reader.onloadend = async () => {
+                    try {
+                      const base64 = reader.result as string
+                      const base64Data = base64.split(',')[1] // Remover "data:application/pdf;base64,"
+                      
+                      console.log('📤 Enviando para:', whatsappContact)
+                      console.log('📄 Arquivo:', `Proposta_${selectedPropostaForWhatsApp.numero_proposta}.pdf`)
+                      console.log('💬 Mensagem:', whatsappMessage || '(sem mensagem)')
+                      
+                      // Enviar via WhatsApp (usa remotejid se disponível, senão formata whatsapp)
+                      await whatsappService.sendDocument(
+                        whatsappContact,
+                        base64Data,
+                        `Proposta_${selectedPropostaForWhatsApp.numero_proposta}.pdf`,
+                        whatsappMessage || undefined
+                      )
+                      
+                      toast.success('Proposta enviada via WhatsApp com sucesso!', { id: 'whatsapp-send' })
+                      setIsSendWhatsAppModalOpen(false)
+                      setSelectedPropostaForWhatsApp(null)
+                      setWhatsappMessage('')
+                    } catch (error) {
+                      console.error('Erro ao enviar via WhatsApp:', error)
+                      toast.error('Erro ao enviar via WhatsApp. Verifique se a instância está conectada.', { id: 'whatsapp-send' })
+                    }
+                  }
+                } catch (error) {
+                  console.error('Erro ao processar envio:', error)
+                  toast.error('Erro ao processar o envio', { id: 'whatsapp-send' })
+                }
+              }}
+              disabled={!selectedPropostaForWhatsApp?.cliente?.remotejid && !selectedPropostaForWhatsApp?.cliente?.whatsapp}
+            >
+              <MessageCircle className="mr-2 h-4 w-4" />
+              Enviar via WhatsApp
             </Button>
           </DialogFooter>
         </DialogContent>
