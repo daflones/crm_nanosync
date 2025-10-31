@@ -21,7 +21,8 @@ import {
   Plug,
   FileText,
   X,
-  Tag
+  Tag,
+  TrendingUp
 } from 'lucide-react'
 import { useClientes, useClientesStageStats, useCreateCliente, useUpdateCliente, useDeleteCliente, useUpdatePipelineStage } from '@/hooks/useClientes'
 import { usePropostas } from '@/hooks/usePropostas'
@@ -117,6 +118,7 @@ const clienteSchema = z.object({
   // CAMPOS OPCIONAIS - Observações e contexto
   observacoes: z.string().nullable().optional().or(z.literal('')),
   produtos_interesse: z.string().nullable().optional().or(z.literal('')),
+  volume_mensal: z.string().nullable().optional().or(z.literal('')),
   analise_cliente: z.string().nullable().optional().or(z.literal('')),
   dores_atuais: z.string().nullable().optional().or(z.literal('')),
   motivacao: z.string().nullable().optional().or(z.literal('')),
@@ -331,6 +333,7 @@ export function ClientesPage() {
         produtos_interesse: data.produtos_interesse 
           ? data.produtos_interesse.split(',').map(p => p.trim()).filter(p => p.length > 0)
           : null,
+        volume_mensal: data.volume_mensal || null,
         analise_cliente: data.analise_cliente || null,
         dores_atuais: data.dores_atuais || null,
         motivacao: data.motivacao || null,
@@ -415,6 +418,7 @@ export function ClientesPage() {
         produtos_interesse: data.produtos_interesse 
           ? data.produtos_interesse.split(',').map(p => p.trim()).filter(p => p.length > 0)
           : null,
+        volume_mensal: data.volume_mensal || null,
         analise_cliente: data.analise_cliente || null,
         dores_atuais: data.dores_atuais || null,
         motivacao: data.motivacao || null,
@@ -536,6 +540,7 @@ export function ClientesPage() {
     setValue('origem', cliente.origem || 'manual')
     setValue('observacoes', cliente.observacoes || '')
     setValue('produtos_interesse', Array.isArray(cliente.produtos_interesse) ? cliente.produtos_interesse.join(', ') : (cliente.produtos_interesse || ''))
+    setValue('volume_mensal', cliente.volume_mensal || '')
     setValue('analise_cliente', cliente.analise_cliente || '')
     setValue('dores_atuais', cliente.dores_atuais || '')
     setValue('motivacao', cliente.motivacao || '')
@@ -1393,6 +1398,16 @@ export function ClientesPage() {
               </div>
 
               <div>
+                <Label htmlFor="volume_mensal">Volume Mensal</Label>
+                <Input
+                  id="volume_mensal"
+                  {...register('volume_mensal')}
+                  placeholder="Ex: 1000 unidades, 500kg, 10 toneladas"
+                />
+                <p className="text-xs text-gray-500 mt-1">Informe o volume mensal estimado (pode ser em números ou texto)</p>
+              </div>
+
+              <div>
                 <Label htmlFor="analise_cliente">Análise do Cliente</Label>
                 <Textarea
                   id="analise_cliente"
@@ -1727,6 +1742,12 @@ export function ClientesPage() {
               <div>
                 <Label htmlFor="edit-produtos_interesse">Produto de Interesse</Label>
                 <Input id="edit-produtos_interesse" {...register('produtos_interesse')} placeholder="Ex: Software de gestão, Consultoria" />
+              </div>
+
+              <div>
+                <Label htmlFor="edit-volume_mensal">Volume Mensal</Label>
+                <Input id="edit-volume_mensal" {...register('volume_mensal')} placeholder="Ex: 1000 unidades, 500kg, 10 toneladas" />
+                <p className="text-xs text-gray-500 mt-1">Informe o volume mensal estimado</p>
               </div>
 
               <div>
@@ -2069,6 +2090,18 @@ export function ClientesPage() {
                           <p className="text-sm text-orange-600 dark:text-orange-300">Segmento</p>
                           <p className="font-medium text-orange-800 dark:text-orange-200">
                             {selectedCliente.segmento_cliente}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {selectedCliente.volume_mensal && (
+                      <div className="flex items-center gap-3">
+                        <TrendingUp className="h-4 w-4 text-orange-600" />
+                        <div>
+                          <p className="text-sm text-orange-600 dark:text-orange-300">Volume Mensal</p>
+                          <p className="font-medium text-orange-800 dark:text-orange-200">
+                            {selectedCliente.volume_mensal}
                           </p>
                         </div>
                       </div>

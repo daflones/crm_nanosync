@@ -12,6 +12,7 @@ export interface Cliente {
   classificacao: string
   origem: string
   observacoes?: string
+  volume_mensal?: string
   data_criacao: string
   data_atualizacao: string
   vendedor_id?: string
@@ -31,6 +32,7 @@ export interface ClienteCreateData {
   classificacao: string
   origem: string
   observacoes?: string
+  volume_mensal?: string
   vendedor_id?: string
   analise_cliente?: string
 }

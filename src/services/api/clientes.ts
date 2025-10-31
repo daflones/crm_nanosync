@@ -18,6 +18,7 @@ export interface Cliente {
   origem: string
   observacoes?: string
   produtos_interesse?: string[]
+  volume_mensal?: string
   expectativa?: string
   data_criacao: string
   data_atualizacao: string

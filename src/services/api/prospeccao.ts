@@ -5,7 +5,23 @@ export interface EstabelecimentoGoogleMaps {
   telefone?: string
 }
 
+type LogCallback = (message: string) => void
+
 class ProspeccaoService {
+  private logCallback?: LogCallback
+
+  // Definir callback para logs
+  setLogCallback(callback: LogCallback) {
+    this.logCallback = callback
+  }
+
+  private log(message: string) {
+    console.log(message)
+    if (this.logCallback) {
+      this.logCallback(message)
+    }
+  }
+
   // Buscar estabelecimentos usando proxy CORS com paginação
   async buscarEstabelecimentos(
     tipoEstabelecimento: string, 
@@ -13,10 +29,9 @@ class ProspeccaoService {
     pageToken?: string
   ): Promise<{ estabelecimentos: EstabelecimentoGoogleMaps[], nextPageToken?: string }> {
     try {
-      console.log('Iniciando busca de estabelecimentos:', { tipoEstabelecimento, cidade })
+      this.log(`🔍 Buscando ${tipoEstabelecimento} em ${cidade}...`)
       
       const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY
-      console.log('API Key disponível:', !!apiKey)
       
       if (!apiKey) {
         throw new Error('Google Maps API Key não configurada')
@@ -31,12 +46,10 @@ class ProspeccaoService {
       // Adicionar pagetoken se fornecido
       if (pageToken) {
         googleMapsUrl += `&pagetoken=${pageToken}`
-        console.log('Buscando próxima página com token:', pageToken)
+        this.log('📄 Buscando próxima página de resultados...')
       }
       
       const finalUrl = proxyUrl + encodeURIComponent(googleMapsUrl)
-      
-      console.log('Fazendo requisição para:', finalUrl.replace(apiKey, 'HIDDEN_KEY'))
 
       const response = await fetch(finalUrl)
       
@@ -45,16 +58,17 @@ class ProspeccaoService {
       }
 
       const data = await response.json()
-      console.log('Resposta da Google Maps API:', data)
 
       if (data.status !== 'OK' && data.status !== 'ZERO_RESULTS') {
         throw new Error(`Google Maps API Error: ${data.status} - ${data.error_message || 'Erro desconhecido'}`)
       }
 
       if (!data.results || data.results.length === 0) {
-        console.log('Nenhum estabelecimento encontrado')
+        this.log('❌ Nenhum estabelecimento encontrado nesta região')
         return { estabelecimentos: [], nextPageToken: data.next_page_token }
       }
+
+      this.log(`📍 ${data.results.length} estabelecimentos encontrados, processando...`)
 
       const estabelecimentos: EstabelecimentoGoogleMaps[] = []
 
@@ -67,11 +81,10 @@ class ProspeccaoService {
           
           // Verificar se já tem telefone na resposta inicial
           if (place.formatted_phone_number) {
-            console.log(`✅ ${place.name} já tem telefone: ${place.formatted_phone_number}`)
             telefone = place.formatted_phone_number
           } else {
             // Só buscar detalhes se não tiver telefone
-            console.log(`🔍 Buscando telefone para: ${place.name}`)
+            this.log(`📞 Buscando telefone de ${place.name}...`)
             
             // Delay entre requisições para evitar rate limiting
             if (i > 0) {
@@ -101,7 +114,7 @@ class ProspeccaoService {
         }
       }
 
-      console.log(`${estabelecimentos.length} estabelecimentos processados`)
+      this.log(`✅ ${estabelecimentos.length} estabelecimentos processados com sucesso`)
       return { 
         estabelecimentos, 
         nextPageToken: data.next_page_token 
@@ -134,7 +147,7 @@ class ProspeccaoService {
         // Delay progressivo entre tentativas
         if (attempt > 1) {
           const delayTime = baseDelay * Math.pow(2, attempt - 1) // Exponential backoff
-          console.log(`Tentativa ${attempt}/${maxRetries} para ${placeId} - aguardando ${delayTime}ms`)
+          this.log(`🔄 Tentativa ${attempt} de buscar telefone (aguardando ${Math.round(delayTime/1000)}s)...`)
           await this.delay(delayTime)
         }
 
@@ -148,8 +161,6 @@ class ProspeccaoService {
         const proxyUrl = proxies[(attempt - 1) % proxies.length]
         const googleMapsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=name,formatted_phone_number&key=${apiKey}`
         const finalUrl = proxyUrl + encodeURIComponent(googleMapsUrl)
-
-        console.log(`Tentativa ${attempt} - Proxy: ${proxyUrl}`)
 
         const response = await fetch(finalUrl, {
           method: 'GET',
@@ -165,20 +176,19 @@ class ProspeccaoService {
         const data = await response.json()
 
         if (data.status !== 'OK') {
-          console.warn(`Detalhes não encontrados para place_id ${placeId}: ${data.status}`)
           return {}
         }
 
-        console.log(`✅ Sucesso na tentativa ${attempt} para ${placeId}`)
+        if (data.result?.formatted_phone_number) {
+          this.log(`✅ Telefone encontrado`)
+        }
         return {
           telefone: data.result?.formatted_phone_number
         }
 
       } catch (error) {
-        console.error(`❌ Tentativa ${attempt}/${maxRetries} falhou para ${placeId}:`, error)
-        
         if (attempt === maxRetries) {
-          console.error(`Todas as tentativas falharam para ${placeId}`)
+          this.log(`⚠️ Não foi possível obter telefone (${maxRetries} tentativas)`)
           return {}
         }
       }
@@ -189,3 +199,8 @@ class ProspeccaoService {
 }
 
 export const prospeccaoService = new ProspeccaoService()
+
+// Export para uso externo
+export const setProspeccaoLogCallback = (callback: LogCallback) => {
+  prospeccaoService.setLogCallback(callback)
+}

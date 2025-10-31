@@ -27,6 +27,7 @@ import { toast } from 'sonner'
 import { useProspeccao } from '../../hooks/useProspeccao'
 import { useWhatsAppInstance } from '../../hooks/useWhatsApp'
 import LogsProspeccaoTable from '../../components/prospeccao/LogsProspeccaoTable'
+import { setProspeccaoLogCallback } from '../../services/api/prospeccao'
 
 interface ProspeccaoConfig {
   tipo_estabelecimento: string
@@ -81,6 +82,8 @@ export default function ProspeccaoPage() {
 
   const [estabelecimentos, setEstabelecimentos] = useState<EstabelecimentoProspectado[]>([])
   const [logs, setLogs] = useState<string[]>([])
+  const [tempoRestante, setTempoRestante] = useState<number>(0) // Tempo restante em segundos
+  const [proximoPendenteId, setProximoPendenteId] = useState<string | null>(null)
   
   // Controle de pausa/parada em tempo real
   const prospeccaoControlRef = useRef({
@@ -100,6 +103,37 @@ export default function ProspeccaoPage() {
 
   const { data: whatsappInstance } = useWhatsAppInstance()
 
+  // Função para adicionar logs
+  const adicionarLog = (mensagem: string) => {
+    const timestamp = new Date().toLocaleTimeString()
+    setLogs(prev => [`[${timestamp}] ${mensagem}`, ...prev.slice(0, 99)]) // Manter apenas 100 logs
+  }
+
+  // Configurar callback de logs do serviço
+  useEffect(() => {
+    setProspeccaoLogCallback(adicionarLog)
+  }, [])
+
+  // Countdown timer
+  useEffect(() => {
+    if (tempoRestante <= 0) {
+      setProximoPendenteId(null)
+      return
+    }
+
+    const interval = setInterval(() => {
+      setTempoRestante(prev => {
+        if (prev <= 1) {
+          setProximoPendenteId(null)
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+
+    return () => clearInterval(interval)
+  }, [tempoRestante])
+
   // Carregar disparos do dia atual
   useEffect(() => {
     const carregarDisparosHoje = async () => {
@@ -113,10 +147,19 @@ export default function ProspeccaoPage() {
     carregarDisparosHoje()
   }, [])
 
-  const adicionarLog = (mensagem: string) => {
-    const timestamp = new Date().toLocaleTimeString()
-    setLogs(prev => [`[${timestamp}] ${mensagem}`, ...prev.slice(0, 99)]) // Manter apenas 100 logs
-  }
+  // Avisar usuário ao tentar sair com prospecção ativa
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (status.ativa) {
+        e.preventDefault()
+        e.returnValue = 'A prospecção está em andamento. Se você sair, ela será interrompida. Deseja continuar?'
+        return e.returnValue
+      }
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [status.ativa])
 
   const continuarProspeccaoExistente = async () => {
     try {
@@ -176,13 +219,13 @@ export default function ProspeccaoPage() {
 
       if (continuar) {
         // Continuar prospecção existente
-        adicionarLog(`Continuando prospecção pendente com ${estabelecimentosPendentes.length} estabelecimentos...`)
+        adicionarLog(`▶️ Retomando prospecção de ${estabelecimentosPendentes.length} estabelecimentos...`)
         await continuarProspeccaoExistente()
         return
       } else {
         // Limpar dados existentes para nova busca
         setEstabelecimentos([])
-        adicionarLog('Iniciando nova prospecção (dados anteriores limpos)...')
+        adicionarLog('🔄 Iniciando nova busca...')
       }
     }
 
@@ -190,10 +233,10 @@ export default function ProspeccaoPage() {
       // Atualizar controle em tempo real
       prospeccaoControlRef.current = { ativa: true, pausada: false }
       setStatus(prev => ({ ...prev, ativa: true, pausada: false }))
-      adicionarLog('Iniciando prospecção...')
+      adicionarLog('🚀 Iniciando nova prospecção...')
 
       // Buscar estabelecimentos no Google Maps
-      adicionarLog(`Buscando estabelecimentos: ${config.tipo_estabelecimento} em ${config.cidade}`)
+      adicionarLog(`🔍 Pesquisando ${config.tipo_estabelecimento} em ${config.cidade}...`)
       console.log('🔍 Iniciando busca de estabelecimentos...')
       
       const resultados = await buscarEstabelecimentos(config.tipo_estabelecimento, config.cidade)
@@ -216,7 +259,7 @@ export default function ProspeccaoPage() {
         total_encontrados: estabelecimentosEncontrados.length 
       }))
 
-      adicionarLog(`${estabelecimentosEncontrados.length} estabelecimentos encontrados`)
+      adicionarLog(`✅ Encontrados ${estabelecimentosEncontrados.length} estabelecimentos na região`)
       console.log('🚀 Iniciando processamento da fila...')
 
       // Processar estabelecimentos em fila
@@ -234,7 +277,7 @@ export default function ProspeccaoPage() {
 
   const processarFilaEstabelecimentos = async (estabelecimentosList: EstabelecimentoProspectado[]) => {
     console.log('🚀 Iniciando processamento da fila:', estabelecimentosList.length, 'estabelecimentos')
-    adicionarLog(`Iniciando processamento de ${estabelecimentosList.length} estabelecimentos`)
+    adicionarLog(`📋 Iniciando análise de ${estabelecimentosList.length} estabelecimentos...`)
     
     let processados = 0
     let whatsappValidos = 0
@@ -248,32 +291,32 @@ export default function ProspeccaoPage() {
       
       // Verificar se a prospecção foi pausada ou parada
       if (!prospeccaoControlRef.current.ativa) {
-        adicionarLog('Prospecção interrompida pelo usuário')
+        adicionarLog('⏹️ Prospecção interrompida')
         break
       }
 
       // Aguardar enquanto pausada
       if (prospeccaoControlRef.current.pausada && prospeccaoControlRef.current.ativa) {
-        adicionarLog('Prospecção pausada - aguardando retomada...')
+        adicionarLog('⏸️ Aguardando retomada...')
         
         while (prospeccaoControlRef.current.pausada && prospeccaoControlRef.current.ativa) {
           await new Promise(resolve => setTimeout(resolve, 1000)) // Aguardar 1 segundo
         }
         
         if (prospeccaoControlRef.current.ativa) {
-          adicionarLog('Prospecção retomada - continuando processamento...')
+          adicionarLog('▶️ Retomando prospecção...')
         }
       }
 
       // Verificar novamente se foi parada durante a pausa
       if (!prospeccaoControlRef.current.ativa) {
-        adicionarLog('Prospecção interrompida pelo usuário')
+        adicionarLog('⏹️ Prospecção interrompida')
         break
       }
 
       // Verificar limite diário
       if (disparosHoje >= config.limite_disparos_dia) {
-        adicionarLog('Limite diário de disparos atingido')
+        adicionarLog('⚠️ Limite diário de 100 disparos atingido')
         break
       }
 
@@ -307,7 +350,7 @@ export default function ProspeccaoPage() {
           )
         )
 
-        adicionarLog(`Validando WhatsApp: ${estabelecimento.nome} - ${estabelecimento.telefone}`)
+        adicionarLog(`📞 Verificando WhatsApp de ${estabelecimento.nome}...`)
         console.log(`🔍 Iniciando validação WhatsApp para: ${estabelecimento.nome}`)
 
         // Validar WhatsApp
@@ -326,7 +369,7 @@ export default function ProspeccaoPage() {
             )
           )
 
-          adicionarLog(`WhatsApp válido encontrado: ${estabelecimento.nome}`)
+          adicionarLog(`✅ ${estabelecimento.nome} tem WhatsApp ativo`)
 
           // Salvar como cliente no banco de dados
           try {
@@ -337,11 +380,11 @@ export default function ProspeccaoPage() {
               telefone: estabelecimento.telefone
             }, estabelecimento.telefone, validacao.jid)
             
-            adicionarLog(`Cliente ${estabelecimento.nome} salvo no banco de dados`)
+            adicionarLog(`💾 ${estabelecimento.nome} adicionado como cliente`)
             toast.success(`Cliente ${estabelecimento.nome} salvo com sucesso!`)
           } catch (error) {
             console.error('Erro ao salvar cliente:', error)
-            adicionarLog(`Erro ao salvar cliente ${estabelecimento.nome}: ${error}`)
+            adicionarLog(`⚠️ Não foi possível salvar ${estabelecimento.nome} como cliente`)
           }
 
           // Enviar mensagem
@@ -359,7 +402,18 @@ export default function ProspeccaoPage() {
               )
             )
 
-            adicionarLog(`Mensagem enviada para: ${estabelecimento.nome}`)
+            adicionarLog(`📨 Mensagem enviada para ${estabelecimento.nome}`)
+
+            // Iniciar countdown para próximo pendente
+            const proximoPendente = estabelecimentosList.find((est, idx) => 
+              idx > estabelecimentosList.indexOf(estabelecimento) && 
+              (est.status === 'pendente' || est.status === 'validando')
+            )
+            
+            if (proximoPendente) {
+              setProximoPendenteId(proximoPendente.id)
+              setTempoRestante(config.tempo_entre_disparos)
+            }
 
           } catch (error) {
             setEstabelecimentos(prev => 
@@ -369,7 +423,7 @@ export default function ProspeccaoPage() {
                   : est
               )
             )
-            adicionarLog(`Erro ao enviar mensagem para ${estabelecimento.nome}: ${error}`)
+            adicionarLog(`❌ Não foi possível enviar mensagem para ${estabelecimento.nome}`)
           }
 
         } else {
@@ -380,7 +434,7 @@ export default function ProspeccaoPage() {
                 : est
             )
           )
-          adicionarLog(`WhatsApp inválido: ${estabelecimento.nome}`)
+          adicionarLog(`❌ ${estabelecimento.nome} não tem WhatsApp ativo`)
         }
 
         // Salvar log de prospecção no banco de dados (não interromper se falhar)
@@ -402,7 +456,7 @@ export default function ProspeccaoPage() {
           )
         } catch (logError) {
           console.error('Erro ao salvar log (continuando prospecção):', logError)
-          adicionarLog(`Aviso: Erro ao salvar log para ${estabelecimento.nome}`)
+          // Log silencioso - não interromper usuário com detalhes técnicos
         }
 
       } catch (error) {
@@ -413,7 +467,7 @@ export default function ProspeccaoPage() {
               : est
           )
         )
-        adicionarLog(`Erro ao processar ${estabelecimento.nome}: ${error}`)
+        adicionarLog(`⚠️ Erro ao processar ${estabelecimento.nome}`)
       }
 
       processados++
@@ -449,25 +503,27 @@ export default function ProspeccaoPage() {
       // Em caso de erro, pular para o próximo imediatamente
       if (processados < estabelecimentosList.length) {
         if (houveSucesso) {
-          adicionarLog(`✅ Mensagem enviada com sucesso! Aguardando ${config.tempo_entre_disparos} segundos...`)
+          const minutos = Math.floor(config.tempo_entre_disparos / 60)
+          adicionarLog(`⏱️ Aguardando ${minutos} minutos para próximo contato...`)
           console.log(`⏳ Aguardando ${config.tempo_entre_disparos} segundos (sucesso)`)
           await new Promise(resolve => setTimeout(resolve, config.tempo_entre_disparos * 1000))
         } else if (houveErro) {
           if (!estabelecimento.telefone) {
-            adicionarLog(`❌ Sem telefone - pulando imediatamente`)
+            adicionarLog(`➡️ Pulando para próximo (sem telefone cadastrado)`)
           } else if (!validacao) {
-            adicionarLog(`❌ Erro na validação - pulando imediatamente`)
+            adicionarLog(`➡️ Pulando para próximo (erro na verificação)`)
           } else if (!validacao.isWhatsApp) {
-            adicionarLog(`❌ WhatsApp inválido - pulando imediatamente`)
+            adicionarLog(`➡️ Pulando para próximo (WhatsApp não encontrado)`)
           } else {
-            adicionarLog(`❌ Erro no envio - pulando imediatamente`)
+            adicionarLog(`➡️ Pulando para próximo (erro no envio)`)
           }
           console.log(`⚡ Pulando para próximo (erro detectado)`)
           // Aguardar apenas 1 segundo para não sobrecarregar o sistema
           await new Promise(resolve => setTimeout(resolve, 1000))
         } else {
           // Caso padrão - aguardar tempo normal
-          adicionarLog(`⚠️ Status indefinido - aguardando tempo padrão`)
+          const minutos = Math.floor(config.tempo_entre_disparos / 60)
+          adicionarLog(`⏱️ Aguardando ${minutos} minutos...`)
           console.log(`⏳ Aguardando ${config.tempo_entre_disparos} segundos (padrão)`)
           await new Promise(resolve => setTimeout(resolve, config.tempo_entre_disparos * 1000))
         }
@@ -479,6 +535,10 @@ export default function ProspeccaoPage() {
     // Limpar controle em tempo real
     prospeccaoControlRef.current = { ativa: false, pausada: false }
     
+    // Limpar timer ao finalizar
+    setTempoRestante(0)
+    setProximoPendenteId(null)
+    
     setStatus(prev => ({ 
       ...prev, 
       ativa: false, 
@@ -487,7 +547,7 @@ export default function ProspeccaoPage() {
       whatsapp_validos: whatsappValidos,
       mensagens_enviadas: mensagensEnviadas
     }))
-    adicionarLog(`Prospecção finalizada - Processados: ${processados}, WhatsApp válidos: ${whatsappValidos}, Mensagens enviadas: ${mensagensEnviadas}`)
+    adicionarLog(`🎉 Prospecção concluída! ${mensagensEnviadas} mensagens enviadas de ${processados} estabelecimentos analisados`)
     toast.success('Prospecção finalizada!')
   }
 
@@ -497,8 +557,14 @@ export default function ProspeccaoPage() {
     // Atualizar controle em tempo real
     prospeccaoControlRef.current.pausada = novoPausado
     
+    // Limpar timer ao pausar
+    if (novoPausado) {
+      setTempoRestante(0)
+      setProximoPendenteId(null)
+    }
+    
     setStatus(prev => ({ ...prev, pausada: novoPausado }))
-    adicionarLog(novoPausado ? 'Prospecção pausada' : 'Prospecção retomada')
+    adicionarLog(novoPausado ? '⏸️ Prospecção pausada' : '▶️ Prospecção retomada')
   }
 
   const pararProspeccao = () => {
@@ -506,12 +572,16 @@ export default function ProspeccaoPage() {
     prospeccaoControlRef.current.ativa = false
     prospeccaoControlRef.current.pausada = false
     
+    // Limpar timer ao parar
+    setTempoRestante(0)
+    setProximoPendenteId(null)
+    
     setStatus(prev => ({ 
       ...prev, 
       ativa: false, 
       pausada: false 
     }))
-    adicionarLog('Prospecção interrompida pelo usuário')
+    adicionarLog('⏹️ Prospecção interrompida')
   }
 
   const getStatusIcon = (statusItem: string) => {
@@ -536,6 +606,12 @@ export default function ProspeccaoPage() {
       case 'erro': return 'bg-red-100 text-red-800'
       default: return 'bg-gray-100 text-gray-800'
     }
+  }
+
+  const formatarTempoRestante = (segundos: number): string => {
+    const minutos = Math.floor(segundos / 60)
+    const segs = segundos % 60
+    return `${minutos}:${String(segs).padStart(2, '0')}`
   }
 
   return (
@@ -584,6 +660,24 @@ export default function ProspeccaoPage() {
         </TabsList>
 
         <TabsContent value="prospeccao" className="space-y-6">
+          {/* Aviso Importante */}
+          {status.ativa && (
+            <div className="bg-orange-50 dark:bg-orange-900/20 border-l-4 border-orange-500 p-4 rounded-lg">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="h-5 w-5 text-orange-600 dark:text-orange-400 mt-0.5" />
+                <div className="flex-1">
+                  <h3 className="font-semibold text-orange-900 dark:text-orange-100 mb-1">
+                    ⚠️ Mantenha esta aba aberta
+                  </h3>
+                  <p className="text-sm text-orange-800 dark:text-orange-200">
+                    A prospecção está em andamento. <strong>Não feche esta aba</strong> ou a prospecção será interrompida. 
+                    Você pode minimizar o navegador, mas a aba precisa permanecer aberta.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Configuração */}
             <div className="lg:col-span-1">
@@ -823,9 +917,17 @@ export default function ProspeccaoPage() {
                               <p className="text-sm text-red-600">{estabelecimento.erro}</p>
                             )}
                           </div>
-                          <Badge className={getStatusColor(estabelecimento.status)}>
-                            {estabelecimento.status.replace('_', ' ')}
-                          </Badge>
+                          <div className="flex items-center gap-2">
+                            {estabelecimento.id === proximoPendenteId && tempoRestante > 0 && (
+                              <div className="flex items-center gap-1 px-2 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 rounded-md text-sm font-medium shadow-sm">
+                                <Clock className="h-3 w-3 animate-pulse" />
+                                <span className="font-mono">{formatarTempoRestante(tempoRestante)}</span>
+                              </div>
+                            )}
+                            <Badge className={getStatusColor(estabelecimento.status)}>
+                              {estabelecimento.status.replace('_', ' ')}
+                            </Badge>
+                          </div>
                         </div>
                       ))}
                     </div>
