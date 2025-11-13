@@ -18,7 +18,8 @@ import {
   CreditCard,
   Target,
   QrCode,
-  Building2
+  Building2,
+  Ticket
 } from 'lucide-react'
 
 interface MenuItem {
@@ -46,7 +47,15 @@ const menuItems: MenuItem[] = [
     label: 'Clientes', 
     icon: Users, 
     href: '/clientes',
-    color: 'text-green-600'
+    color: 'text-green-600',
+    subItems: [
+      {
+        label: 'Tickets de Suporte',
+        icon: Ticket,
+        href: '/tickets-suporte',
+        color: 'text-blue-500'
+      }
+    ]
   },
   { 
     label: 'Vendedores', 

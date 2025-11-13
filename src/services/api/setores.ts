@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase'
-import { supabaseAdmin } from '@/lib/supabase-admin'
-import { AtividadeService } from './atividades'
+// import { supabaseAdmin } from '@/lib/supabase-admin'
+// import { AtividadeService } from './atividades'
 
 export interface Setor {
   id: string
@@ -123,18 +123,19 @@ export class SetorService {
       if (error) throw error
 
       // Registrar atividade
-      try {
-        await AtividadeService.registrarAtividade({
-          tipo: 'setor_criado',
-          descricao: `Setor "${setorData.nome}" foi criado`,
-          detalhes: {
-            setor_id: data.id,
-            setor_nome: setorData.nome
-          }
-        })
-      } catch (atividadeError) {
-        console.warn('Erro ao registrar atividade:', atividadeError)
-      }
+      // TODO: Implementar AtividadeService.registrarAtividade
+      // try {
+      //   await AtividadeService.registrarAtividade({
+      //     tipo: 'setor_criado',
+      //     descricao: `Setor "${setorData.nome}" foi criado`,
+      //     detalhes: {
+      //       setor_id: data.id,
+      //       setor_nome: setorData.nome
+      //     }
+      //   })
+      // } catch (error) {
+      //   console.error('Erro ao registrar atividade:', error)
+      // }
 
       return data
     } catch (error) {
@@ -162,19 +163,20 @@ export class SetorService {
       if (error) throw error
 
       // Registrar atividade
-      try {
-        await AtividadeService.registrarAtividade({
-          tipo: 'setor_atualizado',
-          descricao: `Setor "${data.nome}" foi atualizado`,
-          detalhes: {
-            setor_id: id,
-            setor_nome: data.nome,
-            alteracoes: setorData
-          }
-        })
-      } catch (atividadeError) {
-        console.warn('Erro ao registrar atividade:', atividadeError)
-      }
+      // TODO: Implementar AtividadeService.registrarAtividade
+      // try {
+      //   await AtividadeService.registrarAtividade({
+      //     tipo: 'setor_atualizado',
+      //     descricao: `Setor "${data.nome}" foi atualizado`,
+      //     detalhes: {
+      //       setor_id: id,
+      //       setor_nome: data.nome,
+      //       alteracoes: setorData
+      //     }
+      //   })
+      // } catch (atividadeError) {
+      //   console.warn('Erro ao registrar atividade:', atividadeError)
+      // }
 
       return data
     } catch (error) {
@@ -200,20 +202,21 @@ export class SetorService {
       if (error) throw error
 
       // Registrar atividade
-      if (setor) {
-        try {
-          await AtividadeService.registrarAtividade({
-            tipo: 'setor_excluido',
-            descricao: `Setor "${setor.nome}" foi excluído`,
-            detalhes: {
-              setor_id: id,
-              setor_nome: setor.nome
-            }
-          })
-        } catch (atividadeError) {
-          console.warn('Erro ao registrar atividade:', atividadeError)
-        }
-      }
+      // TODO: Implementar AtividadeService.registrarAtividade
+      // if (setor) {
+      //   try {
+      //     await AtividadeService.registrarAtividade({
+      //       tipo: 'setor_excluido',
+      //       descricao: `Setor "${setor.nome}" foi excluído`,
+      //       detalhes: {
+      //         setor_id: id,
+      //         setor_nome: setor.nome
+      //       }
+      //     })
+      //   } catch (error) {
+      //     console.error('Erro ao registrar atividade:', error)
+      //   }
+      // }
     } catch (error) {
       console.error('Erro ao excluir setor:', error)
       throw error
@@ -234,7 +237,7 @@ export class SetorService {
 
   static async getSetoresAtivos(): Promise<Setor[]> {
     try {
-      const setores = await this.getAll()
+      const setores = await SetorService.getAll()
       return setores.filter(setor => setor.ativo)
     } catch (error) {
       console.error('Erro ao buscar setores ativos:', error)

@@ -20,7 +20,8 @@ import {
   Tags,
   LogOut,
   Activity,
-  Bot
+  Bot,
+  Ticket
 } from 'lucide-react'
 
 interface MobileNavProps {
@@ -31,6 +32,7 @@ interface MobileNavProps {
 const menuItems = [
   { label: 'Dashboard', icon: LayoutDashboard, href: '/app/dashboard', color: 'text-blue-600' },
   { label: 'Clientes', icon: Users, href: '/app/clientes', color: 'text-green-600' },
+  { label: 'Tickets de Suporte', icon: Ticket, href: '/app/tickets-suporte', color: 'text-blue-500' },
   { label: 'Vendedores', icon: UserCheck, href: '/app/vendedores', color: 'text-purple-600', adminOnly: true },
   { label: 'Produtos', icon: Package, href: '/app/produtos', color: 'text-orange-600' },
   { label: 'Categorias', icon: Tags, href: '/app/categorias', color: 'text-pink-600' },

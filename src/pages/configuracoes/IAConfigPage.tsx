@@ -60,6 +60,7 @@ export function IAConfigPage() {
       nome_empresa: false,
       email: false,
       segmento: false,
+      volume_mensal: false,
       endereco: {
         ativo: false,
         rua: false,
@@ -481,6 +482,26 @@ export function IAConfigPage() {
                     regras_qualificacao: {
                       ...iaConfig.regras_qualificacao!,
                       segmento: checked
+                    }
+                  })}
+                />
+              </div>
+
+              {/* Volume Mensal */}
+              <div className="flex items-center justify-between p-3 border rounded-lg">
+                <div className="space-y-0.5">
+                  <Label>Volume Mensal</Label>
+                  <p className="text-sm text-gray-500">
+                    Solicitar volume mensal estimado do lead.
+                  </p>
+                </div>
+                <Switch
+                  checked={iaConfig.regras_qualificacao?.volume_mensal || false}
+                  onCheckedChange={(checked) => setIaConfig({
+                    ...iaConfig,
+                    regras_qualificacao: {
+                      ...iaConfig.regras_qualificacao!,
+                      volume_mensal: checked
                     }
                   })}
                 />

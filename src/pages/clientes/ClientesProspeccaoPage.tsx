@@ -66,17 +66,9 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
-
-// Opções de tags disponíveis
-const TAGS_DISPONIVEIS = ['Atacado', 'Varejo', 'Pallet', 'Carga'] as const
-
-// Cores para cada tag
-const TAG_COLORS: Record<string, string> = {
-  'Atacado': 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
-  'Varejo': 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-  'Pallet': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-  'Carga': 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200'
-}
+import { useTags } from '@/hooks/useTags'
+import { TagsManager } from '@/components/tags/TagsManager'
+import { TAG_COLORS_WITH_HOVER } from '@/types/tag'
 
 // Validation schema - aligned with database structure
 const clienteSchema = z.object({
@@ -169,6 +161,22 @@ export function ClientesProspeccaoPage() {
   const { data: propostasCliente = [] } = usePropostas({ 
     cliente_id: selectedCliente?.id 
   })
+  
+  // Buscar tags disponíveis
+  const { data: tagsDisponiveis = [] } = useTags()
+  
+  // Criar mapa de cores para as tags
+  const tagColors: Record<string, string> = {}
+  tagsDisponiveis.forEach(tag => {
+    tagColors[tag.nome] = tag.cor
+  })
+  
+  // Função helper para obter classes completas da tag (cor + hover)
+  const getTagClasses = (tagName: string): string => {
+    const baseColor = tagColors[tagName] || 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
+    const hoverColor = TAG_COLORS_WITH_HOVER[baseColor] || 'hover:bg-gray-200 dark:hover:bg-gray-800'
+    return `${baseColor} ${hoverColor} transition-colors duration-200`
+  }
   
   // Role-based access control
   const isAdmin = useIsAdmin()
@@ -757,7 +765,7 @@ export function ClientesProspeccaoPage() {
                               {cliente.tags.map((tag: string, index: number) => (
                                 <Badge 
                                   key={index}
-                                  className={`text-xs ${TAG_COLORS[tag] || 'bg-gray-100 text-gray-800'}`}
+                                  className={`text-xs cursor-default ${getTagClasses(tag)}`}
                                 >
                                   {tag}
                                 </Badge>
@@ -1200,7 +1208,7 @@ export function ClientesProspeccaoPage() {
                       }}
                       className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
                         selectedTags.includes(tag)
-                          ? TAG_COLORS[tag] + ' ring-2 ring-offset-1 ring-current'
+                          ? getTagClasses(tag) + ' ring-2 ring-offset-1 ring-current'
                           : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700'
                       }`}
                     >
@@ -1552,7 +1560,7 @@ export function ClientesProspeccaoPage() {
                       }}
                       className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
                         selectedTags.includes(tag)
-                          ? TAG_COLORS[tag] + ' ring-2 ring-offset-1 ring-current'
+                          ? getTagClasses(tag) + ' ring-2 ring-offset-1 ring-current'
                           : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700'
                       }`}
                     >
@@ -1755,7 +1763,7 @@ export function ClientesProspeccaoPage() {
                     {selectedCliente.tags.map((tag: string, index: number) => (
                       <Badge 
                         key={index}
-                        className={TAG_COLORS[tag] || 'bg-gray-100 text-gray-800'}
+                        className={`cursor-default ${getTagClasses(tag)}`}
                       >
                         {tag}
                       </Badge>

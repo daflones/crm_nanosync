@@ -36,6 +36,7 @@ export interface IAConfig {
     nome_empresa: boolean // Nome da empresa
     email: boolean
     segmento: boolean
+    volume_mensal: boolean // Volume mensal estimado
     endereco: {
       ativo: boolean
       rua: boolean
@@ -172,6 +173,7 @@ export const getIAConfig = async (userId: string) => {
           nome_empresa: false,
           email: false,
           segmento: false,
+          volume_mensal: false,
           endereco: {
             ativo: false,
             rua: false,

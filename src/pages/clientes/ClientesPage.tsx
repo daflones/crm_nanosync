@@ -70,17 +70,10 @@ import {
 } from '@/components/ui/select'
 import { KanbanBoard } from '@/components/kanban/KanbanBoard'
 import { Badge } from '@/components/ui/badge'
-
-// Opções de tags disponíveis
-const TAGS_DISPONIVEIS = ['Atacado', 'Varejo', 'Pallet', 'Carga'] as const
-
-// Cores para cada tag
-const TAG_COLORS: Record<string, string> = {
-  'Atacado': 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
-  'Varejo': 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-  'Pallet': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-  'Carga': 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200'
-}
+import { useTags } from '@/hooks/useTags'
+import { TagsManager } from '@/components/tags/TagsManager'
+import { TAG_COLORS_WITH_HOVER } from '@/types/tag'
+import { Settings } from 'lucide-react'
 
 // Validation schema - aligned with database structure
 const clienteSchema = z.object({
@@ -148,6 +141,7 @@ export function ClientesPage() {
   const [isPropostaModalOpen, setIsPropostaModalOpen] = useState(false)
   const [selectedProposta, setSelectedProposta] = useState<any>(null)
   const [isAcaoModalOpen, setIsAcaoModalOpen] = useState(false)
+  const [isTagsManagerOpen, setIsTagsManagerOpen] = useState(false)
   const [selectedAcao, setSelectedAcao] = useState<ClienteAcao | null>(null)
 
   // Load clients with pagination and stage filter
@@ -175,6 +169,22 @@ export function ClientesPage() {
   const { data: propostasCliente = [] } = usePropostas({ 
     cliente_id: selectedCliente?.id 
   })
+  
+  // Buscar tags disponíveis
+  const { data: tagsDisponiveis = [] } = useTags()
+  
+  // Criar mapa de cores para as tags
+  const tagColors: Record<string, string> = {}
+  tagsDisponiveis.forEach(tag => {
+    tagColors[tag.nome] = tag.cor
+  })
+  
+  // Função helper para obter classes completas da tag (cor + hover)
+  const getTagClasses = (tagName: string): string => {
+    const baseColor = tagColors[tagName] || 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
+    const hoverColor = TAG_COLORS_WITH_HOVER[baseColor] || 'hover:bg-gray-200 dark:hover:bg-gray-800'
+    return `${baseColor} ${hoverColor} transition-colors duration-200`
+  }
   
   // Role-based access control
   const isAdmin = useIsAdmin()
@@ -668,6 +678,15 @@ export function ClientesPage() {
               <Plus className="h-4 w-4" />
               <span className="hidden lg:inline">Novo Cliente</span>
             </PlanoAtivoButton>
+            
+            <Button
+              onClick={() => setIsTagsManagerOpen(true)}
+              className="flex items-center gap-2"
+              variant="outline"
+            >
+              <Tag className="h-4 w-4" />
+              <span className="hidden lg:inline">Gerenciar Tags</span>
+            </Button>
           </div>
 
           {/* Mobile View Toggle */}
@@ -930,7 +949,7 @@ export function ClientesPage() {
                               {cliente.tags.map((tag: string, index: number) => (
                                 <Badge 
                                   key={index}
-                                  className={`text-xs ${TAG_COLORS[tag] || 'bg-gray-100 text-gray-800'}`}
+                                  className={`text-xs cursor-default ${getTagClasses(tag)}`}
                                 >
                                   {tag}
                                 </Badge>
@@ -1365,33 +1384,80 @@ export function ClientesPage() {
                   <Tag className="h-4 w-4" />
                   Tags/Marcadores
                 </Label>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {TAGS_DISPONIVEIS.map((tag) => (
-                    <button
-                      key={tag}
+                {tagsDisponiveis.length === 0 ? (
+                  <div className="mt-2 p-4 border border-dashed rounded-lg text-center">
+                    <p className="text-sm text-gray-500 mb-2">Nenhuma tag cadastrada</p>
+                    <Button
                       type="button"
-                      onClick={() => {
-                        setSelectedTags(prev => 
-                          prev.includes(tag) 
-                            ? prev.filter(t => t !== tag)
-                            : [...prev, tag]
-                        )
-                      }}
-                      className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
-                        selectedTags.includes(tag)
-                          ? TAG_COLORS[tag] + ' ring-2 ring-offset-1 ring-current'
-                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700'
-                      }`}
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setIsTagsManagerOpen(true)}
                     >
-                      {selectedTags.includes(tag) && <span className="mr-1">✓</span>}
-                      {tag}
-                    </button>
-                  ))}
-                </div>
-                {selectedTags.length > 0 && (
-                  <p className="text-xs text-gray-500 mt-2">
-                    Selecionadas: {selectedTags.join(', ')}
-                  </p>
+                      <Plus className="h-3 w-3 mr-1" />
+                      Criar primeira tag
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="mt-2 space-y-3">
+                    {/* Tags Selecionadas */}
+                    {selectedTags.length > 0 && (
+                      <div className="flex flex-wrap gap-2 p-3 border rounded-lg bg-gray-50 dark:bg-gray-900">
+                        {selectedTags.map((tagNome) => {
+                          const tag = tagsDisponiveis.find(t => t.nome === tagNome)
+                          return (
+                            <Badge
+                              key={tagNome}
+                              className={`${tag ? getTagClasses(tagNome) : 'bg-gray-100 text-gray-800'} cursor-pointer`}
+                              onClick={() => {
+                                setSelectedTags(prev => prev.filter(t => t !== tagNome))
+                              }}
+                            >
+                              {tagNome}
+                              <X className="ml-1 h-3 w-3" />
+                            </Badge>
+                          )
+                        })}
+                      </div>
+                    )}
+                    
+                    {/* Botões para Adicionar Tags */}
+                    <div className="flex flex-wrap gap-2">
+                      {tagsDisponiveis
+                        .filter(tag => !selectedTags.includes(tag.nome))
+                        .map((tag) => (
+                          <button
+                            key={tag.id}
+                            type="button"
+                            onClick={() => {
+                              setSelectedTags(prev => [...prev, tag.nome])
+                            }}
+                            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${tag.cor} opacity-60 hover:opacity-100 hover:shadow-md`}
+                          >
+                            <Plus className="inline h-3 w-3 mr-1" />
+                            {tag.nome}
+                          </button>
+                        ))}
+                      
+                      {/* Botão Criar Nova Tag */}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setIsTagsManagerOpen(true)}
+                        className="rounded-full"
+                      >
+                        <Plus className="h-3 w-3 mr-1" />
+                        Criar Nova Tag
+                      </Button>
+                    </div>
+                    
+                    <p className="text-xs text-gray-500">
+                      {selectedTags.length === 0 
+                        ? 'Clique nas tags acima para adicionar ao cliente'
+                        : `${selectedTags.length} tag${selectedTags.length > 1 ? 's' : ''} selecionada${selectedTags.length > 1 ? 's' : ''} • Clique em uma tag selecionada para remover`
+                      }
+                    </p>
+                  </div>
                 )}
               </div>
 
@@ -1717,33 +1783,80 @@ export function ClientesPage() {
                   <Tag className="h-4 w-4" />
                   Tags/Marcadores
                 </Label>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {TAGS_DISPONIVEIS.map((tag) => (
-                    <button
-                      key={tag}
+                {tagsDisponiveis.length === 0 ? (
+                  <div className="mt-2 p-4 border border-dashed rounded-lg text-center">
+                    <p className="text-sm text-gray-500 mb-2">Nenhuma tag cadastrada</p>
+                    <Button
                       type="button"
-                      onClick={() => {
-                        setSelectedTags(prev => 
-                          prev.includes(tag) 
-                            ? prev.filter(t => t !== tag)
-                            : [...prev, tag]
-                        )
-                      }}
-                      className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
-                        selectedTags.includes(tag)
-                          ? TAG_COLORS[tag] + ' ring-2 ring-offset-1 ring-current'
-                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700'
-                      }`}
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setIsTagsManagerOpen(true)}
                     >
-                      {selectedTags.includes(tag) && <span className="mr-1">✓</span>}
-                      {tag}
-                    </button>
-                  ))}
-                </div>
-                {selectedTags.length > 0 && (
-                  <p className="text-xs text-gray-500 mt-2">
-                    Selecionadas: {selectedTags.join(', ')}
-                  </p>
+                      <Plus className="h-3 w-3 mr-1" />
+                      Criar primeira tag
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="mt-2 space-y-3">
+                    {/* Tags Selecionadas */}
+                    {selectedTags.length > 0 && (
+                      <div className="flex flex-wrap gap-2 p-3 border rounded-lg bg-gray-50 dark:bg-gray-900">
+                        {selectedTags.map((tagNome) => {
+                          const tag = tagsDisponiveis.find(t => t.nome === tagNome)
+                          return (
+                            <Badge
+                              key={tagNome}
+                              className={`${tag ? getTagClasses(tagNome) : 'bg-gray-100 text-gray-800'} cursor-pointer`}
+                              onClick={() => {
+                                setSelectedTags(prev => prev.filter(t => t !== tagNome))
+                              }}
+                            >
+                              {tagNome}
+                              <X className="ml-1 h-3 w-3" />
+                            </Badge>
+                          )
+                        })}
+                      </div>
+                    )}
+                    
+                    {/* Botões para Adicionar Tags */}
+                    <div className="flex flex-wrap gap-2">
+                      {tagsDisponiveis
+                        .filter(tag => !selectedTags.includes(tag.nome))
+                        .map((tag) => (
+                          <button
+                            key={tag.id}
+                            type="button"
+                            onClick={() => {
+                              setSelectedTags(prev => [...prev, tag.nome])
+                            }}
+                            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${tag.cor} opacity-60 hover:opacity-100 hover:shadow-md`}
+                          >
+                            <Plus className="inline h-3 w-3 mr-1" />
+                            {tag.nome}
+                          </button>
+                        ))}
+                      
+                      {/* Botão Criar Nova Tag */}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setIsTagsManagerOpen(true)}
+                        className="rounded-full"
+                      >
+                        <Plus className="h-3 w-3 mr-1" />
+                        Criar Nova Tag
+                      </Button>
+                    </div>
+                    
+                    <p className="text-xs text-gray-500">
+                      {selectedTags.length === 0 
+                        ? 'Clique nas tags acima para adicionar ao cliente'
+                        : `${selectedTags.length} tag${selectedTags.length > 1 ? 's' : ''} selecionada${selectedTags.length > 1 ? 's' : ''} • Clique em uma tag selecionada para remover`
+                      }
+                    </p>
+                  </div>
                 )}
               </div>
 
@@ -1862,6 +1975,10 @@ export function ClientesPage() {
                       requiredFields.push({ key: 'segmento_cliente', label: 'Segmento', value: cliente.segmento_cliente })
                     }
                     
+                    if (regrasQualificacao?.volume_mensal) {
+                      requiredFields.push({ key: 'volume_mensal', label: 'Volume Mensal', value: cliente.volume_mensal })
+                    }
+                    
                     if (regrasQualificacao?.endereco?.ativo) {
                       const enderecoFields = []
                       if (regrasQualificacao.endereco.rua) enderecoFields.push(cliente.endereco)
@@ -1934,7 +2051,7 @@ export function ClientesPage() {
                     {selectedCliente.tags.map((tag: string, index: number) => (
                       <Badge 
                         key={index}
-                        className={TAG_COLORS[tag] || 'bg-gray-100 text-gray-800'}
+                        className={`cursor-default ${getTagClasses(tag)}`}
                       >
                         {tag}
                       </Badge>
@@ -2766,6 +2883,12 @@ export function ClientesPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Tags Manager Modal */}
+      <TagsManager 
+        open={isTagsManagerOpen} 
+        onOpenChange={setIsTagsManagerOpen} 
+      />
     </div>
   )
 }
