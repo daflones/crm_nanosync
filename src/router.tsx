@@ -11,6 +11,7 @@ const ConfirmationPage = lazy(() => import('./pages/auth/ConfirmationPage').then
 const ResetPasswordPage = lazy(() => import('./pages/auth/ResetPasswordPage').then(m => ({ default: m.ResetPasswordPage })))
 const DashboardPage = lazy(() => import('./pages/dashboard/DashboardPage').then(m => ({ default: m.DashboardPage })))
 const ClientesPage = lazy(() => import('./pages/clientes/ClientesPage').then(m => ({ default: m.ClientesPage })))
+const ClientesProspeccaoPage = lazy(() => import('./pages/clientes/ClientesProspeccaoPage').then(m => ({ default: m.ClientesProspeccaoPage })))
 const VendedoresPage = lazy(() => import('./pages/vendedores/VendedoresPage'))
 const SetoresAtendimentoPage = lazy(() => import('./pages/setores-atendimento/SetoresAtendimentoPage'))
 const ProdutosPage = lazy(() => import('./pages/produtos/ProdutosPage').then(m => ({ default: m.ProdutosPage })))
@@ -94,6 +95,10 @@ export const router = createBrowserRouter([
       {
         path: 'clientes',
         element: withSuspense(ClientesPage),
+      },
+      {
+        path: 'clientes-prospeccao',
+        element: withSuspense(ClientesProspeccaoPage),
       },
       {
         path: 'vendedores',

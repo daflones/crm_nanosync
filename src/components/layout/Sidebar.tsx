@@ -20,13 +20,22 @@ import {
   QrCode,
   Building2
 } from 'lucide-react'
+
+interface MenuItem {
+  label: string
+  icon: any
+  href: string
+  color: string
+  adminOnly?: boolean
+  subItems?: MenuItem[]
+}
 import { useAuthStore } from '@/stores/authStore'
 import { usePlanoAtivo } from '@/hooks/usePlanoAtivo'
 import { useIAConfig } from '@/hooks/useIAConfig'
 import { SubscriptionStatusBanner } from '@/components/SubscriptionNotifications'
 import { Button } from '@/components/ui/button'
 
-const menuItems = [
+const menuItems: MenuItem[] = [
   { 
     label: 'Dashboard', 
     icon: LayoutDashboard, 
@@ -99,7 +108,15 @@ const menuItems = [
     label: 'Prospecção', 
     icon: Target, 
     href: '/prospeccao',
-    color: 'text-red-600'
+    color: 'text-red-600',
+    subItems: [
+      {
+        label: 'Clientes de Prospecção',
+        icon: Users,
+        href: '/clientes-prospeccao',
+        color: 'text-red-500'
+      }
+    ]
   },
   // { 
   //   label: 'Relatórios', 
@@ -206,6 +223,8 @@ export function Sidebar() {
         {filteredMenuItems.map((item) => {
           const Icon = item.icon
           const isActive = location.pathname === `/app${item.href}` || location.pathname.startsWith(`/app${item.href}/`)
+          const hasSubItems = item.subItems && item.subItems.length > 0
+          const isParentActive = hasSubItems && item.subItems?.some(sub => location.pathname === `/app${sub.href}` || location.pathname.startsWith(`/app${sub.href}/`))
           
           // Se for o dashboard, usar o handler especial
           if (item.href === '/dashboard') {
@@ -253,22 +272,52 @@ export function Sidebar() {
           }
 
           return (
-            <Link
-              key={item.href}
-              to={`/app${item.href}`}
-              className={cn(
-                'flex items-center space-x-3 rounded-xl px-4 py-2.5 text-sm font-medium transition-all duration-200 group',
-                isActive
-                  ? 'bg-primary-600 text-white shadow-lg shadow-primary-600/25'
-                  : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700 hover:shadow-md'
+            <div key={item.href}>
+              <Link
+                to={`/app${item.href}`}
+                className={cn(
+                  'flex items-center space-x-3 rounded-xl px-4 py-2.5 text-sm font-medium transition-all duration-200 group',
+                  isActive || isParentActive
+                    ? 'bg-primary-600 text-white shadow-lg shadow-primary-600/25'
+                    : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700 hover:shadow-md'
+                )}
+              >
+                <Icon className={cn(
+                  'h-5 w-5 transition-transform group-hover:scale-110', 
+                  isActive || isParentActive ? 'text-white' : item.color
+                )} />
+                <span className="font-medium">{item.label}</span>
+              </Link>
+              
+              {/* Subitems */}
+              {hasSubItems && (
+                <div className="ml-4 mt-1 space-y-1">
+                  {item.subItems!.map((subItem) => {
+                    const SubIcon = subItem.icon
+                    const isSubActive = location.pathname === `/app${subItem.href}` || location.pathname.startsWith(`/app${subItem.href}/`)
+                    
+                    return (
+                      <Link
+                        key={subItem.href}
+                        to={`/app${subItem.href}`}
+                        className={cn(
+                          'flex items-center space-x-3 rounded-lg px-4 py-2 text-sm font-medium transition-all duration-200 group',
+                          isSubActive
+                            ? 'bg-primary-500 text-white shadow-md'
+                            : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700/50'
+                        )}
+                      >
+                        <SubIcon className={cn(
+                          'h-4 w-4 transition-transform group-hover:scale-110',
+                          isSubActive ? 'text-white' : subItem.color
+                        )} />
+                        <span className="text-xs">{subItem.label}</span>
+                      </Link>
+                    )
+                  })}
+                </div>
               )}
-            >
-              <Icon className={cn(
-                'h-5 w-5 transition-transform group-hover:scale-110', 
-                isActive ? 'text-white' : item.color
-              )} />
-              <span className="font-medium">{item.label}</span>
-            </Link>
+            </div>
           )
         })}
       </nav>

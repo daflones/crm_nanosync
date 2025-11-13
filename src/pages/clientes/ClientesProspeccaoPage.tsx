@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 import {
   Plus,
   Search,
-  Filter,
   Mail,
   Building,
   User,
@@ -10,8 +9,6 @@ import {
   Loader2, 
   MapPin,
   Edit,
-  LayoutGrid,
-  List,
   Eye,
   Trash2,
   Phone,
@@ -22,19 +19,19 @@ import {
   FileText,
   X,
   Tag,
-  TrendingUp
+  TrendingUp,
+  Target
 } from 'lucide-react'
 import ClienteTimeline from '@/components/cliente/ClienteTimeline'
 import AcaoModal from '@/components/cliente/AcaoModal'
 import type { ClienteAcao } from '@/types/cliente-acao'
-import { useClientes, useClientesStageStats, useCreateCliente, useUpdateCliente, useDeleteCliente, useUpdatePipelineStage } from '@/hooks/useClientes'
+import { useClientes, useCreateCliente, useUpdateCliente, useDeleteCliente, useUpdatePipelineStage } from '@/hooks/useClientes'
 import { usePropostas } from '@/hooks/usePropostas'
 import { useVendedores } from '@/hooks/useVendedores'
 import { useIsAdmin, useCurrentVendedorId } from '@/hooks/useAuth'
 import { useIAConfig } from '@/hooks/useIAConfig'
 import { VendedorSelector } from '@/components/VendedorSelector'
-import { PlanoAtivoButton } from '@/components/PlanoAtivoGuard'
-import { useForm, useWatch } from 'react-hook-form'
+import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
@@ -68,7 +65,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { KanbanBoard } from '@/components/kanban/KanbanBoard'
 import { Badge } from '@/components/ui/badge'
 
 // Opções de tags disponíveis
@@ -133,15 +129,13 @@ const clienteSchema = z.object({
 
 type ClienteFormData = z.infer<typeof clienteSchema>
 
-export function ClientesPage() {
+export function ClientesProspeccaoPage() {
   const [searchTerm, setSearchTerm] = useState('')
-  const [selectedStage, setSelectedStage] = useState('todos')
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [selectedCliente, setSelectedCliente] = useState<any>(null)
-  const [viewMode, setViewMode] = useState<'grid' | 'list' | 'kanban'>('grid')
   const [page, setPage] = useState(1)
   const [limit] = useState(50) // 50 clientes por página
   const [selectedTags, setSelectedTags] = useState<string[]>([]) // Tags para criação/edição
@@ -150,18 +144,18 @@ export function ClientesPage() {
   const [isAcaoModalOpen, setIsAcaoModalOpen] = useState(false)
   const [selectedAcao, setSelectedAcao] = useState<ClienteAcao | null>(null)
 
-  // Load clients with pagination and stage filter
+  // Load clients with pagination - ONLY Prospecção
   const { data: clientes = [], count: totalClientesFiltered = 0, isLoading } = useClientes({ 
     page, 
     limit,
-    etapa: selectedStage === 'todos' ? undefined : selectedStage
+    origem: 'Prospecção'
   })
-  const { data: stageStats = {} } = useClientesStageStats()
   
-  // Total geral de clientes (sempre fixo)
+  // Total geral de clientes de prospecção
   const { data: allClientes = [], count: totalClientes = 0 } = useClientes({ 
     page: 1, 
-    limit: 1 // Só precisamos do count, não dos dados
+    limit: 1,
+    origem: 'Prospecção'
   })
   const { data: _vendedores = [] } = useVendedores()
   const createCliente = useCreateCliente()
@@ -231,16 +225,10 @@ export function ClientesPage() {
     return origem
   }
 
-  const getStageCount = (stageId: string) => {
-    return clientes.filter((cliente: any) => cliente.etapa_pipeline === stageId).length
-  }
-
   // Filtro de busca local (apenas para busca instantânea, stage filter é no backend)
-  // IMPORTANTE: Excluir clientes com origem = 'Prospecção' (eles aparecem na aba específica)
+  // IMPORTANTE: Esta página mostra APENAS clientes de Prospecção
   const filteredClientes = searchTerm 
-    ? clientes
-        .filter((cliente: any) => cliente.origem !== 'Prospecção') // Excluir clientes de prospecção
-        .filter((cliente: any) => {
+    ? clientes.filter((cliente: any) => {
           const searchLower = searchTerm.toLowerCase()
           const searchNumbers = searchTerm.replace(/\D/g, '')
           
@@ -259,7 +247,7 @@ export function ClientesPage() {
           
           return matchesName || matchesCompany || matchesEmail || matchesPhone || matchesPhoneCompany || matchesCPF || matchesCNPJ || matchesTags
         })
-    : clientes.filter((cliente: any) => cliente.origem !== 'Prospecção') // Excluir clientes de prospecção
+    : clientes // Já filtrado por origem='Prospecção' no hook
 
   // Pagination info (usa totalClientesFiltered para a categoria selecionada)
   const totalPages = Math.ceil(totalClientesFiltered / limit)
@@ -270,7 +258,7 @@ export function ClientesPage() {
   // Reset page when filters change
   useEffect(() => {
     setPage(1)
-  }, [searchTerm, selectedStage])
+  }, [searchTerm])
 
   const handleLoadMore = () => {
     setPage(prev => prev + 1)
@@ -587,34 +575,19 @@ export function ClientesPage() {
       <div className="w-full space-y-6 transition-all duration-300 ease-in-out">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Clientes</h1>
+            <div className="flex items-center gap-2">
+              <Target className="h-7 w-7 text-red-600" />
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Clientes de Prospecção</h1>
+            </div>
             <p className="text-gray-600 dark:text-gray-400 mt-1 transition-colors duration-300 ease-in-out">
-              Gerencie seus clientes e oportunidades de vendas
+              Clientes gerados através do sistema de prospecção automatizada
             </p>
-          </div>
-          
-          {/* Mobile: New Client Button */}
-          <div className="sm:hidden">
-            <button 
-              onClick={() => {
-                reset()
-                if (!isAdmin && currentVendedorId) {
-                  setValue('vendedor_id', currentVendedorId)
-                }
-                setIsCreateModalOpen(true)
-              }}
-              className="w-full px-4 py-2 text-sm font-medium text-white bg-primary-600 border border-primary-600 rounded-md hover:bg-primary-700 flex items-center justify-center gap-2"
-            >
-              <Plus className="h-4 w-4" />
-              Novo Cliente
-            </button>
           </div>
         </div>
 
-        {/* Search and Controls */}
-        <div className="mt-4 flex flex-col sm:flex-row gap-3">
-          {/* Search */}
-          <div className="relative flex-1">
+        {/* Search */}
+        <div className="mt-4">
+          <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <input
               type="text"
@@ -624,169 +597,23 @@ export function ClientesPage() {
               className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
             />
           </div>
-          
-          {/* Desktop Controls */}
-          <div className="hidden sm:flex items-center gap-3">
-            {/* View Toggle */}
-            <div className="flex items-center border border-gray-300 dark:border-gray-600 rounded-md">
-              <button
-                onClick={() => setViewMode('kanban')}
-                className={`px-3 py-2 text-sm font-medium flex items-center gap-2 ${
-                  viewMode === 'kanban' 
-                    ? 'bg-primary-600 text-white' 
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                <LayoutGrid className="h-4 w-4" />
-                <span className="hidden lg:inline">Kanban</span>
-              </button>
-              <button
-                onClick={() => setViewMode('list')}
-                className={`px-3 py-2 text-sm font-medium flex items-center gap-2 ${
-                  viewMode === 'list' 
-                    ? 'bg-primary-600 text-white' 
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                <List className="h-4 w-4" />
-                <span className="hidden lg:inline">Lista</span>
-              </button>
-            </div>
-            
-            {/* New Client Button */}
-            <PlanoAtivoButton
-              onClick={() => {
-                reset()
-                if (!isAdmin && currentVendedorId) {
-                  setValue('vendedor_id', currentVendedorId)
-                }
-                setIsCreateModalOpen(true)
-              }}
-              className="flex items-center gap-2"
-              variant="primary"
-            >
-              <Plus className="h-4 w-4" />
-              <span className="hidden lg:inline">Novo Cliente</span>
-            </PlanoAtivoButton>
-          </div>
-
-          {/* Mobile View Toggle */}
-          <div className="sm:hidden flex items-center border border-gray-300 dark:border-gray-600 rounded-md">
-            <button
-              onClick={() => setViewMode('kanban')}
-              className={`flex-1 px-3 py-2 text-sm font-medium flex items-center justify-center gap-2 ${
-                viewMode === 'kanban' 
-                  ? 'bg-primary-600 text-white' 
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              <LayoutGrid className="h-4 w-4" />
-              Kanban
-            </button>
-            <button
-              onClick={() => setViewMode('list')}
-              className={`flex-1 px-3 py-2 text-sm font-medium flex items-center justify-center gap-2 ${
-                viewMode === 'list' 
-                  ? 'bg-primary-600 text-white' 
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              <List className="h-4 w-4" />
-              Lista
-            </button>
-          </div>
         </div>
       </div>
 
-      {/* Statistics Cards - Horizontal Layout like List View */}
-      <div className="w-full overflow-x-auto">
-        <div className="flex gap-4 pb-2" style={{ minWidth: 'max-content' }}>
-          <div 
-            className={`flex-shrink-0 p-4 rounded-lg border cursor-pointer transition-colors ${
-              selectedStage === 'todos' ? 'bg-primary-50 border-primary-200 dark:bg-primary-900/20 dark:border-primary-700' : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
-            }`}
-            onClick={() => setSelectedStage('todos')}
-            style={{ minWidth: '120px' }}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Todos</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{totalClientes}</p>
-              </div>
-              <Users className="h-8 w-8 text-gray-400 dark:text-gray-500" />
-            </div>
-          </div>
-
-          {pipelineStages.map((stage) => (
-            <div
-              key={stage.id}
-              className={`flex-shrink-0 p-4 rounded-lg border cursor-pointer transition-colors ${
-                selectedStage === stage.id ? 'bg-primary-50 border-primary-200 dark:bg-primary-900/20 dark:border-primary-700' : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
-              }`}
-              onClick={() => setSelectedStage(stage.id)}
-              style={{ minWidth: '120px' }}
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-300">{stage.name}</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{stageStats[stage.id] || 0}</p>
-                </div>
-                <div className={`w-3 h-3 rounded-full ${stage.color}`} />
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Conditional View Rendering */}
-      {viewMode === 'kanban' ? (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
-          <div className="p-3 sm:p-6 pb-0">
-            <div className="mb-4 sm:mb-6">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Pipeline de Vendas</h2>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Gerencie seus leads através do funil de vendas</p>
-            </div>
-          </div>
-          <div className="w-full">
-            <KanbanBoard
-              clientes={clientes as any[]}
-              onEdit={openEditModal}
-              onDelete={openDeleteDialog}
-              onView={handleViewCliente}
-              onUpdateStage={handleUpdateStage}
-            />
-          </div>
-          
-          {/* Floating Add Button for Kanban */}
-          <PlanoAtivoButton
-            onClick={() => {
-              reset()
-              if (!isAdmin && currentVendedorId) {
-                setValue('vendedor_id', currentVendedorId)
-              }
-              setIsCreateModalOpen(true)
-            }}
-            className="fixed bottom-6 right-6 z-50 w-12 h-12 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center"
-            variant="primary"
-          >
-            <Plus className="h-5 w-5" />
-          </PlanoAtivoButton>
-        </div>
-      ) : (
+      {/* Lista de Clientes */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
           <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-            <h2 className="text-lg font-semibold text-gray-900">
-              {selectedStage === 'todos' ? 'Todos os Clientes' : 
-               pipelineStages.find(s => s.id === selectedStage)?.name || 'Clientes'}
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+              Clientes de Prospecção ({totalClientes})
             </h2>
           </div>
 
           {filteredClientes.length === 0 ? (
             <div className="text-center py-12">
               <User className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" />
-              <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">Nenhum cliente encontrado</h3>
+              <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">Nenhum cliente de prospecção encontrado</h3>
               <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                Comece adicionando um novo cliente ao seu pipeline.
+                Aguarde a prospecção automatizada adicionar novos clientes.
               </p>
             </div>
           ) : (
@@ -966,22 +793,18 @@ export function ClientesPage() {
                             >
                               <Eye className="h-4 w-4" />
                             </button>
-                            <PlanoAtivoButton
+                            <button
                               onClick={() => openEditModal(cliente)}
                               className="p-2 text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-gray-100 dark:hover:bg-gray-600 rounded"
-                              variant="secondary"
-                              size="sm"
                             >
                               <Edit className="h-4 w-4" />
-                            </PlanoAtivoButton>
-                            <PlanoAtivoButton
+                            </button>
+                            <button
                               onClick={() => openDeleteDialog(cliente)}
                               className="p-2 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-600 rounded"
-                              variant="danger"
-                              size="sm"
                             >
                               <Trash2 className="h-4 w-4" />
-                            </PlanoAtivoButton>
+                            </button>
                           </div>
                         </div>
                       </div>
@@ -995,8 +818,7 @@ export function ClientesPage() {
               <div className="p-6 border-t border-gray-200 dark:border-gray-700">
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                   <div className="text-sm text-gray-600 dark:text-gray-400">
-                    Mostrando <span className="font-semibold">{showingFrom}</span> a <span className="font-semibold">{showingTo}</span> de <span className="font-semibold">{totalClientesFiltered}</span> clientes
-                    {selectedStage !== 'todos' && <span className="ml-1">({pipelineStages.find(s => s.id === selectedStage)?.name})</span>}
+                    Mostrando <span className="font-semibold">{showingFrom}</span> a <span className="font-semibold">{showingTo}</span> de <span className="font-semibold">{totalClientesFiltered}</span> clientes de prospecção
                   </div>
                   {hasMore && (
                     <Button
@@ -1013,7 +835,6 @@ export function ClientesPage() {
             </>
           )}
         </div>
-      )}
 
       {/* Create Modal */}
       <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
@@ -2416,16 +2237,15 @@ export function ClientesPage() {
             >
               Fechar
             </Button>
-            <PlanoAtivoButton 
+            <Button 
               onClick={() => {
                 setIsDetailModalOpen(false)
                 openEditModal(selectedCliente)
               }}
-              variant="primary"
             >
               <Edit className="mr-2 h-4 w-4" />
               Editar
-            </PlanoAtivoButton>
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
